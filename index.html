@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <title>Cuadro de Consumo Reprodata — Importador PDF</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
     --azul:#1f3864;
@@ -126,6 +127,37 @@
   </table>
 </div>
 
+<div class="panel" id="panelSAP">
+  <h3>Asiento contable SAP</h3>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+    <label style="font-size:11px">N° Factura:
+      <input type="text" id="inpFactura" value="01-F020-00027840" style="padding:4px 6px;border:1px solid #ccc;border-radius:3px;width:180px;font-size:12px">
+    </label>
+    <button id="btnGenSAP">Generar asiento SAP</button>
+    <button class="secundario" id="btnCopiarSAP">📋 Copiar al portapapeles (TSV)</button>
+    <button class="secundario" id="btnDescargarXLSX">⬇ Descargar .xlsx (completo)</button>
+    <span id="statusSAP" style="font-size:11px;color:#555"></span>
+  </div>
+  <div class="wrap" style="max-height:340px">
+    <table id="tablaSAP">
+      <thead>
+        <tr>
+          <th>Datos</th><th>Monto</th><th>Modelo</th><th>S/N</th><th>IP</th>
+          <th>CECO</th><th>Monto USD</th><th>Cuenta</th><th>Débito<br>(ME)</th>
+          <th>Crédito<br>(ME)</th><th>Débito</th><th>Crédito</th>
+          <th>Comentarios</th><th>Referencia 2</th><th>Centro<br>Costo</th>
+        </tr>
+      </thead>
+      <tbody id="tbodySAP">
+        <tr><td colspan="15" style="padding:16px;color:#888">— Cargue un PDF y presione <b>Generar asiento SAP</b> —</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="font-size:11px;color:#666;margin-top:6px">
+    El <b>.xlsx</b> exporta las <b>30 columnas</b> exactas del formato SAP (incluye <i>Cuenta de mayor, Cuenta asociada, Referencia 1, Posición, Cuenta destino, Cuenta patrimonial, Socio Negocios</i>, etc.). Esta tabla es solo vista previa de lo principal.
+  </div>
+</div>
+
 <div class="leyenda">
   <b>Marca, IP, Observación, Cuenta, Centro Costo y Volumen Máximo</b> se autocompletan desde el maestro interno. Las filas con fondo naranja indican un S/N del PDF que aún no existe en el maestro.<br>
   <b>Validación mensual:</b> al importar un PDF se compara cada <i>Contador Inicial</i> del PDF contra el <i>Contador Final</i> del mes anterior guardado. <span class="ci-badge ok">✓</span> fondo verde = cuadra. <span class="ci-badge err">✗</span> fondo rojo = discrepancia (posible error de facturación). Use <b>Guardar este mes</b> para ir armando el histórico y <b>Exportar histórico</b> para respaldar (los datos viven en el navegador; si cambia de equipo, impórtelos con <b>Importar histórico</b>).
@@ -163,12 +195,16 @@ const MAESTRO = {
   "9502370Y":{marca:"Sharp",modelo:"MX-M3070",ip:"10.72.8.207",observacion:"3er Piso - Contabilidad",cantidad:1,cuenta:941231308,centroCosto:403,alquilerFijo:51.68}
 };
 
+// Volumen Máximo POR EQUIPO (no el total de la bolsa).
+// Bolsa 1 son sólo B/N (Canon IR-*, MX-M3070): 3250 A4BN, 0 color.
+// Bolsas 2..5 (multifuncionales color): 188 A4BN + 563 A4CL por equipo.
 const VOL_MAX_BOLSA = {
-  "Bolsa 1":{A4BN:13000,A3BN:null,A4CL:null,A3CL:null},
-  "Bolsa 2":{A4BN:1504,A3BN:null,A4CL:4504,A3CL:null},
-  "Bolsa 3":{A4BN:1128,A3BN:null,A4CL:3378,A3CL:null},
-  "Bolsa 4":{A4BN:188,A3BN:null,A4CL:563,A3CL:null},
-  "Bolsa 5":{A4BN:188,A3BN:null,A4CL:563,A3CL:null}
+  "Bolsa 1":{A4BN:3250,A3BN:0,A4CL:0,A3CL:0},
+  "Bolsa 2":{A4BN:188,A3BN:0,A4CL:563,A3CL:0},
+  "Bolsa 3":{A4BN:188,A3BN:0,A4CL:563,A3CL:0},
+  "Bolsa 4":{A4BN:188,A3BN:0,A4CL:563,A3CL:0},
+  "Bolsa 5":{A4BN:188,A3BN:0,A4CL:563,A3CL:0},
+  "SIN BOLSA":{A4BN:0,A3BN:0,A4CL:0,A3CL:0}
 };
 
 const statusEl = document.getElementById('status');
@@ -356,9 +392,11 @@ function renderizar(equipos, meta){
     for(let i=0;i<FORMATOS.length;i++){
       const fmt = FORMATOS[i];
       const d = eq.formatos[fmt] || {ci:0,cf:0,consumo:0,volEst:0,cantExc:0,precio:0,total:0};
-      const volMax = (VOL_MAX_BOLSA[bolsa] && VOL_MAX_BOLSA[bolsa][fmt]) || null;
+      const volMax = (VOL_MAX_BOLSA[bolsa] && VOL_MAX_BOLSA[bolsa][fmt] != null) ? VOL_MAX_BOLSA[bolsa][fmt] : null;
       const consumo = d.consumo;
-      const excedenteReal = volMax !== null ? (consumo - volMax) : d.cantExc;
+      const excedenteReal = (volMax !== null)
+        ? (consumo === 0 ? 0 : consumo - volMax)
+        : d.cantExc;
       const totalCalc = volMax !== null ? excedenteReal * d.precio : d.total;
       if(totalCalc > 0) totalExcedenteCalc += totalCalc;
 
@@ -548,8 +586,9 @@ document.getElementById('btnExportCsv').addEventListener('click', () => {
     const m = MAESTRO[eq.sn] || {};
     for(const fmt of FORMATOS){
       const d = eq.formatos[fmt] || {};
-      const volMax = (VOL_MAX_BOLSA[eq.bolsaPdf] && VOL_MAX_BOLSA[eq.bolsaPdf][fmt]);
-      const exc = volMax!=null ? (d.consumo||0)-volMax : (d.cantExc||0);
+      const volMax = (VOL_MAX_BOLSA[eq.bolsaPdf] && VOL_MAX_BOLSA[eq.bolsaPdf][fmt] != null) ? VOL_MAX_BOLSA[eq.bolsaPdf][fmt] : null;
+      const cons = d.consumo||0;
+      const exc = volMax!=null ? (cons===0 ? 0 : cons - volMax) : (d.cantExc||0);
       const total = volMax!=null ? exc*(d.precio||0) : (d.total||0);
       rows.push([
         meta.periodo||'', m.marca||'', m.modelo||eq.modeloPdf||'', eq.sn, m.ip||'',
@@ -609,6 +648,237 @@ document.getElementById('histInput').addEventListener('change', async (ev) => {
 });
 
 actualizarListaMeses();
+
+// ====== Asiento SAP ======
+const SAP_HEADERS = [
+  'Datos','Monto','Modelo','S/N','IP','CECO','Monto USD','Cuenta',
+  'Cuenta de mayor/Nombre SN','Cuenta asociada','Débito (ME)','Crédito (ME)',
+  'Débito','Crédito','Débito (MS)','Crédito (MS)','Comentarios',
+  'Referencia 1','Referencia 2','Centro de Costo','Posición del formulario principal',
+  'Cuenta destino','Cuenta patrimonial','Comp. destino','Procesado DC',
+  'Info socio de negocios','Info de terceros','Tipo doc. - Serie - Numero',
+  'Socio Negocios','Fecha Registro Ventas'
+];
+
+function montoConsumoEquipo(eq){
+  const FMTS = ['A4BN','A3BN','A4CL','A3CL'];
+  const bolsa = eq.bolsaPdf;
+  let total = 0;
+  for(const fmt of FMTS){
+    const d = eq.formatos[fmt] || {};
+    const volMax = (VOL_MAX_BOLSA[bolsa] && VOL_MAX_BOLSA[bolsa][fmt] != null) ? VOL_MAX_BOLSA[bolsa][fmt] : null;
+    const cons = d.consumo || 0;
+    const exc = (volMax != null) ? (cons === 0 ? 0 : cons - volMax) : (d.cantExc||0);
+    const t = (volMax != null) ? exc * (d.precio||0) : (d.total||0);
+    total += t;
+  }
+  return Math.round(total * 10000) / 10000;
+}
+
+function generarAsientoSAP(equipos, meta, numFactura){
+  const clave = claveMes(meta.periodo);
+  if(!clave) throw new Error('No se pudo determinar el período');
+  const [anio, mes] = clave.split('-').map(Number);
+  const ultDia = new Date(anio, mes, 0).getDate();
+  const pad2 = (n) => String(n).padStart(2,'0');
+  const fechaFac = `${pad2(ultDia)}/${pad2(mes)}/${anio}`;
+  const rangoFechas = `01-${pad2(mes)}-${anio} AL ${pad2(ultDia)}-${pad2(mes)}-${anio}`;
+  const refFactura = `Factura N° ${numFactura}`;
+
+  const totalRenta = meta.totalRenta || (equipos.length * 51.6819047619048);
+  const alquiler = totalRenta / equipos.length;
+  const totalExc = equipos.reduce((s,e) => s + montoConsumoEquipo(e), 0);
+  const montoTotal = Math.round((totalRenta + totalExc) * 100) / 100;
+
+  const ordenados = [...equipos].sort((a,b) => {
+    const ca = (MAESTRO[a.sn] && MAESTRO[a.sn].centroCosto) || 9999;
+    const cb = (MAESTRO[b.sn] && MAESTRO[b.sn].centroCosto) || 9999;
+    if(ca !== cb) return ca - cb;
+    return String(a.sn).localeCompare(String(b.sn));
+  });
+
+  const filas = [];
+  let idx = 0;
+  for(const eq of ordenados){
+    const m = MAESTRO[eq.sn] || {};
+    const modelo = m.modelo || eq.modeloPdf || '';
+    const ip = m.ip || '';
+    const ceco = m.centroCosto || '';
+    const cuenta = m.cuenta || '';
+
+    const rowAlquiler = {
+      Datos: idx === 0 ? numFactura : '',
+      Monto: idx === 0 ? montoTotal : '',
+      Modelo: modelo, 'S/N': eq.sn, IP: ip, CECO: ceco,
+      'Monto USD': round4(alquiler),
+      Cuenta: cuenta,
+      'Débito (ME)': '', 'Crédito (ME)': round4(alquiler),
+      'Débito': 0, 'Crédito': '',
+      Comentarios: `FOTOCOPIAS POR ALQUILER EQUIPO MULTIFUNCIONAL DEL ${rangoFechas}`,
+      'Referencia 2': refFactura,
+      'Centro de Costo': ceco
+    };
+    filas.push(rowAlquiler);
+    idx++;
+
+    const consumo = montoConsumoEquipo(eq);
+    const rowConsumo = {
+      Datos: idx === 1 ? 'FECHA' : '',
+      Monto: idx === 1 ? fechaFac : '',
+      Modelo: modelo, 'S/N': eq.sn, IP: ip, CECO: ceco,
+      'Monto USD': round4(consumo),
+      Cuenta: cuenta,
+      'Débito (ME)': '', 'Crédito (ME)': consumo >= 0 ? round4(consumo) : 0,
+      'Débito': consumo < 0 ? round4(Math.abs(consumo)) : 0, 'Crédito': '',
+      Comentarios: `CONSUMO DE COPIAS ${eq.sn}`,
+      'Referencia 2': refFactura,
+      'Centro de Costo': ceco
+    };
+    filas.push(rowConsumo);
+    idx++;
+  }
+
+  const totalCredME = filas.reduce((s,r) => s + (Number(r['Crédito (ME)']) || 0), 0);
+  filas.push({
+    'Crédito (ME)': round4(totalCredME),
+    Comentarios: 'TOTAL'
+  });
+
+  return filas;
+}
+
+function round4(v){ return Math.round(v * 10000) / 10000; }
+
+function renderSAPPreview(filas){
+  const tbody = document.getElementById('tbodySAP');
+  tbody.innerHTML = '';
+  const cols = ['Datos','Monto','Modelo','S/N','IP','CECO','Monto USD','Cuenta','Débito (ME)','Crédito (ME)','Débito','Crédito','Comentarios','Referencia 2','Centro de Costo'];
+  const fmtCell = (v) => {
+    if(v===null||v===undefined||v==='') return '';
+    if(typeof v === 'number') return v.toLocaleString('es-PE',{minimumFractionDigits:2, maximumFractionDigits:4});
+    return v;
+  };
+  for(const r of filas){
+    const tr = document.createElement('tr');
+    let html = '';
+    for(const c of cols){
+      const v = r[c];
+      let cls = '';
+      if(['Monto','Monto USD','Débito (ME)','Crédito (ME)','Débito','Crédito'].includes(c)) cls = 'num';
+      if(c === 'Comentarios') cls = 'obs';
+      html += `<td class="${cls}">${fmtCell(v)}</td>`;
+    }
+    tr.innerHTML = html;
+    if(r.Comentarios === 'TOTAL'){
+      tr.style.fontWeight = 'bold';
+      tr.style.background = '#f7f7f7';
+    }
+    tbody.appendChild(tr);
+  }
+}
+
+document.getElementById('btnGenSAP').addEventListener('click', () => {
+  const s = document.getElementById('statusSAP');
+  if(!window._ultimosEquipos || !window._ultimosEquipos.length){
+    s.textContent = 'Cargue un PDF primero.'; s.style.color = 'var(--rojo)'; return;
+  }
+  const numFactura = document.getElementById('inpFactura').value.trim() || 'SIN-FACTURA';
+  try{
+    const filas = generarAsientoSAP(window._ultimosEquipos, window._ultimaMeta, numFactura);
+    window._ultimoSAP = filas;
+    renderSAPPreview(filas);
+    s.textContent = `Generadas ${filas.length - 1} líneas + total.`;
+    s.style.color = '#1a7a1a';
+  }catch(e){
+    s.textContent = 'Error: '+e.message; s.style.color = 'var(--rojo)';
+  }
+});
+
+document.getElementById('btnCopiarSAP').addEventListener('click', async () => {
+  const filas = window._ultimoSAP;
+  const s = document.getElementById('statusSAP');
+  if(!filas){ s.textContent = 'Genere el asiento primero.'; s.style.color = 'var(--rojo)'; return; }
+  const lines = [SAP_HEADERS.join('\t')];
+  for(const r of filas){
+    lines.push(SAP_HEADERS.map(h => {
+      const v = r[h];
+      if(v===undefined||v===null) return '';
+      return String(v).replace(/\t/g,' ').replace(/\n/g,' ');
+    }).join('\t'));
+  }
+  try{
+    await navigator.clipboard.writeText(lines.join('\n'));
+    s.textContent = '✓ Copiado al portapapeles. Pegue en Excel/SAP.';
+    s.style.color = '#1a7a1a';
+  }catch(e){
+    const ta = document.createElement('textarea');
+    ta.value = lines.join('\n');
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    s.textContent = '✓ Copiado (método legacy).';
+    s.style.color = '#1a7a1a';
+  }
+});
+
+document.getElementById('btnDescargarXLSX').addEventListener('click', () => {
+  const filas = window._ultimoSAP;
+  const s = document.getElementById('statusSAP');
+  if(!filas){ s.textContent = 'Genere el asiento primero.'; s.style.color = 'var(--rojo)'; return; }
+  if(typeof XLSX === 'undefined'){ s.textContent = 'Error: la librería XLSX no cargó.'; s.style.color = 'var(--rojo)'; return; }
+
+  const meta = window._ultimaMeta || {};
+  const wb = XLSX.utils.book_new();
+
+  const aoaSAP = [SAP_HEADERS];
+  for(const r of filas){
+    aoaSAP.push(SAP_HEADERS.map(h => r[h] !== undefined ? r[h] : ''));
+  }
+  const wsSAP = XLSX.utils.aoa_to_sheet(aoaSAP);
+  XLSX.utils.book_append_sheet(wb, wsSAP, 'SAP');
+
+  const FORMATOS = ['A4BN','A3BN','A4CL','A3CL'];
+  const cabMes = [
+    meta.periodo||'','Marca','Modelo','S/N','IP','Observación','Cantidad Impresoras',
+    'Bolsa','Formatos','Contador Inicial','Contador Final','Consumo del Mes',
+    'Volumen Maximo Establecido','Volumen Excedente','Precio','Total','alquiler fijo',
+    'Cuenta','Centro Costo'
+  ];
+  const aoaMes = [cabMes];
+  for(const eq of (window._ultimosEquipos||[])){
+    const m = MAESTRO[eq.sn] || {};
+    for(let i=0;i<FORMATOS.length;i++){
+      const fmt = FORMATOS[i];
+      const d = eq.formatos[fmt] || {};
+      const volMax = (VOL_MAX_BOLSA[eq.bolsaPdf] && VOL_MAX_BOLSA[eq.bolsaPdf][fmt] != null) ? VOL_MAX_BOLSA[eq.bolsaPdf][fmt] : null;
+      const exc = volMax!=null ? (d.consumo||0)-volMax : (d.cantExc||0);
+      const tot = volMax!=null ? exc*(d.precio||0) : (d.total||0);
+      aoaMes.push([
+        i===0 ? (meta.periodo||'') : '',
+        i===0 ? (m.marca||'') : '',
+        i===0 ? (m.modelo||eq.modeloPdf||'') : '',
+        i===0 ? eq.sn : '',
+        i===0 ? (m.ip||'') : '',
+        i===0 ? (m.observacion||eq.direccion||'') : '',
+        i===0 ? (m.cantidad||1) : '',
+        i===0 ? (eq.bolsaPdf||'') : '',
+        fmt,
+        d.ci||0, d.cf||0, d.consumo||0,
+        volMax||'', exc, d.precio||0, Math.round(tot*100)/100,
+        i===0 ? (m.alquilerFijo||51.68) : '',
+        i===0 ? (m.cuenta||'') : '',
+        i===0 ? (m.centroCosto||'') : ''
+      ]);
+    }
+  }
+  const wsMes = XLSX.utils.aoa_to_sheet(aoaMes);
+  XLSX.utils.book_append_sheet(wb, wsMes, meta.periodo ? meta.periodo.replace(/\s+/,'-') : 'Mes');
+
+  const nombre = `Reprodata_${(meta.periodo||'export').replace(/\s+/g,'_')}.xlsx`;
+  XLSX.writeFile(wb, nombre);
+  s.textContent = `✓ Descargado: ${nombre}`;
+  s.style.color = '#1a7a1a';
+});
 </script>
 
 </body>
