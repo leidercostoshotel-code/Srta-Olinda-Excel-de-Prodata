@@ -159,7 +159,7 @@
     </table>
   </div>
   <div class="hint-edit">
-    💡 Las celdas en <b>amarillo claro</b> (Monto USD, Crédito (ME), Débito, Comentarios) son <b>editables</b>: haga click sobre la celda, corrija el valor y presione <kbd>Enter</kbd> (o <kbd>Esc</kbd> para cancelar). Las filas modificadas quedan marcadas y el total se recalcula automáticamente. Los cambios se reflejan al <b>Copiar</b> y al <b>Descargar .xlsx</b>. El <b>.xlsx</b> exporta las <b>30 columnas</b> exactas del formato SAP (incluye <i>Cuenta de mayor, Cuenta asociada, Referencia 1, Posición, Cuenta destino, Cuenta patrimonial, Socio Negocios</i>, etc.).
+    💡 Las celdas en <b>amarillo claro</b> (Monto USD, Débito (ME), Crédito (ME), Comentarios) son <b>editables</b>: haga click sobre la celda, corrija el valor y presione <kbd>Enter</kbd> (o <kbd>Esc</kbd> para cancelar). Las filas modificadas quedan marcadas y el total se recalcula automáticamente. Los cambios se reflejan al <b>Copiar</b> y al <b>Descargar .xlsx</b>. El <b>.xlsx</b> exporta las <b>30 columnas</b> exactas del formato SAP (incluye <i>Cuenta de mayor, Cuenta asociada, Referencia 1, Posición, Cuenta destino, Cuenta patrimonial, Socio Negocios</i>, etc.).
   </div>
 </div>
 
@@ -717,8 +717,9 @@ function generarAsientoSAP(equipos, meta, numFactura){
       Modelo: modelo, 'S/N': eq.sn, IP: ip, CECO: ceco,
       'Monto USD': round4(alquiler),
       Cuenta: cuenta,
-      'Débito (ME)': '', 'Crédito (ME)': round4(alquiler),
-      'Débito': 0, 'Crédito': '',
+      'Débito (ME)': 0, 'Crédito (ME)': round4(alquiler),
+      'Débito': 0, 'Crédito': 0,
+      'Débito (MS)': 0, 'Crédito (MS)': 0,
       Comentarios: `FOTOCOPIAS POR ALQUILER EQUIPO MULTIFUNCIONAL DEL ${rangoFechas}`,
       'Referencia 2': refFactura,
       'Centro de Costo': ceco
@@ -733,8 +734,11 @@ function generarAsientoSAP(equipos, meta, numFactura){
       Modelo: modelo, 'S/N': eq.sn, IP: ip, CECO: ceco,
       'Monto USD': round4(consumo),
       Cuenta: cuenta,
-      'Débito (ME)': '', 'Crédito (ME)': consumo >= 0 ? round4(consumo) : 0,
-      'Débito': consumo < 0 ? round4(Math.abs(consumo)) : 0, 'Crédito': '',
+      'Débito (ME)': 0,
+      'Crédito (ME)': consumo >= 0 ? round4(consumo) : 0,
+      'Débito': consumo < 0 ? round4(Math.abs(consumo)) : 0,
+      'Crédito': 0,
+      'Débito (MS)': 0, 'Crédito (MS)': 0,
       Comentarios: `CONSUMO DE COPIAS ${eq.sn}`,
       'Referencia 2': refFactura,
       'Centro de Costo': ceco
@@ -744,8 +748,13 @@ function generarAsientoSAP(equipos, meta, numFactura){
   }
 
   const totalCredME = filas.reduce((s,r) => s + (Number(r['Crédito (ME)']) || 0), 0);
+  const totalDeb = filas.reduce((s,r) => s + (Number(r['Débito']) || 0), 0);
   filas.push({
+    'Débito (ME)': 0,
     'Crédito (ME)': round4(totalCredME),
+    'Débito': round4(totalDeb),
+    'Crédito': 0,
+    'Débito (MS)': 0, 'Crédito (MS)': 0,
     Comentarios: 'TOTAL'
   });
 
@@ -758,12 +767,16 @@ function renderSAPPreview(filas){
   const tbody = document.getElementById('tbodySAP');
   tbody.innerHTML = '';
   const cols = ['Datos','Monto','Modelo','S/N','IP','CECO','Monto USD','Cuenta','Débito (ME)','Crédito (ME)','Débito','Crédito','Comentarios','Referencia 2','Centro de Costo'];
-  const fmtCell = (v) => {
+  const fmtCell = (v, col) => {
     if(v===null||v===undefined||v==='') return '';
-    if(typeof v === 'number') return v.toLocaleString('es-PE',{minimumFractionDigits:2, maximumFractionDigits:4});
+    if(typeof v === 'number'){
+      const n = v.toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2});
+      return COLS_USD.has(col) ? `USD ${n}` : v.toLocaleString('es-PE',{minimumFractionDigits:2, maximumFractionDigits:4});
+    }
     return v;
   };
-  const EDITABLES_NUM = new Set(['Monto USD','Crédito (ME)','Débito']);
+  const EDITABLES_NUM = new Set(['Monto USD','Débito (ME)','Crédito (ME)','Débito','Crédito']);
+  const COLS_USD = new Set(['Débito (ME)','Crédito (ME)','Débito','Crédito','Débito (MS)','Crédito (MS)']);
   const EDITABLES_TXT = new Set(['Comentarios']);
   filas.forEach((r, idx) => {
     const esTotal = r.Comentarios === 'TOTAL';
@@ -776,7 +789,7 @@ function renderSAPPreview(filas){
       const v = r[c];
       if(['Monto','Monto USD','Débito (ME)','Crédito (ME)','Débito','Crédito'].includes(c)) td.classList.add('num');
       if(c === 'Comentarios') td.classList.add('obs');
-      td.textContent = fmtCell(v);
+      td.textContent = fmtCell(v, c);
       if(!esTotal && (EDITABLES_NUM.has(c) || EDITABLES_TXT.has(c))){
         td.classList.add('editable');
         td.contentEditable = 'true';
@@ -806,8 +819,8 @@ function renderSAPPreview(filas){
       const esNumerico = EDITABLES_NUM.has(col);
       let nuevoVal;
       if(esNumerico){
-        const txt = td.textContent.trim().replace(/,/g,'').replace(/\s+/g,'');
-        nuevoVal = txt === '' ? '' : (isNaN(parseFloat(txt)) ? fila[col] : parseFloat(txt));
+        const txt = td.textContent.trim().replace(/USD/gi,'').replace(/,/g,'').replace(/\s+/g,'');
+        nuevoVal = txt === '' ? 0 : (isNaN(parseFloat(txt)) ? fila[col] : parseFloat(txt));
       } else {
         nuevoVal = td.textContent.trim();
       }
@@ -815,9 +828,7 @@ function renderSAPPreview(filas){
       fila[col] = nuevoVal;
       fila._editado = true;
       tr.classList.add('editado');
-      td.textContent = (typeof nuevoVal === 'number')
-        ? nuevoVal.toLocaleString('es-PE',{minimumFractionDigits:2, maximumFractionDigits:4})
-        : (nuevoVal || '');
+      td.textContent = fmtCell(nuevoVal, col);
       recalcularTotalSAP();
       const s = document.getElementById('statusSAP');
       s.textContent = `✎ Editado: ${fila['S/N']||''} ${col}. ${(window._ultimoSAP.filter(x=>x._editado).length)} fila(s) modificada(s).`;
@@ -844,8 +855,16 @@ function recalcularTotalSAP(){
   if(!trTotal) return;
   const tds = trTotal.querySelectorAll('td');
   const colsHdr = ['Datos','Monto','Modelo','S/N','IP','CECO','Monto USD','Cuenta','Débito (ME)','Crédito (ME)','Débito','Crédito','Comentarios','Referencia 2','Centro de Costo'];
-  const fmt = (v) => (typeof v === 'number' ? v.toLocaleString('es-PE',{minimumFractionDigits:2,maximumFractionDigits:4}) : (v==null?'':v));
-  colsHdr.forEach((c, i) => { tds[i].textContent = fmt(totalFila[c]); });
+  const COLS_USD_TOT = new Set(['Débito (ME)','Crédito (ME)','Débito','Crédito']);
+  const fmt = (v, c) => {
+    if(v===null||v===undefined||v==='') return '';
+    if(typeof v === 'number'){
+      const n = v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+      return COLS_USD_TOT.has(c) ? `USD ${n}` : v.toLocaleString('es-PE',{minimumFractionDigits:2,maximumFractionDigits:4});
+    }
+    return v;
+  };
+  colsHdr.forEach((c, i) => { tds[i].textContent = fmt(totalFila[c], c); });
 }
 
 document.getElementById('btnGenSAP').addEventListener('click', () => {
@@ -903,9 +922,42 @@ document.getElementById('btnDescargarXLSX').addEventListener('click', () => {
 
   const aoaSAP = [SAP_HEADERS];
   for(const r of filas){
-    aoaSAP.push(SAP_HEADERS.map(h => r[h] !== undefined ? r[h] : ''));
+    aoaSAP.push(SAP_HEADERS.map(h => {
+      const v = r[h];
+      if(v !== undefined && v !== '') return v;
+      // Asegurar que las columnas de monto siempre tengan número (0 si vacío)
+      if(['Débito (ME)','Crédito (ME)','Débito','Crédito','Débito (MS)','Crédito (MS)'].includes(h)){
+        return 0;
+      }
+      return '';
+    }));
   }
   const wsSAP = XLSX.utils.aoa_to_sheet(aoaSAP);
+
+  // Aplicar formato "USD" #,##0.00 a columnas de monto (K..P = índices 10..15)
+  const fmtUSD = '"USD" #,##0.00';
+  const range = XLSX.utils.decode_range(wsSAP['!ref']);
+  for(let R = 1; R <= range.e.r; R++){
+    for(const C of [10, 11, 12, 13, 14, 15]){
+      const addr = XLSX.utils.encode_cell({r:R, c:C});
+      if(wsSAP[addr]){
+        wsSAP[addr].z = fmtUSD;
+        if(typeof wsSAP[addr].v === 'number') wsSAP[addr].t = 'n';
+      }
+    }
+  }
+  // Ancho de columnas
+  wsSAP['!cols'] = SAP_HEADERS.map((h) => {
+    if(h === 'Comentarios') return {wch: 68};
+    if(h === 'Referencia 2') return {wch: 26};
+    if(h === 'Cuenta de mayor/Nombre SN') return {wch: 20};
+    if(['Débito (ME)','Crédito (ME)','Débito','Crédito','Débito (MS)','Crédito (MS)'].includes(h)) return {wch: 12};
+    if(h === 'Cuenta' || h === 'CECO' || h === 'Centro de Costo') return {wch: 11};
+    if(h === 'Modelo' || h === 'S/N' || h === 'IP') return {wch: 14};
+    if(h === 'Datos' || h === 'Monto') return {wch: 18};
+    if(h === 'Monto USD') return {wch: 11};
+    return {wch: 14};
+  });
   XLSX.utils.book_append_sheet(wb, wsSAP, 'SAP');
 
   const FORMATOS = ['A4BN','A3BN','A4CL','A3CL'];
