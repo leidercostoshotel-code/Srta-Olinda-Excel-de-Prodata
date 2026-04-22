@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Cuadro de Consumo Reprodata — Importador PDF</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.js"></script>
+<style>
+  :root{
+    --azul:#1f3864;
+    --azul-bajo:#2f5496;
+    --amarillo:#ffc000;
+    --rojo:#c00000;
+    --borde:#8aa4c8;
+    --gris:#f2f2f2;
+  }
+  *{box-sizing:border-box}
+  body{font-family:"Segoe UI",Arial,sans-serif;margin:0;padding:16px;background:#fafafa;color:#222;font-size:12px}
+  h1{font-size:18px;margin:0 0 10px 0}
+  .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;padding:10px;background:#fff;border:1px solid #ddd;border-radius:4px}
+  .toolbar button,.toolbar label{padding:6px 12px;border:1px solid var(--azul);background:var(--azul);color:#fff;cursor:pointer;border-radius:3px;font-size:12px}
+  .toolbar button.secundario{background:#fff;color:var(--azul)}
+  .toolbar input[type=file]{display:none}
+  .status{font-size:12px;color:#555;margin-left:auto}
+  .status.error{color:var(--rojo);font-weight:bold}
+  .wrap{overflow:auto;background:#fff;border:1px solid #ccc}
+  table{border-collapse:collapse;font-size:11px;white-space:nowrap}
+  th,td{border:1px solid var(--borde);padding:4px 6px;text-align:center;vertical-align:middle}
+  thead th{background:var(--azul);color:#fff;font-weight:bold;position:sticky;top:0;z-index:2}
+  td.fecha{background:var(--amarillo);font-weight:bold}
+  td.obs{text-align:left;max-width:320px;white-space:normal}
+  td.neg{color:var(--rojo)}
+  td.excedente-hl{background:#fff2a8}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  tr.sep td{border-top:2px solid #333}
+  .leyenda{font-size:11px;color:#666;margin-top:8px}
+  .resumen{margin-top:12px;padding:10px;background:#fff;border:1px solid #ddd;border-radius:4px;display:flex;gap:20px;flex-wrap:wrap}
+  .resumen .kpi{min-width:150px}
+  .resumen .kpi .lbl{font-size:10px;color:#666;text-transform:uppercase}
+  .resumen .kpi .val{font-size:16px;font-weight:bold;color:var(--azul)}
+  .pend{background:#fff4e0}
+</style>
+</head>
+<body>
+
+<h1>Cuadro de Consumo — Reprodata (Contrato 276580)</h1>
+
+<div class="toolbar">
+  <button id="btnCargarRepo">Cargar PDF del repositorio</button>
+  <label for="fileInput" class="secundario" style="cursor:pointer">Importar otro PDF…</label>
+  <input type="file" id="fileInput" accept="application/pdf">
+  <button class="secundario" id="btnExportCsv">Exportar CSV</button>
+  <span class="status" id="status">Listo. Cargue el PDF para procesar.</span>
+</div>
+
+<div class="resumen" id="resumen" style="display:none">
+  <div class="kpi"><div class="lbl">Período</div><div class="val" id="kpiPeriodo">—</div></div>
+  <div class="kpi"><div class="lbl">Equipos</div><div class="val" id="kpiEquipos">0</div></div>
+  <div class="kpi"><div class="lbl">Total Renta Mensual</div><div class="val" id="kpiRenta">S/ 0.00</div></div>
+  <div class="kpi"><div class="lbl">Total Excedente</div><div class="val" id="kpiExcedente">S/ 0.00</div></div>
+</div>
+
+<div class="wrap">
+  <table id="tabla">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Marca</th>
+        <th>Modelo</th>
+        <th>S/N</th>
+        <th>IP</th>
+        <th>Observación</th>
+        <th>Cantidad<br>Impresoras</th>
+        <th>Bolsa</th>
+        <th>Formatos</th>
+        <th>Contador<br>Inicial</th>
+        <th>Contador<br>Final</th>
+        <th>Consumo<br>del Mes</th>
+        <th>Volumen Máximo<br>Establecido</th>
+        <th>Volumen<br>Excedente</th>
+        <th>Precio</th>
+        <th>Total</th>
+        <th>alquiler<br>fijo</th>
+        <th>Cuenta</th>
+        <th>Centro<br>Costo</th>
+      </tr>
+    </thead>
+    <tbody id="tbody">
+      <tr><td colspan="19" style="padding:20px;color:#888">— Sin datos. Importe un PDF para ver la tabla —</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="leyenda">
+  Los campos <b>Marca, IP, Observación, Cuenta, Centro Costo y Volumen Máximo</b> se autocompletan desde el maestro interno (cruzado por S/N con el Excel). Las filas con fondo naranja indican un S/N del PDF que aún no existe en el maestro.
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js';
+
+const MAESTRO = {
+  "RJQ00596":{marca:"Canon",modelo:"IR-C3330",ip:"10.72.8.203",observacion:"2do Piso - Seguridad",cantidad:1,cuenta:941231308,centroCosto:408,alquilerFijo:51.68},
+  "QFX06245":{marca:"Canon",modelo:"IR-1730",ip:"10.72.8.215",observacion:"2do Piso - Oficina Auditor de Ingresos",cantidad:1,cuenta:941231308,centroCosto:403,alquilerFijo:51.68},
+  "35E33608":{marca:"Canon",modelo:"IR-1643",ip:"10.72.8.211",observacion:"1er Piso - Front Desk - Recepción",cantidad:1,cuenta:931221108,centroCosto:101,alquilerFijo:51.68},
+  "35E33607":{marca:"Canon",modelo:"IR-1643",ip:"10.72.8.153",observacion:"1er Piso - Front Desk - Recepción",cantidad:1,cuenta:931221108,centroCosto:101,alquilerFijo:51.68},
+  "X3B7002433":{marca:"Epson",modelo:"WF-C5790",ip:"10.72.8.191",observacion:"2do Piso - Oficina Banquetes",cantidad:1,cuenta:932341308,centroCosto:207,alquilerFijo:51.68},
+  "X3B7003659":{marca:"Epson",modelo:"WF-C5790",ip:"10.72.8.197",observacion:"3er Piso - Reservas",cantidad:1,cuenta:943331308,centroCosto:406,alquilerFijo:51.68},
+  "X3B7003660":{marca:"Epson",modelo:"WF-C5790",ip:"10.72.8.204",observacion:"1er Piso - Room Service",cantidad:1,cuenta:932341308,centroCosto:206,alquilerFijo:51.68},
+  "X3B7003661":{marca:"Epson",modelo:"WF-C5790",ip:"10.72.8.132",observacion:"1er Sótano - Steward - Limpieza",cantidad:1,cuenta:932341308,centroCosto:200,alquilerFijo:51.68},
+  "X3B7003671":{marca:"Epson",modelo:"WF-C5790",ip:"10.72.8.208",observacion:"1er Piso - Caja Lobby Bar",cantidad:1,cuenta:932341308,centroCosto:204,alquilerFijo:51.68},
+  "X3B7003703":{marca:"Epson",modelo:"WF-C5790",ip:"10.9.10.153",observacion:"1er Piso Gym",cantidad:1,cuenta:933441108,centroCosto:304,alquilerFijo:51.68},
+  "X3B7003711":{marca:"Epson",modelo:"WF-C5790",ip:"10.72.8.205",observacion:"1er Piso - Recepción - Back Office",cantidad:1,cuenta:931221108,centroCosto:101,alquilerFijo:51.68},
+  "X3B7003739":{marca:"Epson",modelo:"WF-C5790",ip:"10.72.10.43",observacion:"1er Piso Compras",cantidad:1,cuenta:941231308,centroCosto:402,alquilerFijo:51.68},
+  "X3B7003876":{marca:"Epson",modelo:"WF-C5790",ip:"10.72.8.220",observacion:"1er Piso - Oficina AyB",cantidad:1,cuenta:932341308,centroCosto:200,alquilerFijo:51.68},
+  "XBJZ017266":{marca:"Epson",modelo:"WF-C5890",ip:"10.72.8.229",observacion:"1er Sótano - Housekeeping",cantidad:1,cuenta:931221108,centroCosto:102,alquilerFijo:51.68},
+  "XBJZ017602":{marca:"Epson",modelo:"WF-C5890",ip:"10.72.8.206",observacion:"1er Piso - Bodega",cantidad:1,cuenta:941231308,centroCosto:403,alquilerFijo:51.68},
+  "XBJZ017603":{marca:"Epson",modelo:"WF-C5890",ip:"10.72.8.196",observacion:"1er Piso - Conserge",cantidad:1,cuenta:931221108,centroCosto:103,alquilerFijo:51.68},
+  "XBJZ021745":{marca:"Epson",modelo:"WF-C5890",ip:"10.72.8.219",observacion:"1er Piso - Oficina Chef",cantidad:1,cuenta:932341308,centroCosto:200,alquilerFijo:51.68},
+  "XBJZ021772":{marca:"Epson",modelo:"WF-C5890",ip:"10.72.8.151",observacion:"3er Piso - Gerencia General",cantidad:1,cuenta:941231308,centroCosto:401,alquilerFijo:51.68},
+  "XBJZ027512":{marca:"Epson",modelo:"WF-C5890",ip:"10.72.8.210",observacion:"3er Piso - Ventas",cantidad:1,cuenta:943331308,centroCosto:406,alquilerFijo:51.68},
+  "35009304":{marca:"Sharp",modelo:"MX-3070",ip:"10.72.8.200",observacion:"1er Sótano - RRHH - Sistemas",cantidad:1,cuenta:942331307,centroCosto:404,alquilerFijo:51.68},
+  "9502370Y":{marca:"Sharp",modelo:"MX-M3070",ip:"10.72.8.207",observacion:"3er Piso - Contabilidad",cantidad:1,cuenta:941231308,centroCosto:403,alquilerFijo:51.68}
+};
+
+const VOL_MAX_BOLSA = {
+  "Bolsa 1":{A4BN:13000,A3BN:null,A4CL:null,A3CL:null},
+  "Bolsa 2":{A4BN:1504,A3BN:null,A4CL:4504,A3CL:null},
+  "Bolsa 3":{A4BN:1128,A3BN:null,A4CL:3378,A3CL:null},
+  "Bolsa 4":{A4BN:188,A3BN:null,A4CL:563,A3CL:null},
+  "Bolsa 5":{A4BN:188,A3BN:null,A4CL:563,A3CL:null}
+};
+
+const statusEl = document.getElementById('status');
+function setStatus(msg, error=false){
+  statusEl.textContent = msg;
+  statusEl.classList.toggle('error', !!error);
+}
+
+document.getElementById('btnCargarRepo').addEventListener('click', async () => {
+  try{
+    setStatus('Descargando PDF del repositorio…');
+    const url = 'CUADRO DE CONSUMO DEL CONTRATO 276580 PERIODO 2026 MES DE MARZO.pdf';
+    const resp = await fetch(url);
+    if(!resp.ok) throw new Error('No se encontró el PDF en el repositorio ('+resp.status+')');
+    const buf = await resp.arrayBuffer();
+    await procesarPdf(buf);
+  }catch(e){
+    setStatus('Error: '+e.message, true);
+  }
+});
+
+document.getElementById('fileInput').addEventListener('change', async (ev) => {
+  const f = ev.target.files[0];
+  if(!f) return;
+  try{
+    setStatus('Leyendo '+f.name+'…');
+    const buf = await f.arrayBuffer();
+    await procesarPdf(buf, f.name);
+  }catch(e){
+    setStatus('Error: '+e.message, true);
+  }
+});
+
+async function procesarPdf(buf, nombre){
+  setStatus('Procesando PDF…');
+  const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+  const lines = await extraerLineas(pdf);
+  const meta = detectarMeta(lines);
+  const equipos = parsearEquipos(lines);
+  renderizar(equipos, meta);
+  setStatus(`Listo. ${equipos.length} equipos detectados.`);
+}
+
+async function extraerLineas(pdf){
+  const lines = [];
+  for(let i=1;i<=pdf.numPages;i++){
+    const page = await pdf.getPage(i);
+    const tc = await page.getTextContent();
+    const rows = {};
+    for(const it of tc.items){
+      const y = Math.round(it.transform[5]);
+      if(!rows[y]) rows[y] = [];
+      rows[y].push({x:it.transform[4], text:it.str});
+    }
+    const ys = Object.keys(rows).map(Number).sort((a,b)=>b-a);
+    for(const y of ys){
+      rows[y].sort((a,b)=>a.x-b.x);
+      lines.push({page:i,y,items:rows[y]});
+    }
+  }
+  return lines;
+}
+
+function detectarMeta(lines){
+  const meta = {periodo:'', totalRenta:0, totalExcedente:0};
+  for(const l of lines){
+    const txt = l.items.map(i=>i.str||i.text).join(' ');
+    const pm = txt.match(/PERIODO\s+(\d{4})\s+MES\s+DE\s+(\w+)/i);
+    if(pm){ meta.periodo = `${pm[2]} ${pm[1]}`.toUpperCase(); }
+    const rm = txt.match(/TOTAL RENTA MENSUAL:\s*\$?\s*([\d,.]+)/i);
+    if(rm){ meta.totalRenta = parseFloat(rm[1].replace(/,/g,'')); }
+    const em = txt.match(/TOTAL EXCEDENTE:\s*\$?\s*([\d,.]+)/i);
+    if(em){ meta.totalExcedente = parseFloat(em[1].replace(/,/g,'')); }
+  }
+  return meta;
+}
+
+function parsearEquipos(lines){
+  const equipos = [];
+  let actual = null;
+
+  const reFormatoDatos = /^(A4BN|A3BN|A4CL|A3CL)\s+([\d,.]+)\s+([\d,.]+)\s+([\d,.]+)\s+([\d,.]+)\s+([\d,.]+)\s+([\d.]+)\s+([\d.,]+)/;
+  const reEquip = /^([A-Z0-9]+)\s*-\s*([A-Z0-9][A-Z0-9-]*)(?:\s*-\s*(Bolsa\s*\d+))?/i;
+
+  for(const line of lines){
+    const full = line.items.map(i=>i.text).join(' ').replace(/\s+/g,' ').trim();
+
+    const leftParts = line.items.filter(it=>it.x<280).map(i=>i.text).join(' ').replace(/\s+/g,' ').trim();
+    const rightPortion = line.items.filter(it=>it.x>=280).map(i=>i.text).join(' ').replace(/\s+/g,' ').trim();
+
+    const m = rightPortion.match(reFormatoDatos) || full.match(reFormatoDatos);
+    if(!m) continue;
+
+    const [, fmt, ci, cf, cons, volEst, cantExc, precio, total] = m;
+    const num = (s)=>parseFloat(String(s).replace(/,/g,''))||0;
+
+    if(fmt === 'A4BN'){
+      const em = leftParts.match(reEquip);
+      if(em){
+        actual = {
+          sn: em[1],
+          modeloPdf: em[2],
+          bolsaPdf: em[3] ? em[3].replace(/\s+/,' ').trim() : 'SIN BOLSA',
+          direccion: '',
+          formatos: {}
+        };
+        equipos.push(actual);
+      }else{
+        actual = null;
+        continue;
+      }
+    }
+    if(!actual) continue;
+
+    actual.formatos[fmt] = {
+      ci: num(ci),
+      cf: num(cf),
+      consumo: num(cons),
+      volEst: num(volEst),
+      cantExc: num(cantExc),
+      precio: num(precio),
+      total: num(total)
+    };
+
+    if(fmt === 'A3BN' && leftParts && !actual.direccion){
+      actual.direccion = leftParts;
+    }
+  }
+
+  return equipos;
+}
+
+function fmtNum(v, dec=2){
+  if(v===null||v===undefined||isNaN(v)) return '';
+  return v.toLocaleString('es-PE',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+}
+function fmtInt(v){
+  if(v===null||v===undefined||isNaN(v)) return '';
+  return Math.round(v).toLocaleString('es-PE');
+}
+
+function renderizar(equipos, meta){
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+
+  const FORMATOS = ['A4BN','A3BN','A4CL','A3CL'];
+  const fechaStr = meta.periodo ? meta.periodo.replace(/\s+/,' ') : '';
+
+  let totalExcedenteCalc = 0;
+  let totalRentaCalc = 0;
+
+  for(const eq of equipos){
+    const m = MAESTRO[eq.sn] || {};
+    const sinMaestro = !MAESTRO[eq.sn];
+    const marca = m.marca || '';
+    const modelo = m.modelo || eq.modeloPdf || '';
+    const ip = m.ip || '';
+    const observacion = m.observacion || eq.direccion || '';
+    const cantidad = m.cantidad || 1;
+    const bolsa = eq.bolsaPdf || m.bolsa || '';
+    const cuenta = m.cuenta || '';
+    const centroCosto = m.centroCosto || '';
+    const alquilerFijo = m.alquilerFijo || 51.68;
+    totalRentaCalc += alquilerFijo;
+
+    for(let i=0;i<FORMATOS.length;i++){
+      const fmt = FORMATOS[i];
+      const d = eq.formatos[fmt] || {ci:0,cf:0,consumo:0,volEst:0,cantExc:0,precio:0,total:0};
+      const volMax = (VOL_MAX_BOLSA[bolsa] && VOL_MAX_BOLSA[bolsa][fmt]) || null;
+      const consumo = d.consumo;
+      const excedenteReal = volMax !== null ? (consumo - volMax) : d.cantExc;
+      const totalCalc = volMax !== null ? excedenteReal * d.precio : d.total;
+      if(totalCalc > 0) totalExcedenteCalc += totalCalc;
+
+      const tr = document.createElement('tr');
+      if(i===0) tr.classList.add('sep');
+      if(sinMaestro) tr.classList.add('pend');
+
+      let html = '';
+      if(i===0){
+        html += `<td class="fecha" rowspan="4">${fechaStr||'—'}</td>`;
+        html += `<td rowspan="4">${marca}</td>`;
+        html += `<td rowspan="4"><b>${modelo}</b></td>`;
+        html += `<td rowspan="4">${eq.sn}</td>`;
+        html += `<td rowspan="4">${ip}</td>`;
+        html += `<td class="obs" rowspan="4">${observacion}</td>`;
+        html += `<td rowspan="4">${cantidad}</td>`;
+        html += `<td rowspan="4">${bolsa}</td>`;
+      }
+      html += `<td>${fmt}</td>`;
+      html += `<td class="num">${fmtInt(d.ci)}</td>`;
+      html += `<td class="num">${fmtInt(d.cf)}</td>`;
+      html += `<td class="num">${fmtInt(consumo)}</td>`;
+      html += `<td class="num">${volMax!==null?fmtInt(volMax):''}</td>`;
+      const excClass = excedenteReal < 0 ? 'neg' : (excedenteReal>0?'excedente-hl':'');
+      html += `<td class="num ${excClass}">${fmtNum(excedenteReal)}</td>`;
+      html += `<td class="num">${fmtNum(d.precio,4)}</td>`;
+      html += `<td class="num ${totalCalc<0?'neg':''}">${fmtNum(totalCalc)}</td>`;
+      if(i===0){
+        html += `<td rowspan="4" class="num">${fmtNum(alquilerFijo)}</td>`;
+        html += `<td rowspan="4">${cuenta}</td>`;
+        html += `<td rowspan="4"><b>${centroCosto}</b></td>`;
+      }
+      tr.innerHTML = html;
+      tbody.appendChild(tr);
+    }
+  }
+
+  document.getElementById('resumen').style.display = 'flex';
+  document.getElementById('kpiPeriodo').textContent = meta.periodo || '—';
+  document.getElementById('kpiEquipos').textContent = equipos.length;
+  document.getElementById('kpiRenta').textContent = 'S/ '+fmtNum(meta.totalRenta || totalRentaCalc);
+  document.getElementById('kpiExcedente').textContent = 'S/ '+fmtNum(meta.totalExcedente || totalExcedenteCalc);
+
+  window._ultimosEquipos = equipos;
+  window._ultimaMeta = meta;
+}
+
+document.getElementById('btnExportCsv').addEventListener('click', () => {
+  const equipos = window._ultimosEquipos;
+  if(!equipos || !equipos.length){ setStatus('Nada que exportar. Cargue un PDF primero.', true); return; }
+  const meta = window._ultimaMeta || {};
+  const FORMATOS = ['A4BN','A3BN','A4CL','A3CL'];
+  const header = ['Fecha','Marca','Modelo','S/N','IP','Observacion','CantImp','Bolsa','Formato','ContadorInicial','ContadorFinal','Consumo','VolMax','VolExc','Precio','Total','AlquilerFijo','Cuenta','CentroCosto'];
+  const rows = [header];
+  for(const eq of equipos){
+    const m = MAESTRO[eq.sn] || {};
+    for(const fmt of FORMATOS){
+      const d = eq.formatos[fmt] || {};
+      const volMax = (VOL_MAX_BOLSA[eq.bolsaPdf] && VOL_MAX_BOLSA[eq.bolsaPdf][fmt]);
+      const exc = volMax!=null ? (d.consumo||0)-volMax : (d.cantExc||0);
+      const total = volMax!=null ? exc*(d.precio||0) : (d.total||0);
+      rows.push([
+        meta.periodo||'', m.marca||'', m.modelo||eq.modeloPdf||'', eq.sn, m.ip||'',
+        (m.observacion||eq.direccion||'').replace(/,/g,' '), m.cantidad||1, eq.bolsaPdf||'',
+        fmt, d.ci||0, d.cf||0, d.consumo||0, volMax||'', exc, d.precio||0, total.toFixed(2),
+        (m.alquilerFijo||51.68).toFixed(2), m.cuenta||'', m.centroCosto||''
+      ]);
+    }
+  }
+  const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `cuadro_consumo_${(meta.periodo||'export').replace(/\s+/g,'_')}.csv`;
+  a.click();
+});
+</script>
+
+</body>
+</html>
