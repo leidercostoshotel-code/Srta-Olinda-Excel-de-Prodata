@@ -38,6 +38,26 @@
   .resumen .kpi .lbl{font-size:10px;color:#666;text-transform:uppercase}
   .resumen .kpi .val{font-size:16px;font-weight:bold;color:var(--azul)}
   .pend{background:#fff4e0}
+  td.ci-ok{background:#d9f5d9}
+  td.ci-err{background:#ffd6d6}
+  .ci-badge{display:inline-block;margin-left:4px;font-weight:bold;font-size:10px}
+  .ci-badge.ok{color:#1a7a1a}
+  .ci-badge.err{color:#b00000}
+  .panel{margin-top:12px;padding:10px 12px;background:#fff;border:1px solid #ddd;border-radius:4px}
+  .panel h3{margin:0 0 8px 0;font-size:13px;color:var(--azul)}
+  .banner{padding:8px 12px;margin-top:8px;border-radius:4px;font-size:12px}
+  .banner.info{background:#e7f0fa;border:1px solid #b6cfec;color:#1f3864}
+  .banner.warn{background:#fff4e0;border:1px solid #f0c374;color:#7a4a00}
+  .banner.err{background:#ffe0e0;border:1px solid #e09a9a;color:#7a0000}
+  .banner.ok{background:#e8f7e8;border:1px solid #9ed59e;color:#1a5c1a}
+  .mes-item{display:inline-flex;align-items:center;gap:4px;margin:2px 4px 2px 0;padding:3px 8px;background:var(--gris);border-radius:3px;font-size:11px}
+  .mes-item button{background:transparent;border:none;color:#999;cursor:pointer;padding:0 2px;font-size:12px}
+  .mes-item button:hover{color:var(--rojo)}
+  details{margin-top:6px}
+  details summary{cursor:pointer;color:var(--azul);font-size:11px}
+  .discrepancias{max-height:200px;overflow:auto;margin-top:6px;font-size:11px}
+  .discrepancias table{font-size:11px}
+  .discrepancias th{background:var(--rojo)}
 </style>
 </head>
 <body>
@@ -49,6 +69,10 @@
   <label for="fileInput" class="secundario" style="cursor:pointer">Importar otro PDF…</label>
   <input type="file" id="fileInput" accept="application/pdf">
   <button class="secundario" id="btnExportCsv">Exportar CSV</button>
+  <button id="btnGuardarMes">💾 Guardar este mes</button>
+  <button class="secundario" id="btnExportHist">Exportar histórico</button>
+  <label for="histInput" class="secundario" style="cursor:pointer">Importar histórico…</label>
+  <input type="file" id="histInput" accept="application/json" style="display:none">
   <span class="status" id="status">Listo. Cargue el PDF para procesar.</span>
 </div>
 
@@ -57,6 +81,18 @@
   <div class="kpi"><div class="lbl">Equipos</div><div class="val" id="kpiEquipos">0</div></div>
   <div class="kpi"><div class="lbl">Total Renta Mensual</div><div class="val" id="kpiRenta">S/ 0.00</div></div>
   <div class="kpi"><div class="lbl">Total Excedente</div><div class="val" id="kpiExcedente">S/ 0.00</div></div>
+  <div class="kpi"><div class="lbl">Validación CI vs Mes Anterior</div><div class="val" id="kpiValidacion">—</div></div>
+</div>
+
+<div id="bannerCompara"></div>
+
+<div class="panel" id="panelHistorico">
+  <h3>Histórico local (navegador)</h3>
+  <div id="listaMeses" style="min-height:24px">— sin meses guardados —</div>
+  <details id="detalleDiscrepancias" style="display:none">
+    <summary id="sumDiscrepancias">Ver discrepancias</summary>
+    <div class="discrepancias" id="tablaDiscrepancias"></div>
+  </details>
 </div>
 
 <div class="wrap">
@@ -91,7 +127,8 @@
 </div>
 
 <div class="leyenda">
-  Los campos <b>Marca, IP, Observación, Cuenta, Centro Costo y Volumen Máximo</b> se autocompletan desde el maestro interno (cruzado por S/N con el Excel). Las filas con fondo naranja indican un S/N del PDF que aún no existe en el maestro.
+  <b>Marca, IP, Observación, Cuenta, Centro Costo y Volumen Máximo</b> se autocompletan desde el maestro interno. Las filas con fondo naranja indican un S/N del PDF que aún no existe en el maestro.<br>
+  <b>Validación mensual:</b> al importar un PDF se compara cada <i>Contador Inicial</i> del PDF contra el <i>Contador Final</i> del mes anterior guardado. <span class="ci-badge ok">✓</span> fondo verde = cuadra. <span class="ci-badge err">✗</span> fondo rojo = discrepancia (posible error de facturación). Use <b>Guardar este mes</b> para ir armando el histórico y <b>Exportar histórico</b> para respaldar (los datos viven en el navegador; si cambia de equipo, impórtelos con <b>Importar histórico</b>).
 </div>
 
 <script>
@@ -295,6 +332,10 @@ function renderizar(equipos, meta){
   const FORMATOS = ['A4BN','A3BN','A4CL','A3CL'];
   const fechaStr = meta.periodo ? meta.periodo.replace(/\s+/,' ') : '';
 
+  const mesAnterior = obtenerMesAnterior(meta.periodo);
+  const discrepancias = [];
+  let totalCI = 0, okCI = 0;
+
   let totalExcedenteCalc = 0;
   let totalRentaCalc = 0;
 
@@ -337,7 +378,30 @@ function renderizar(equipos, meta){
         html += `<td rowspan="4">${bolsa}</td>`;
       }
       html += `<td>${fmt}</td>`;
-      html += `<td class="num">${fmtInt(d.ci)}</td>`;
+
+      let ciClass = 'num';
+      let ciBadge = '';
+      if(mesAnterior){
+        const equipoAnt = (mesAnterior.equipos || []).find(x => x.sn === eq.sn);
+        const cfAnt = equipoAnt && equipoAnt.formatos && equipoAnt.formatos[fmt] ? equipoAnt.formatos[fmt].cf : null;
+        if(cfAnt !== null && cfAnt !== undefined){
+          totalCI++;
+          if(cfAnt === d.ci){
+            ciClass += ' ci-ok';
+            ciBadge = `<span class="ci-badge ok" title="Coincide con CF de ${mesAnterior.meta.periodo}">✓</span>`;
+            okCI++;
+          } else {
+            ciClass += ' ci-err';
+            const dif = d.ci - cfAnt;
+            ciBadge = `<span class="ci-badge err" title="Esperado ${fmtInt(cfAnt)} (CF de ${mesAnterior.meta.periodo}), diferencia ${dif>0?'+':''}${fmtInt(dif)}">✗</span>`;
+            discrepancias.push({
+              sn: eq.sn, modelo: MAESTRO[eq.sn]?.modelo || eq.modeloPdf, obs: MAESTRO[eq.sn]?.observacion || '',
+              formato: fmt, ciPdf: d.ci, cfAnterior: cfAnt, diferencia: dif
+            });
+          }
+        }
+      }
+      html += `<td class="${ciClass}">${fmtInt(d.ci)}${ciBadge}</td>`;
       html += `<td class="num">${fmtInt(d.cf)}</td>`;
       html += `<td class="num">${fmtInt(consumo)}</td>`;
       html += `<td class="num">${volMax!==null?fmtInt(volMax):''}</td>`;
@@ -361,8 +425,116 @@ function renderizar(equipos, meta){
   document.getElementById('kpiRenta').textContent = 'S/ '+fmtNum(meta.totalRenta || totalRentaCalc);
   document.getElementById('kpiExcedente').textContent = 'S/ '+fmtNum(meta.totalExcedente || totalExcedenteCalc);
 
+  const kpiVal = document.getElementById('kpiValidacion');
+  const banner = document.getElementById('bannerCompara');
+  const detalle = document.getElementById('detalleDiscrepancias');
+  const sumDisc = document.getElementById('sumDiscrepancias');
+  const tablaDisc = document.getElementById('tablaDiscrepancias');
+
+  if(!mesAnterior){
+    kpiVal.textContent = 'Sin base previa';
+    kpiVal.style.color = '#999';
+    banner.innerHTML = '<div class="banner info">💡 No hay un mes anterior guardado. Presione <b>Guardar este mes</b> para que al importar el próximo PDF se valide automáticamente que los contadores iniciales cuadren con los finales de este período.</div>';
+    detalle.style.display = 'none';
+  } else if(totalCI === 0){
+    kpiVal.textContent = 'Sin coincidencias';
+    kpiVal.style.color = '#999';
+    banner.innerHTML = `<div class="banner warn">⚠ Se detectó un mes anterior (${mesAnterior.meta.periodo}) pero ningún S/N del PDF actual tiene datos comparables.</div>`;
+    detalle.style.display = 'none';
+  } else if(discrepancias.length === 0){
+    kpiVal.textContent = `✓ ${okCI}/${totalCI} OK`;
+    kpiVal.style.color = '#1a7a1a';
+    banner.innerHTML = `<div class="banner ok">✅ Todos los contadores iniciales del PDF coinciden con los finales del ${mesAnterior.meta.periodo}. La facturación está consistente.</div>`;
+    detalle.style.display = 'none';
+  } else {
+    kpiVal.textContent = `${okCI}/${totalCI} OK — ${discrepancias.length} ✗`;
+    kpiVal.style.color = '#b00000';
+    banner.innerHTML = `<div class="banner err">⚠ <b>${discrepancias.length} discrepancia(s)</b> entre el Contador Inicial del PDF actual y el Contador Final del ${mesAnterior.meta.periodo}. Revisar antes de pagar la factura.</div>`;
+    sumDisc.textContent = `Ver ${discrepancias.length} discrepancia(s) detectada(s)`;
+    let h = '<table><thead><tr><th>S/N</th><th>Modelo</th><th>Observación</th><th>Formato</th><th>CI del PDF</th><th>CF '+mesAnterior.meta.periodo+'</th><th>Diferencia</th></tr></thead><tbody>';
+    for(const d of discrepancias){
+      h += `<tr><td>${d.sn}</td><td>${d.modelo||''}</td><td style="text-align:left">${d.obs||''}</td><td>${d.formato}</td><td class="num">${fmtInt(d.ciPdf)}</td><td class="num">${fmtInt(d.cfAnterior)}</td><td class="num neg"><b>${d.diferencia>0?'+':''}${fmtInt(d.diferencia)}</b></td></tr>`;
+    }
+    h += '</tbody></table>';
+    tablaDisc.innerHTML = h;
+    detalle.style.display = 'block';
+    detalle.open = true;
+  }
+
   window._ultimosEquipos = equipos;
   window._ultimaMeta = meta;
+  window._ultimasDiscrepancias = discrepancias;
+}
+
+// ====== Histórico local ======
+const STORAGE_PREFIX = 'reprodata_mes_';
+const MESES_ES = {ENERO:1,FEBRERO:2,MARZO:3,ABRIL:4,MAYO:5,JUNIO:6,JULIO:7,AGOSTO:8,SEPTIEMBRE:9,SETIEMBRE:9,OCTUBRE:10,NOVIEMBRE:11,DICIEMBRE:12};
+
+function claveMes(periodo){
+  if(!periodo) return null;
+  const parts = periodo.trim().split(/\s+/);
+  if(parts.length !== 2) return null;
+  const mes = MESES_ES[parts[0].toUpperCase()];
+  const anio = parseInt(parts[1]);
+  if(!mes || !anio) return null;
+  return `${anio}-${String(mes).padStart(2,'0')}`;
+}
+
+function guardarMes(equipos, meta){
+  const k = claveMes(meta && meta.periodo);
+  if(!k){ setStatus('No se puede guardar: período del PDF no detectado.', true); return; }
+  const existe = localStorage.getItem(STORAGE_PREFIX + k);
+  if(existe && !confirm(`Ya existe un respaldo de ${meta.periodo}. ¿Sobrescribir?`)) return;
+  const payload = {
+    guardadoEn: new Date().toISOString(),
+    meta,
+    equipos: equipos.map(e => ({sn:e.sn, modeloPdf:e.modeloPdf, bolsaPdf:e.bolsaPdf, direccion:e.direccion, formatos:e.formatos}))
+  };
+  localStorage.setItem(STORAGE_PREFIX + k, JSON.stringify(payload));
+  actualizarListaMeses();
+  setStatus(`✓ Guardado ${meta.periodo} (${equipos.length} equipos) en este navegador.`);
+}
+
+function listarMeses(){
+  const meses = [];
+  for(let i=0;i<localStorage.length;i++){
+    const k = localStorage.key(i);
+    if(!k.startsWith(STORAGE_PREFIX)) continue;
+    try{
+      const v = JSON.parse(localStorage.getItem(k));
+      meses.push({clave: k.slice(STORAGE_PREFIX.length), periodo: v.meta.periodo, equipos: v.equipos.length, guardadoEn: v.guardadoEn});
+    }catch(e){}
+  }
+  meses.sort((a,b)=>a.clave.localeCompare(b.clave));
+  return meses;
+}
+
+function obtenerMesAnterior(periodoActual){
+  const claveActual = claveMes(periodoActual);
+  if(!claveActual) return null;
+  const meses = listarMeses();
+  let anterior = null;
+  for(const m of meses){
+    if(m.clave < claveActual && (!anterior || m.clave > anterior.clave)) anterior = m;
+  }
+  if(!anterior) return null;
+  return JSON.parse(localStorage.getItem(STORAGE_PREFIX + anterior.clave));
+}
+
+function eliminarMes(clave){
+  if(!confirm(`¿Eliminar el respaldo de ${clave}?`)) return;
+  localStorage.removeItem(STORAGE_PREFIX + clave);
+  actualizarListaMeses();
+  setStatus(`Eliminado ${clave}`);
+}
+
+function actualizarListaMeses(){
+  const cont = document.getElementById('listaMeses');
+  const meses = listarMeses();
+  if(!meses.length){ cont.innerHTML = '<span style="color:#888">— sin meses guardados —</span>'; return; }
+  cont.innerHTML = meses.map(m =>
+    `<span class="mes-item" title="Guardado el ${new Date(m.guardadoEn).toLocaleString('es-PE')}"><b>${m.periodo}</b> · ${m.equipos} equipos <button onclick="eliminarMes('${m.clave}')" title="Eliminar">✕</button></span>`
+  ).join('');
 }
 
 document.getElementById('btnExportCsv').addEventListener('click', () => {
@@ -394,6 +566,49 @@ document.getElementById('btnExportCsv').addEventListener('click', () => {
   a.download = `cuadro_consumo_${(meta.periodo||'export').replace(/\s+/g,'_')}.csv`;
   a.click();
 });
+
+document.getElementById('btnGuardarMes').addEventListener('click', () => {
+  if(!window._ultimosEquipos || !window._ultimosEquipos.length){
+    setStatus('Cargue un PDF antes de guardar.', true); return;
+  }
+  guardarMes(window._ultimosEquipos, window._ultimaMeta);
+});
+
+document.getElementById('btnExportHist').addEventListener('click', () => {
+  const meses = listarMeses();
+  if(!meses.length){ setStatus('Nada que exportar: no hay meses guardados.', true); return; }
+  const data = {};
+  for(const m of meses){
+    data[m.clave] = JSON.parse(localStorage.getItem(STORAGE_PREFIX + m.clave));
+  }
+  const blob = new Blob([JSON.stringify({exportadoEn:new Date().toISOString(), meses:data}, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `reprodata_historico_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+});
+
+document.getElementById('histInput').addEventListener('change', async (ev) => {
+  const f = ev.target.files[0];
+  if(!f) return;
+  try{
+    const txt = await f.text();
+    const j = JSON.parse(txt);
+    const meses = j.meses || j;
+    let n = 0;
+    for(const k of Object.keys(meses)){
+      localStorage.setItem(STORAGE_PREFIX + k, JSON.stringify(meses[k]));
+      n++;
+    }
+    actualizarListaMeses();
+    setStatus(`✓ Importados ${n} mes(es) al histórico local.`);
+  }catch(e){
+    setStatus('Error al importar: '+e.message, true);
+  }
+  ev.target.value = '';
+});
+
+actualizarListaMeses();
 </script>
 
 </body>
