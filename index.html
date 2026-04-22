@@ -159,7 +159,7 @@
     </table>
   </div>
   <div class="hint-edit">
-    💡 Las celdas en <b>amarillo claro</b> (Monto USD, Crédito (ME), Débito, Comentarios) son <b>editables</b>: haga click sobre la celda, corrija el valor y presione <kbd>Enter</kbd> (o <kbd>Esc</kbd> para cancelar). Las filas modificadas quedan marcadas y el total se recalcula automáticamente. Los cambios se reflejan al <b>Copiar</b> y al <b>Descargar .xlsx</b>. El <b>.xlsx</b> exporta las <b>30 columnas</b> exactas del formato SAP (incluye <i>Cuenta de mayor, Cuenta asociada, Referencia 1, Posición, Cuenta destino, Cuenta patrimonial, Socio Negocios</i>, etc.).
+    💡 Las celdas en <b>amarillo claro</b> (Monto USD, Débito (ME), Crédito (ME), Comentarios) son <b>editables</b>: haga click sobre la celda, corrija el valor y presione <kbd>Enter</kbd> (o <kbd>Esc</kbd> para cancelar). Las filas modificadas quedan marcadas y el total se recalcula automáticamente. Los cambios se reflejan al <b>Copiar</b> y al <b>Descargar .xlsx</b>. El <b>.xlsx</b> exporta las <b>30 columnas</b> exactas del formato SAP (incluye <i>Cuenta de mayor, Cuenta asociada, Referencia 1, Posición, Cuenta destino, Cuenta patrimonial, Socio Negocios</i>, etc.).
   </div>
 </div>
 
@@ -717,8 +717,8 @@ function generarAsientoSAP(equipos, meta, numFactura){
       Modelo: modelo, 'S/N': eq.sn, IP: ip, CECO: ceco,
       'Monto USD': round4(alquiler),
       Cuenta: cuenta,
-      'Débito (ME)': '', 'Crédito (ME)': round4(alquiler),
-      'Débito': 0, 'Crédito': '',
+      'Débito (ME)': 0, 'Crédito (ME)': round4(alquiler),
+      'Débito': '', 'Crédito': '',
       Comentarios: `FOTOCOPIAS POR ALQUILER EQUIPO MULTIFUNCIONAL DEL ${rangoFechas}`,
       'Referencia 2': refFactura,
       'Centro de Costo': ceco
@@ -733,8 +733,9 @@ function generarAsientoSAP(equipos, meta, numFactura){
       Modelo: modelo, 'S/N': eq.sn, IP: ip, CECO: ceco,
       'Monto USD': round4(consumo),
       Cuenta: cuenta,
-      'Débito (ME)': '', 'Crédito (ME)': consumo >= 0 ? round4(consumo) : 0,
-      'Débito': consumo < 0 ? round4(Math.abs(consumo)) : 0, 'Crédito': '',
+      'Débito (ME)': consumo < 0 ? round4(Math.abs(consumo)) : 0,
+      'Crédito (ME)': consumo >= 0 ? round4(consumo) : 0,
+      'Débito': '', 'Crédito': '',
       Comentarios: `CONSUMO DE COPIAS ${eq.sn}`,
       'Referencia 2': refFactura,
       'Centro de Costo': ceco
@@ -743,8 +744,10 @@ function generarAsientoSAP(equipos, meta, numFactura){
     idx++;
   }
 
+  const totalDebME = filas.reduce((s,r) => s + (Number(r['Débito (ME)']) || 0), 0);
   const totalCredME = filas.reduce((s,r) => s + (Number(r['Crédito (ME)']) || 0), 0);
   filas.push({
+    'Débito (ME)': round4(totalDebME),
     'Crédito (ME)': round4(totalCredME),
     Comentarios: 'TOTAL'
   });
@@ -763,7 +766,7 @@ function renderSAPPreview(filas){
     if(typeof v === 'number') return v.toLocaleString('es-PE',{minimumFractionDigits:2, maximumFractionDigits:4});
     return v;
   };
-  const EDITABLES_NUM = new Set(['Monto USD','Crédito (ME)','Débito']);
+  const EDITABLES_NUM = new Set(['Monto USD','Débito (ME)','Crédito (ME)']);
   const EDITABLES_TXT = new Set(['Comentarios']);
   filas.forEach((r, idx) => {
     const esTotal = r.Comentarios === 'TOTAL';
@@ -835,10 +838,10 @@ function recalcularTotalSAP(){
   for(let i=0;i<filas.length-1;i++){
     const f = filas[i];
     tCred += (Number(f['Crédito (ME)']) || 0);
-    tDeb  += (Number(f['Débito']) || 0);
+    tDeb  += (Number(f['Débito (ME)']) || 0);
   }
   totalFila['Crédito (ME)'] = Math.round(tCred * 10000) / 10000;
-  totalFila['Débito'] = Math.round(tDeb * 10000) / 10000;
+  totalFila['Débito (ME)'] = Math.round(tDeb * 10000) / 10000;
   const tbody = document.getElementById('tbodySAP');
   const trTotal = tbody.querySelector('tr[data-total="1"]');
   if(!trTotal) return;
