@@ -59,6 +59,11 @@
   .discrepancias{max-height:200px;overflow:auto;margin-top:6px;font-size:11px}
   .discrepancias table{font-size:11px}
   .discrepancias th{background:var(--rojo)}
+  td.editable{background:#fffbea;cursor:text}
+  td.editable:focus{outline:2px solid var(--azul-bajo);background:#fff}
+  td.editable:hover{background:#fff4cf}
+  tr.editado td{background:#fff7d6 !important}
+  .hint-edit{font-size:11px;color:#666;margin-top:6px}
 </style>
 </head>
 <body>
@@ -153,8 +158,8 @@
       </tbody>
     </table>
   </div>
-  <div style="font-size:11px;color:#666;margin-top:6px">
-    El <b>.xlsx</b> exporta las <b>30 columnas</b> exactas del formato SAP (incluye <i>Cuenta de mayor, Cuenta asociada, Referencia 1, Posición, Cuenta destino, Cuenta patrimonial, Socio Negocios</i>, etc.). Esta tabla es solo vista previa de lo principal.
+  <div class="hint-edit">
+    💡 Las celdas en <b>amarillo claro</b> (Monto USD, Crédito (ME), Débito, Comentarios) son <b>editables</b>: haga click sobre la celda, corrija el valor y presione <kbd>Enter</kbd> (o <kbd>Esc</kbd> para cancelar). Las filas modificadas quedan marcadas y el total se recalcula automáticamente. Los cambios se reflejan al <b>Copiar</b> y al <b>Descargar .xlsx</b>. El <b>.xlsx</b> exporta las <b>30 columnas</b> exactas del formato SAP (incluye <i>Cuenta de mayor, Cuenta asociada, Referencia 1, Posición, Cuenta destino, Cuenta patrimonial, Socio Negocios</i>, etc.).
   </div>
 </div>
 
@@ -758,23 +763,89 @@ function renderSAPPreview(filas){
     if(typeof v === 'number') return v.toLocaleString('es-PE',{minimumFractionDigits:2, maximumFractionDigits:4});
     return v;
   };
-  for(const r of filas){
+  const EDITABLES_NUM = new Set(['Monto USD','Crédito (ME)','Débito']);
+  const EDITABLES_TXT = new Set(['Comentarios']);
+  filas.forEach((r, idx) => {
+    const esTotal = r.Comentarios === 'TOTAL';
     const tr = document.createElement('tr');
-    let html = '';
-    for(const c of cols){
+    tr.dataset.row = idx;
+    if(esTotal) tr.dataset.total = '1';
+    if(r._editado) tr.classList.add('editado');
+    cols.forEach(c => {
+      const td = document.createElement('td');
       const v = r[c];
-      let cls = '';
-      if(['Monto','Monto USD','Débito (ME)','Crédito (ME)','Débito','Crédito'].includes(c)) cls = 'num';
-      if(c === 'Comentarios') cls = 'obs';
-      html += `<td class="${cls}">${fmtCell(v)}</td>`;
-    }
-    tr.innerHTML = html;
-    if(r.Comentarios === 'TOTAL'){
+      if(['Monto','Monto USD','Débito (ME)','Crédito (ME)','Débito','Crédito'].includes(c)) td.classList.add('num');
+      if(c === 'Comentarios') td.classList.add('obs');
+      td.textContent = fmtCell(v);
+      if(!esTotal && (EDITABLES_NUM.has(c) || EDITABLES_TXT.has(c))){
+        td.classList.add('editable');
+        td.contentEditable = 'true';
+        td.dataset.col = c;
+        td.title = 'Click para editar';
+      }
+      tr.appendChild(td);
+    });
+    if(esTotal){
       tr.style.fontWeight = 'bold';
       tr.style.background = '#f7f7f7';
     }
     tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('td.editable').forEach(td => {
+    td.addEventListener('focus', () => { td._prev = td.textContent; });
+    td.addEventListener('keydown', (ev) => {
+      if(ev.key === 'Enter'){ ev.preventDefault(); td.blur(); }
+      if(ev.key === 'Escape'){ td.textContent = td._prev ?? ''; td.blur(); }
+    });
+    td.addEventListener('blur', () => {
+      const tr = td.closest('tr');
+      const rowIdx = parseInt(tr.dataset.row, 10);
+      const col = td.dataset.col;
+      const fila = window._ultimoSAP[rowIdx];
+      const esNumerico = EDITABLES_NUM.has(col);
+      let nuevoVal;
+      if(esNumerico){
+        const txt = td.textContent.trim().replace(/,/g,'').replace(/\s+/g,'');
+        nuevoVal = txt === '' ? '' : (isNaN(parseFloat(txt)) ? fila[col] : parseFloat(txt));
+      } else {
+        nuevoVal = td.textContent.trim();
+      }
+      if(nuevoVal === fila[col]) return;
+      fila[col] = nuevoVal;
+      fila._editado = true;
+      tr.classList.add('editado');
+      td.textContent = (typeof nuevoVal === 'number')
+        ? nuevoVal.toLocaleString('es-PE',{minimumFractionDigits:2, maximumFractionDigits:4})
+        : (nuevoVal || '');
+      recalcularTotalSAP();
+      const s = document.getElementById('statusSAP');
+      s.textContent = `✎ Editado: ${fila['S/N']||''} ${col}. ${(window._ultimoSAP.filter(x=>x._editado).length)} fila(s) modificada(s).`;
+      s.style.color = '#b57700';
+    });
+  });
+}
+
+function recalcularTotalSAP(){
+  const filas = window._ultimoSAP;
+  if(!filas || !filas.length) return;
+  const totalFila = filas[filas.length - 1];
+  if(totalFila.Comentarios !== 'TOTAL') return;
+  let tCred = 0, tDeb = 0;
+  for(let i=0;i<filas.length-1;i++){
+    const f = filas[i];
+    tCred += (Number(f['Crédito (ME)']) || 0);
+    tDeb  += (Number(f['Débito']) || 0);
   }
+  totalFila['Crédito (ME)'] = Math.round(tCred * 10000) / 10000;
+  totalFila['Débito'] = Math.round(tDeb * 10000) / 10000;
+  const tbody = document.getElementById('tbodySAP');
+  const trTotal = tbody.querySelector('tr[data-total="1"]');
+  if(!trTotal) return;
+  const tds = trTotal.querySelectorAll('td');
+  const colsHdr = ['Datos','Monto','Modelo','S/N','IP','CECO','Monto USD','Cuenta','Débito (ME)','Crédito (ME)','Débito','Crédito','Comentarios','Referencia 2','Centro de Costo'];
+  const fmt = (v) => (typeof v === 'number' ? v.toLocaleString('es-PE',{minimumFractionDigits:2,maximumFractionDigits:4}) : (v==null?'':v));
+  colsHdr.forEach((c, i) => { tds[i].textContent = fmt(totalFila[c]); });
 }
 
 document.getElementById('btnGenSAP').addEventListener('click', () => {
