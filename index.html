@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Cuadro de Consumo Reprodata — Importador PDF</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
   :root{
     --azul:#1f3864;
@@ -95,7 +95,12 @@
 </div>
 
 <script>
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js';
+if (typeof pdfjsLib === 'undefined') {
+  document.getElementById('status').textContent = 'Error: no se pudo cargar PDF.js desde el CDN. Revise su conexión o bloqueadores de scripts.';
+  document.getElementById('status').classList.add('error');
+} else {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
 
 const MAESTRO = {
   "RJQ00596":{marca:"Canon",modelo:"IR-C3330",ip:"10.72.8.203",observacion:"2do Piso - Seguridad",cantidad:1,cuenta:941231308,centroCosto:408,alquilerFijo:51.68},
