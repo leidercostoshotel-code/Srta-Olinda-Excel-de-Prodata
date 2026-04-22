@@ -712,8 +712,8 @@ function generarAsientoSAP(equipos, meta, numFactura){
     const cuenta = m.cuenta || '';
 
     const rowAlquiler = {
-      Datos: idx === 0 ? numFactura : '',
-      Monto: idx === 0 ? montoTotal : '',
+      Datos: '',
+      Monto: '',
       Modelo: modelo, 'S/N': eq.sn, IP: ip, CECO: ceco,
       'Monto USD': round4(alquiler),
       Cuenta: cuenta,
@@ -729,8 +729,8 @@ function generarAsientoSAP(equipos, meta, numFactura){
 
     const consumo = montoConsumoEquipo(eq);
     const rowConsumo = {
-      Datos: idx === 1 ? 'FECHA' : '',
-      Monto: idx === 1 ? fechaFac : '',
+      Datos: '',
+      Monto: '',
       Modelo: modelo, 'S/N': eq.sn, IP: ip, CECO: ceco,
       'Monto USD': round4(consumo),
       Cuenta: cuenta,
