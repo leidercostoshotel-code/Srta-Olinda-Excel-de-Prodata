@@ -718,8 +718,8 @@ function generarAsientoSAP(equipos, meta, numFactura){
       'Monto USD': round4(alquiler),
       Cuenta: cuenta,
       'Débito (ME)': round4(alquiler), 'Crédito (ME)': 0,
-      'Débito': 0, 'Crédito': 0,
-      'Débito (MS)': 0, 'Crédito (MS)': 0,
+      'Débito': '', 'Crédito': '',
+      'Débito (MS)': '', 'Crédito (MS)': '',
       Comentarios: `FOTOCOPIAS POR ALQUILER EQUIPO MULTIFUNCIONAL DEL ${rangoFechas}`,
       'Referencia 2': refFactura,
       'Centro de Costo': ceco
@@ -736,8 +736,8 @@ function generarAsientoSAP(equipos, meta, numFactura){
       Cuenta: cuenta,
       'Débito (ME)': consumo >= 0 ? round4(consumo) : 0,
       'Crédito (ME)': consumo < 0 ? round4(Math.abs(consumo)) : 0,
-      'Débito': 0, 'Crédito': 0,
-      'Débito (MS)': 0, 'Crédito (MS)': 0,
+      'Débito': '', 'Crédito': '',
+      'Débito (MS)': '', 'Crédito (MS)': '',
       Comentarios: `CONSUMO DE COPIAS ${eq.sn}`,
       'Referencia 2': refFactura,
       'Centro de Costo': ceco
@@ -751,8 +751,8 @@ function generarAsientoSAP(equipos, meta, numFactura){
   filas.push({
     'Débito (ME)': round4(totalDebME),
     'Crédito (ME)': round4(totalCredME),
-    'Débito': 0, 'Crédito': 0,
-    'Débito (MS)': 0, 'Crédito (MS)': 0,
+    'Débito': '', 'Crédito': '',
+    'Débito (MS)': '', 'Crédito (MS)': '',
     Comentarios: 'TOTAL'
   });
 
@@ -765,16 +765,18 @@ function renderSAPPreview(filas){
   const tbody = document.getElementById('tbodySAP');
   tbody.innerHTML = '';
   const cols = ['Datos','Monto','Modelo','S/N','IP','CECO','Monto USD','Cuenta','Débito (ME)','Crédito (ME)','Débito','Crédito','Comentarios','Referencia 2','Centro de Costo'];
+  const COLS_INT = new Set(['CECO','Cuenta','Centro de Costo','Posición del formulario principal','Cuenta destino','Cuenta patrimonial']);
   const fmtCell = (v, col) => {
     if(v===null||v===undefined||v==='') return '';
     if(typeof v === 'number'){
+      if(COLS_INT.has(col)) return String(Math.round(v));
       const n = v.toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2});
       return COLS_USD.has(col) ? `USD ${n}` : v.toLocaleString('es-PE',{minimumFractionDigits:2, maximumFractionDigits:4});
     }
     return v;
   };
-  const EDITABLES_NUM = new Set(['Monto USD','Débito (ME)','Crédito (ME)','Débito','Crédito']);
-  const COLS_USD = new Set(['Débito (ME)','Crédito (ME)','Débito','Crédito','Débito (MS)','Crédito (MS)']);
+  const EDITABLES_NUM = new Set(['Monto USD','Débito (ME)','Crédito (ME)']);
+  const COLS_USD = new Set(['Débito (ME)','Crédito (ME)']);
   const EDITABLES_TXT = new Set(['Comentarios']);
   filas.forEach((r, idx) => {
     const esTotal = r.Comentarios === 'TOTAL';
@@ -853,10 +855,12 @@ function recalcularTotalSAP(){
   if(!trTotal) return;
   const tds = trTotal.querySelectorAll('td');
   const colsHdr = ['Datos','Monto','Modelo','S/N','IP','CECO','Monto USD','Cuenta','Débito (ME)','Crédito (ME)','Débito','Crédito','Comentarios','Referencia 2','Centro de Costo'];
-  const COLS_USD_TOT = new Set(['Débito (ME)','Crédito (ME)','Débito','Crédito']);
+  const COLS_USD_TOT = new Set(['Débito (ME)','Crédito (ME)']);
+  const COLS_INT_TOT = new Set(['CECO','Cuenta','Centro de Costo']);
   const fmt = (v, c) => {
     if(v===null||v===undefined||v==='') return '';
     if(typeof v === 'number'){
+      if(COLS_INT_TOT.has(c)) return String(Math.round(v));
       const n = v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
       return COLS_USD_TOT.has(c) ? `USD ${n}` : v.toLocaleString('es-PE',{minimumFractionDigits:2,maximumFractionDigits:4});
     }
@@ -923,24 +927,34 @@ document.getElementById('btnDescargarXLSX').addEventListener('click', () => {
     aoaSAP.push(SAP_HEADERS.map(h => {
       const v = r[h];
       if(v !== undefined && v !== '') return v;
-      // Asegurar que las columnas de monto siempre tengan número (0 si vacío)
-      if(['Débito (ME)','Crédito (ME)','Débito','Crédito','Débito (MS)','Crédito (MS)'].includes(h)){
-        return 0;
-      }
+      // Débito (ME) y Crédito (ME) siempre llevan número (0 si vacío).
+      // Las otras columnas de monto quedan vacías -> plantilla SAP limpia.
+      if(h === 'Débito (ME)' || h === 'Crédito (ME)') return 0;
       return '';
     }));
   }
   const wsSAP = XLSX.utils.aoa_to_sheet(aoaSAP);
 
-  // Aplicar formato "USD" #,##0.00 a columnas de monto (K..P = índices 10..15)
+  // Formatos: Débito (ME) y Crédito (ME) como "USD #,##0.00" (K=10, L=11).
+  // Números de cuenta (códigos) como entero sin separadores: CECO (F=5),
+  // Cuenta (H=7), Centro de Costo (T=19), Posición (U=20), Cuenta destino
+  // (V=21), Cuenta patrimonial (W=22).
   const fmtUSD = '"USD" #,##0.00';
+  const fmtInt = '0';
   const range = XLSX.utils.decode_range(wsSAP['!ref']);
   for(let R = 1; R <= range.e.r; R++){
-    for(const C of [10, 11, 12, 13, 14, 15]){
+    for(const C of [10, 11]){
       const addr = XLSX.utils.encode_cell({r:R, c:C});
       if(wsSAP[addr]){
         wsSAP[addr].z = fmtUSD;
         if(typeof wsSAP[addr].v === 'number') wsSAP[addr].t = 'n';
+      }
+    }
+    for(const C of [5, 7, 19, 20, 21, 22]){
+      const addr = XLSX.utils.encode_cell({r:R, c:C});
+      if(wsSAP[addr] && typeof wsSAP[addr].v === 'number'){
+        wsSAP[addr].z = fmtInt;
+        wsSAP[addr].t = 'n';
       }
     }
   }
