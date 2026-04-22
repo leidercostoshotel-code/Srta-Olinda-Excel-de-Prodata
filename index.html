@@ -717,7 +717,7 @@ function generarAsientoSAP(equipos, meta, numFactura){
       Modelo: modelo, 'S/N': eq.sn, IP: ip, CECO: ceco,
       'Monto USD': round4(alquiler),
       Cuenta: cuenta,
-      'Débito (ME)': 0, 'Crédito (ME)': round4(alquiler),
+      'Débito (ME)': round4(alquiler), 'Crédito (ME)': 0,
       'Débito': 0, 'Crédito': 0,
       'Débito (MS)': 0, 'Crédito (MS)': 0,
       Comentarios: `FOTOCOPIAS POR ALQUILER EQUIPO MULTIFUNCIONAL DEL ${rangoFechas}`,
@@ -734,10 +734,9 @@ function generarAsientoSAP(equipos, meta, numFactura){
       Modelo: modelo, 'S/N': eq.sn, IP: ip, CECO: ceco,
       'Monto USD': round4(consumo),
       Cuenta: cuenta,
-      'Débito (ME)': 0,
-      'Crédito (ME)': consumo >= 0 ? round4(consumo) : 0,
-      'Débito': consumo < 0 ? round4(Math.abs(consumo)) : 0,
-      'Crédito': 0,
+      'Débito (ME)': consumo >= 0 ? round4(consumo) : 0,
+      'Crédito (ME)': consumo < 0 ? round4(Math.abs(consumo)) : 0,
+      'Débito': 0, 'Crédito': 0,
       'Débito (MS)': 0, 'Crédito (MS)': 0,
       Comentarios: `CONSUMO DE COPIAS ${eq.sn}`,
       'Referencia 2': refFactura,
@@ -747,13 +746,12 @@ function generarAsientoSAP(equipos, meta, numFactura){
     idx++;
   }
 
+  const totalDebME = filas.reduce((s,r) => s + (Number(r['Débito (ME)']) || 0), 0);
   const totalCredME = filas.reduce((s,r) => s + (Number(r['Crédito (ME)']) || 0), 0);
-  const totalDeb = filas.reduce((s,r) => s + (Number(r['Débito']) || 0), 0);
   filas.push({
-    'Débito (ME)': 0,
+    'Débito (ME)': round4(totalDebME),
     'Crédito (ME)': round4(totalCredME),
-    'Débito': round4(totalDeb),
-    'Crédito': 0,
+    'Débito': 0, 'Crédito': 0,
     'Débito (MS)': 0, 'Crédito (MS)': 0,
     Comentarios: 'TOTAL'
   });
@@ -845,11 +843,11 @@ function recalcularTotalSAP(){
   let tCred = 0, tDeb = 0;
   for(let i=0;i<filas.length-1;i++){
     const f = filas[i];
+    tDeb  += (Number(f['Débito (ME)']) || 0);
     tCred += (Number(f['Crédito (ME)']) || 0);
-    tDeb  += (Number(f['Débito']) || 0);
   }
+  totalFila['Débito (ME)'] = Math.round(tDeb * 10000) / 10000;
   totalFila['Crédito (ME)'] = Math.round(tCred * 10000) / 10000;
-  totalFila['Débito'] = Math.round(tDeb * 10000) / 10000;
   const tbody = document.getElementById('tbodySAP');
   const trTotal = tbody.querySelector('tr[data-total="1"]');
   if(!trTotal) return;
