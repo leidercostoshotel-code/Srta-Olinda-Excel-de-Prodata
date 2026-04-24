@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Cuadro de Consumo Reprodata — Importador PDF</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <style>
   :root{
     --azul:#1f3864;
@@ -746,6 +746,26 @@ function generarAsientoSAP(equipos, meta, numFactura){
     idx++;
   }
 
+  // Cuadre con cuenta 421111101: iguala Débito (ME) y Crédito (ME).
+  const debPre = filas.reduce((s,r) => s + (Number(r['Débito (ME)']) || 0), 0);
+  const credPre = filas.reduce((s,r) => s + (Number(r['Crédito (ME)']) || 0), 0);
+  const dif = round4(debPre - credPre);
+  if(Math.abs(dif) > 0.001){
+    filas.push({
+      Datos:'', Monto:'', Modelo:'', 'S/N':'', IP:'', CECO:'',
+      'Monto USD': round4(Math.abs(dif)),
+      Cuenta: 421111101,
+      'Débito (ME)': dif < 0 ? round4(Math.abs(dif)) : 0,
+      'Crédito (ME)': dif > 0 ? round4(dif) : 0,
+      'Débito':'', 'Crédito':'',
+      'Débito (MS)':'', 'Crédito (MS)':'',
+      Comentarios: 'CUADRE - DIFERENCIA POR TIPO DE CAMBIO',
+      'Referencia 2': refFactura,
+      'Centro de Costo':'',
+      _cuadre: true
+    });
+  }
+
   const totalDebME = filas.reduce((s,r) => s + (Number(r['Débito (ME)']) || 0), 0);
   const totalCredME = filas.reduce((s,r) => s + (Number(r['Crédito (ME)']) || 0), 0);
   filas.push({
@@ -780,9 +800,11 @@ function renderSAPPreview(filas){
   const EDITABLES_TXT = new Set(['Comentarios']);
   filas.forEach((r, idx) => {
     const esTotal = r.Comentarios === 'TOTAL';
+    const esCuadre = !!r._cuadre;
     const tr = document.createElement('tr');
     tr.dataset.row = idx;
     if(esTotal) tr.dataset.total = '1';
+    if(esCuadre) tr.dataset.cuadre = '1';
     if(r._editado) tr.classList.add('editado');
     cols.forEach(c => {
       const td = document.createElement('td');
@@ -800,7 +822,11 @@ function renderSAPPreview(filas){
     });
     if(esTotal){
       tr.style.fontWeight = 'bold';
-      tr.style.background = '#f7f7f7';
+      tr.style.background = '#ffeb00';
+      tr.style.borderTop = '2px solid #000';
+    } else if(esCuadre){
+      tr.style.fontWeight = 'bold';
+      tr.style.background = '#ffeb00';
     }
     tbody.appendChild(tr);
   });
@@ -842,6 +868,24 @@ function recalcularTotalSAP(){
   if(!filas || !filas.length) return;
   const totalFila = filas[filas.length - 1];
   if(totalFila.Comentarios !== 'TOTAL') return;
+
+  // Recalcular cuadre (antes del TOTAL) si existe
+  const cuadreFila = filas[filas.length - 2];
+  const tieneCuadre = cuadreFila && cuadreFila._cuadre;
+  if(tieneCuadre){
+    let debSinCuadre = 0, credSinCuadre = 0;
+    for(let i=0;i<filas.length-2;i++){
+      debSinCuadre += (Number(filas[i]['Débito (ME)']) || 0);
+      credSinCuadre += (Number(filas[i]['Crédito (ME)']) || 0);
+    }
+    const dif = Math.round((debSinCuadre - credSinCuadre) * 10000) / 10000;
+    if(!cuadreFila._editado){
+      cuadreFila['Débito (ME)'] = dif < 0 ? Math.abs(dif) : 0;
+      cuadreFila['Crédito (ME)'] = dif > 0 ? dif : 0;
+      cuadreFila['Monto USD'] = Math.abs(dif);
+    }
+  }
+
   let tCred = 0, tDeb = 0;
   for(let i=0;i<filas.length-1;i++){
     const f = filas[i];
@@ -850,6 +894,28 @@ function recalcularTotalSAP(){
   }
   totalFila['Débito (ME)'] = Math.round(tDeb * 10000) / 10000;
   totalFila['Crédito (ME)'] = Math.round(tCred * 10000) / 10000;
+
+  // Actualizar celdas visuales de la fila cuadre si no fue editada manualmente
+  if(tieneCuadre && !cuadreFila._editado){
+    const tbody = document.getElementById('tbodySAP');
+    const trCuadre = tbody.querySelector('tr[data-cuadre="1"]');
+    if(trCuadre){
+      const colsHdr = ['Datos','Monto','Modelo','S/N','IP','CECO','Monto USD','Cuenta','Débito (ME)','Crédito (ME)','Débito','Crédito','Comentarios','Referencia 2','Centro de Costo'];
+      const COLS_USD_CUA = new Set(['Débito (ME)','Crédito (ME)']);
+      const COLS_INT_CUA = new Set(['CECO','Cuenta','Centro de Costo']);
+      const tds = trCuadre.querySelectorAll('td');
+      const fmtC = (v, c) => {
+        if(v===null||v===undefined||v==='') return '';
+        if(typeof v === 'number'){
+          if(COLS_INT_CUA.has(c)) return String(Math.round(v));
+          const n = v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+          return COLS_USD_CUA.has(c) ? `USD ${n}` : v.toLocaleString('es-PE',{minimumFractionDigits:2,maximumFractionDigits:4});
+        }
+        return v;
+      };
+      colsHdr.forEach((c, i) => { tds[i].textContent = fmtC(cuadreFila[c], c); });
+    }
+  }
   const tbody = document.getElementById('tbodySAP');
   const trTotal = tbody.querySelector('tr[data-total="1"]');
   if(!trTotal) return;
@@ -922,48 +988,169 @@ document.getElementById('btnDescargarXLSX').addEventListener('click', () => {
   const meta = window._ultimaMeta || {};
   const wb = XLSX.utils.book_new();
 
-  const aoaSAP = [SAP_HEADERS];
+  const NCOLS = SAP_HEADERS.length;
+  const vacia = () => Array(NCOLS).fill('');
+  const periodo = meta.periodo || '';
+  const numFac = (document.getElementById('inpFactura').value.trim() || '');
+
+  const titulo = `CUADRO DE CONSUMO - REPRODATA  ·  ${periodo}`;
+  const subtitulo = `Contrato 276580 — HOTELERA COSTA DEL PACIFICO S.A. (C20297885538)` + (numFac ? `   |   Factura N° ${numFac}` : '');
+
+  // Fila 0: título; Fila 1: subtítulo; Fila 2: espacio; Fila 3: encabezados; 4+: datos.
+  const aoaSAP = [
+    [titulo, ...vacia().slice(1)],
+    [subtitulo, ...vacia().slice(1)],
+    vacia(),
+    [...SAP_HEADERS]
+  ];
   for(const r of filas){
     aoaSAP.push(SAP_HEADERS.map(h => {
       const v = r[h];
       if(v !== undefined && v !== '') return v;
-      // Débito (ME) y Crédito (ME) siempre llevan número (0 si vacío).
-      // Las otras columnas de monto quedan vacías -> plantilla SAP limpia.
       if(h === 'Débito (ME)' || h === 'Crédito (ME)') return 0;
       return '';
     }));
   }
   const wsSAP = XLSX.utils.aoa_to_sheet(aoaSAP);
 
-  // Formatos: Débito (ME) y Crédito (ME) como "USD #,##0.00" (K=10, L=11).
-  // Números de cuenta (códigos) como entero sin separadores: CECO (F=5),
-  // Cuenta (H=7), Centro de Costo (T=19), Posición (U=20), Cuenta destino
-  // (V=21), Cuenta patrimonial (W=22).
+  // Merges: título y subtítulo ocupan toda la fila.
+  wsSAP['!merges'] = [
+    {s:{r:0, c:0}, e:{r:0, c:NCOLS-1}},
+    {s:{r:1, c:0}, e:{r:1, c:NCOLS-1}}
+  ];
+
+  // Altos de filas (título grande, subtítulo mediano, encabezado grande).
+  wsSAP['!rows'] = [
+    {hpt: 30}, {hpt: 22}, {hpt: 8}, {hpt: 38}
+  ];
+
+  // Formatos numéricos
   const fmtUSD = '"USD" #,##0.00';
   const fmtInt = '0';
-  const range = XLSX.utils.decode_range(wsSAP['!ref']);
-  for(let R = 1; R <= range.e.r; R++){
-    for(const C of [10, 11]){
-      const addr = XLSX.utils.encode_cell({r:R, c:C});
-      if(wsSAP[addr]){
-        wsSAP[addr].z = fmtUSD;
-        if(typeof wsSAP[addr].v === 'number') wsSAP[addr].t = 'n';
+
+  // Estilos
+  const borderAll = {
+    top:{style:'thin',color:{rgb:'8AA4C8'}},
+    bottom:{style:'thin',color:{rgb:'8AA4C8'}},
+    left:{style:'thin',color:{rgb:'8AA4C8'}},
+    right:{style:'thin',color:{rgb:'8AA4C8'}}
+  };
+  const borderMed = {
+    top:{style:'medium',color:{rgb:'000000'}},
+    bottom:{style:'medium',color:{rgb:'000000'}},
+    left:{style:'thin',color:{rgb:'000000'}},
+    right:{style:'thin',color:{rgb:'000000'}}
+  };
+  const styleTitle = {
+    font:{name:'Segoe UI', sz:16, bold:true, color:{rgb:'FFFFFF'}},
+    fill:{patternType:'solid', fgColor:{rgb:'1F3864'}},
+    alignment:{horizontal:'center', vertical:'center'},
+    border: borderMed
+  };
+  const styleSubtitle = {
+    font:{name:'Segoe UI', sz:11, bold:true, color:{rgb:'FFFFFF'}},
+    fill:{patternType:'solid', fgColor:{rgb:'2F5496'}},
+    alignment:{horizontal:'center', vertical:'center'}
+  };
+  const styleHeader = {
+    font:{name:'Segoe UI', sz:11, bold:true, color:{rgb:'000000'}},
+    fill:{patternType:'solid', fgColor:{rgb:'FFC000'}},
+    alignment:{horizontal:'center', vertical:'center', wrapText:true},
+    border: borderMed
+  };
+  const styleCell = {
+    font:{name:'Segoe UI', sz:10, color:{rgb:'1F3864'}},
+    alignment:{vertical:'center', horizontal:'center'},
+    border: borderAll
+  };
+  const styleCellLeft = { ...styleCell, alignment:{vertical:'center', horizontal:'left', wrapText:true} };
+  const styleCellNum  = { ...styleCell, alignment:{vertical:'center', horizontal:'right'} };
+  const styleZebra = { ...styleCell, fill:{patternType:'solid', fgColor:{rgb:'F7FAFF'}} };
+  const styleZebraLeft = { ...styleCellLeft, fill:{patternType:'solid', fgColor:{rgb:'F7FAFF'}} };
+  const styleZebraNum  = { ...styleCellNum,  fill:{patternType:'solid', fgColor:{rgb:'F7FAFF'}} };
+  const styleCuadre = {
+    font:{name:'Segoe UI', sz:10, bold:true, color:{rgb:'000000'}},
+    fill:{patternType:'solid', fgColor:{rgb:'FFEB00'}},
+    alignment:{vertical:'center', horizontal:'center'},
+    border: borderAll
+  };
+  const styleCuadreNum = { ...styleCuadre, alignment:{vertical:'center', horizontal:'right'} };
+  const styleCuadreLeft = { ...styleCuadre, alignment:{vertical:'center', horizontal:'left', wrapText:true} };
+  const styleTotal = {
+    font:{name:'Segoe UI', sz:11, bold:true, color:{rgb:'000000'}},
+    fill:{patternType:'solid', fgColor:{rgb:'FFEB00'}},
+    alignment:{vertical:'center', horizontal:'center'},
+    border: borderMed
+  };
+  const styleTotalNum = { ...styleTotal, alignment:{vertical:'center', horizontal:'right'} };
+  const styleTotalLeft = { ...styleTotal, alignment:{vertical:'center', horizontal:'left', wrapText:true} };
+
+  // Columnas por tipo
+  const COL_INT = new Set([5, 7, 19, 20, 21, 22]);         // F,H,T,U,V,W -> sin separador
+  const COL_USD = new Set([10, 11]);                        // K, L
+  const COL_LEFT_ALIGN = new Set([16, 17, 18]);             // Q, R, S (comentarios, refs)
+
+  // Aplicar estilos y formatos
+  const totalIdxInAoa = aoaSAP.length - 1;
+  const cuadreIdxInAoa = (filas[filas.length - 2] && filas[filas.length - 2]._cuadre) ? aoaSAP.length - 2 : -1;
+
+  // Título
+  wsSAP[XLSX.utils.encode_cell({r:0,c:0})].s = styleTitle;
+  // Rellenar el merge con estilo (algunos motores requieren celdas reales)
+  for(let c=1;c<NCOLS;c++){
+    const a = XLSX.utils.encode_cell({r:0,c});
+    if(!wsSAP[a]) wsSAP[a] = {t:'s', v:''};
+    wsSAP[a].s = styleTitle;
+  }
+  wsSAP[XLSX.utils.encode_cell({r:1,c:0})].s = styleSubtitle;
+  for(let c=1;c<NCOLS;c++){
+    const a = XLSX.utils.encode_cell({r:1,c});
+    if(!wsSAP[a]) wsSAP[a] = {t:'s', v:''};
+    wsSAP[a].s = styleSubtitle;
+  }
+  // Encabezados (fila 3 en aoa, r=3)
+  for(let c=0;c<NCOLS;c++){
+    const a = XLSX.utils.encode_cell({r:3,c});
+    if(!wsSAP[a]) wsSAP[a] = {t:'s', v: SAP_HEADERS[c]};
+    wsSAP[a].s = styleHeader;
+  }
+  // Datos: r de 4 a totalIdxInAoa
+  for(let R = 4; R <= totalIdxInAoa; R++){
+    const esCuadre = (R === cuadreIdxInAoa);
+    const esTotal = (R === totalIdxInAoa);
+    const zebra = ((R - 4) % 2 === 0);
+    for(let C = 0; C < NCOLS; C++){
+      const a = XLSX.utils.encode_cell({r:R,c:C});
+      if(!wsSAP[a]) wsSAP[a] = {t:'s', v:''};
+      // Formato numérico
+      if(COL_USD.has(C)){
+        wsSAP[a].z = fmtUSD;
+        if(typeof wsSAP[a].v === 'number') wsSAP[a].t = 'n';
+      } else if(COL_INT.has(C) && typeof wsSAP[a].v === 'number'){
+        wsSAP[a].z = fmtInt;
+        wsSAP[a].t = 'n';
       }
-    }
-    for(const C of [5, 7, 19, 20, 21, 22]){
-      const addr = XLSX.utils.encode_cell({r:R, c:C});
-      if(wsSAP[addr] && typeof wsSAP[addr].v === 'number'){
-        wsSAP[addr].z = fmtInt;
-        wsSAP[addr].t = 'n';
+      // Estilo
+      let sty;
+      if(esTotal){
+        sty = COL_LEFT_ALIGN.has(C) ? styleTotalLeft : (COL_USD.has(C) ? styleTotalNum : styleTotal);
+      } else if(esCuadre){
+        sty = COL_LEFT_ALIGN.has(C) ? styleCuadreLeft : (COL_USD.has(C) ? styleCuadreNum : styleCuadre);
+      } else if(zebra){
+        sty = COL_LEFT_ALIGN.has(C) ? styleZebraLeft : (COL_USD.has(C) ? styleZebraNum : styleZebra);
+      } else {
+        sty = COL_LEFT_ALIGN.has(C) ? styleCellLeft : (COL_USD.has(C) ? styleCellNum : styleCell);
       }
+      wsSAP[a].s = sty;
     }
   }
-  // Ancho de columnas
+
+  // Anchos
   wsSAP['!cols'] = SAP_HEADERS.map((h) => {
     if(h === 'Comentarios') return {wch: 68};
-    if(h === 'Referencia 2') return {wch: 26};
+    if(h === 'Referencia 2') return {wch: 28};
     if(h === 'Cuenta de mayor/Nombre SN') return {wch: 20};
-    if(['Débito (ME)','Crédito (ME)','Débito','Crédito','Débito (MS)','Crédito (MS)'].includes(h)) return {wch: 12};
+    if(['Débito (ME)','Crédito (ME)','Débito','Crédito','Débito (MS)','Crédito (MS)'].includes(h)) return {wch: 13};
     if(h === 'Cuenta' || h === 'CECO' || h === 'Centro de Costo') return {wch: 11};
     if(h === 'Modelo' || h === 'S/N' || h === 'IP') return {wch: 14};
     if(h === 'Datos' || h === 'Monto') return {wch: 18};
@@ -986,7 +1173,8 @@ document.getElementById('btnDescargarXLSX').addEventListener('click', () => {
       const fmt = FORMATOS[i];
       const d = eq.formatos[fmt] || {};
       const volMax = (VOL_MAX_BOLSA[eq.bolsaPdf] && VOL_MAX_BOLSA[eq.bolsaPdf][fmt] != null) ? VOL_MAX_BOLSA[eq.bolsaPdf][fmt] : null;
-      const exc = volMax!=null ? (d.consumo||0)-volMax : (d.cantExc||0);
+      const consFmt = d.consumo || 0;
+      const exc = volMax!=null ? (consFmt===0 ? 0 : consFmt - volMax) : (d.cantExc||0);
       const tot = volMax!=null ? exc*(d.precio||0) : (d.total||0);
       aoaMes.push([
         i===0 ? (meta.periodo||'') : '',
@@ -999,21 +1187,103 @@ document.getElementById('btnDescargarXLSX').addEventListener('click', () => {
         i===0 ? (eq.bolsaPdf||'') : '',
         fmt,
         d.ci||0, d.cf||0, d.consumo||0,
-        volMax||'', exc, d.precio||0, Math.round(tot*100)/100,
+        volMax!=null ? volMax : '', exc, d.precio||0, Math.round(tot*100)/100,
         i===0 ? (m.alquilerFijo||51.68) : '',
         i===0 ? (m.cuenta||'') : '',
         i===0 ? (m.centroCosto||'') : ''
       ]);
     }
   }
-  const wsMes = XLSX.utils.aoa_to_sheet(aoaMes);
+  const wsMes = aplicarEstiloHojaMes(aoaMes, meta);
   XLSX.utils.book_append_sheet(wb, wsMes, meta.periodo ? meta.periodo.replace(/\s+/,'-') : 'Mes');
 
   const nombre = `Reprodata_${(meta.periodo||'export').replace(/\s+/g,'_')}.xlsx`;
   XLSX.writeFile(wb, nombre);
-  s.textContent = `✓ Descargado: ${nombre}`;
+  s.textContent = `✓ Descargado con formato: ${nombre}`;
   s.style.color = '#1a7a1a';
 });
+
+function aplicarEstiloHojaMes(aoaBase, meta){
+  const NCOLS = aoaBase[0].length;
+  const vacia = () => Array(NCOLS).fill('');
+  const titulo = `REPORTE DE CONSUMO MENSUAL — REPRODATA  ·  ${meta.periodo||''}`;
+  const aoa = [
+    [titulo, ...vacia().slice(1)],
+    vacia(),
+    aoaBase[0],
+    ...aoaBase.slice(1)
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!merges'] = [{s:{r:0,c:0}, e:{r:0,c:NCOLS-1}}];
+  ws['!rows'] = [{hpt:28}, {hpt:8}, {hpt:34}];
+
+  const brd = {top:{style:'thin',color:{rgb:'8AA4C8'}}, bottom:{style:'thin',color:{rgb:'8AA4C8'}}, left:{style:'thin',color:{rgb:'8AA4C8'}}, right:{style:'thin',color:{rgb:'8AA4C8'}}};
+  const stTitle = {font:{name:'Segoe UI',sz:14,bold:true,color:{rgb:'FFFFFF'}}, fill:{patternType:'solid', fgColor:{rgb:'1F3864'}}, alignment:{horizontal:'center',vertical:'center'}};
+  const stHdr = {font:{name:'Segoe UI',sz:11,bold:true,color:{rgb:'000000'}}, fill:{patternType:'solid', fgColor:{rgb:'FFC000'}}, alignment:{horizontal:'center',vertical:'center',wrapText:true}, border:{top:{style:'medium',color:{rgb:'000000'}},bottom:{style:'medium',color:{rgb:'000000'}},left:{style:'thin',color:{rgb:'000000'}},right:{style:'thin',color:{rgb:'000000'}}}};
+  const stCell = {font:{name:'Segoe UI',sz:10,color:{rgb:'1F3864'}}, alignment:{horizontal:'center',vertical:'center'}, border:brd};
+  const stLeft = {...stCell, alignment:{horizontal:'left',vertical:'center',wrapText:true}};
+  const stNum  = {...stCell, alignment:{horizontal:'right',vertical:'center'}};
+  const stZebraC = {...stCell, fill:{patternType:'solid', fgColor:{rgb:'F7FAFF'}}};
+  const stZebraL = {...stLeft, fill:{patternType:'solid', fgColor:{rgb:'F7FAFF'}}};
+  const stZebraN = {...stNum,  fill:{patternType:'solid', fgColor:{rgb:'F7FAFF'}}};
+  const stGroup  = {...stCell, fill:{patternType:'solid', fgColor:{rgb:'E7EEF7'}}, font:{name:'Segoe UI',sz:10,bold:true,color:{rgb:'1F3864'}}};
+  const stGroupL = {...stGroup, alignment:{horizontal:'left',vertical:'center',wrapText:true}};
+  const stGroupN = {...stGroup, alignment:{horizontal:'right',vertical:'center'}};
+
+  // Título
+  for(let c=0;c<NCOLS;c++){
+    const a = XLSX.utils.encode_cell({r:0,c});
+    if(!ws[a]) ws[a] = {t:'s',v: c===0? titulo : ''};
+    ws[a].s = stTitle;
+  }
+  // Encabezados (r=2)
+  for(let c=0;c<NCOLS;c++){
+    const a = XLSX.utils.encode_cell({r:2,c});
+    if(!ws[a]) ws[a] = {t:'s',v: aoaBase[0][c]};
+    ws[a].s = stHdr;
+  }
+  // Datos
+  const COL_LEFT = new Set([5]);     // Observación
+  const COL_CENTER_FIRST = new Set([0,1,2,3,4,6,7]); // Fecha, Marca, Modelo, S/N, IP, Cantidad, Bolsa
+  const COL_NUM = new Set([9,10,11,12,13,14,15,16,17,18]); // Contadores, precios, totales, cuentas
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  const fmtUSD = '#,##0.00';
+  const fmtInt = '0';
+  for(let R = 3; R <= range.e.r; R++){
+    const grupo = Math.floor((R-3)/4);
+    const zebra = grupo % 2 === 1;
+    const primeraDeGrupo = ((R-3) % 4) === 0;
+    for(let C = 0; C < NCOLS; C++){
+      const a = XLSX.utils.encode_cell({r:R,c:C});
+      if(!ws[a]) ws[a] = {t:'s',v:''};
+      // formato número
+      if([9,10,11,12,13].includes(C) && typeof ws[a].v === 'number'){ ws[a].z = fmtInt; ws[a].t = 'n'; }
+      if([14,15,16].includes(C) && typeof ws[a].v === 'number'){ ws[a].z = fmtUSD; ws[a].t = 'n'; }
+      if([17,18].includes(C) && typeof ws[a].v === 'number'){ ws[a].z = fmtInt; ws[a].t = 'n'; }
+      let sty;
+      if(primeraDeGrupo && [0,1,2,3,4,5,6,7,17,18].includes(C)){
+        // Primera fila del equipo con info: resaltar ligeramente
+        sty = COL_LEFT.has(C) ? stGroupL : (COL_NUM.has(C) ? stGroupN : stGroup);
+      } else if(zebra){
+        sty = COL_LEFT.has(C) ? stZebraL : (COL_NUM.has(C) ? stZebraN : stZebraC);
+      } else {
+        sty = COL_LEFT.has(C) ? stLeft : (COL_NUM.has(C) ? stNum : stCell);
+      }
+      ws[a].s = sty;
+    }
+  }
+
+  ws['!cols'] = aoaBase[0].map((h) => {
+    if(h === 'Observación') return {wch: 40};
+    if(h === 'S/N' || h === 'IP') return {wch: 14};
+    if(h === 'Modelo' || h === 'Marca') return {wch: 12};
+    if(h === 'Contador Inicial' || h === 'Contador Final' || h === 'Volumen Maximo Establecido') return {wch: 14};
+    if(h === 'Consumo del Mes' || h === 'Volumen Excedente') return {wch: 12};
+    if(h === 'Cuenta' || h === 'Centro Costo' || h === 'Cantidad Impresoras') return {wch: 12};
+    return {wch: 11};
+  });
+  return ws;
+}
 </script>
 
 </body>
