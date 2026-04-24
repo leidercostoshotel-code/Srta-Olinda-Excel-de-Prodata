@@ -5,79 +5,319 @@
 <title>Cuadro de Consumo Reprodata — Importador PDF</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
     --azul:#1f3864;
-    --azul-bajo:#2f5496;
-    --amarillo:#ffc000;
-    --rojo:#c00000;
-    --borde:#8aa4c8;
-    --gris:#f2f2f2;
+    --azul-oscuro:#12244a;
+    --azul-medio:#2f5496;
+    --azul-claro:#4b6fa8;
+    --amarillo:#f5b300;
+    --amarillo-claro:#fff4cf;
+    --rojo:#c0392b;
+    --verde:#0e8a5f;
+    --ambar:#b37400;
+    --texto:#0f172a;
+    --texto-suave:#475569;
+    --texto-mas-suave:#94a3b8;
+    --borde:#e2e8f0;
+    --borde-tabla:#cbd5e1;
+    --bg:#f1f5f9;
+    --bg-card:#ffffff;
+    --bg-sutil:#f8fafc;
+    --bg-zebra:#f9fbff;
+    --bg-header-tabla:linear-gradient(180deg, #1f3864 0%, #17294a 100%);
+    --sombra-sm:0 1px 2px rgba(15,23,42,.06), 0 1px 3px rgba(15,23,42,.04);
+    --sombra-md:0 2px 4px rgba(15,23,42,.06), 0 4px 12px rgba(15,23,42,.06);
+    --sombra-lg:0 4px 8px rgba(15,23,42,.06), 0 12px 28px rgba(15,23,42,.08);
+    --radio:10px;
+    --radio-sm:6px;
+    --transicion:all 160ms cubic-bezier(.4,0,.2,1);
   }
   *{box-sizing:border-box}
-  body{font-family:"Segoe UI",Arial,sans-serif;margin:0;padding:16px;background:#fafafa;color:#222;font-size:12px}
-  h1{font-size:18px;margin:0 0 10px 0}
-  .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;padding:10px;background:#fff;border:1px solid #ddd;border-radius:4px}
-  .toolbar button,.toolbar label{padding:6px 12px;border:1px solid var(--azul);background:var(--azul);color:#fff;cursor:pointer;border-radius:3px;font-size:12px}
-  .toolbar button.secundario{background:#fff;color:var(--azul)}
+  html,body{height:100%}
+  body{
+    font-family:'Inter','Segoe UI',system-ui,-apple-system,Arial,sans-serif;
+    margin:0;padding:0;
+    background:var(--bg);
+    color:var(--texto);
+    font-size:13px;
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+  .app{max-width:1600px;margin:0 auto;padding:24px 28px 48px}
+
+  /* Header */
+  .appbar{
+    background:linear-gradient(135deg, #1f3864 0%, #2f5496 100%);
+    color:#fff;
+    border-radius:var(--radio);
+    padding:18px 24px;
+    box-shadow:var(--sombra-md);
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    margin-bottom:20px;
+    position:relative;overflow:hidden;
+  }
+  .appbar::after{
+    content:'';position:absolute;right:-60px;top:-60px;width:220px;height:220px;
+    background:radial-gradient(circle, rgba(245,179,0,.18) 0%, transparent 65%);
+    pointer-events:none;
+  }
+  .appbar h1{
+    font-size:19px;font-weight:700;margin:0;letter-spacing:-.01em;
+    display:flex;align-items:center;gap:10px;
+  }
+  .appbar h1 .dot{width:10px;height:10px;border-radius:50%;background:var(--amarillo);box-shadow:0 0 0 4px rgba(245,179,0,.25)}
+  .appbar .subtitulo{font-size:12px;opacity:.85;margin-top:2px;font-weight:400}
+  .appbar .chip{
+    background:rgba(255,255,255,.12);padding:6px 12px;border-radius:999px;
+    font-size:11px;font-weight:500;letter-spacing:.02em;backdrop-filter:blur(6px);
+    border:1px solid rgba(255,255,255,.15);
+  }
+
+  /* Toolbar */
+  .toolbar{
+    display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+    margin-bottom:16px;padding:14px 16px;
+    background:var(--bg-card);
+    border:1px solid var(--borde);
+    border-radius:var(--radio);
+    box-shadow:var(--sombra-sm);
+  }
+  .toolbar button,.toolbar label.btn{
+    padding:8px 14px;border:1px solid transparent;
+    background:var(--azul);color:#fff;cursor:pointer;
+    border-radius:var(--radio-sm);font-size:12px;font-weight:500;font-family:inherit;
+    transition:var(--transicion);
+    display:inline-flex;align-items:center;gap:6px;
+    box-shadow:0 1px 0 rgba(0,0,0,.04);
+    letter-spacing:.01em;
+  }
+  .toolbar button:hover,.toolbar label.btn:hover{background:var(--azul-oscuro);transform:translateY(-1px);box-shadow:var(--sombra-sm)}
+  .toolbar button:active,.toolbar label.btn:active{transform:translateY(0)}
+  .toolbar button.secundario,.toolbar label.btn.secundario{
+    background:#fff;color:var(--azul);border:1px solid var(--borde);
+  }
+  .toolbar button.secundario:hover,.toolbar label.btn.secundario:hover{background:var(--bg-sutil);border-color:var(--azul-claro);color:var(--azul)}
   .toolbar input[type=file]{display:none}
-  .status{font-size:12px;color:#555;margin-left:auto}
-  .status.error{color:var(--rojo);font-weight:bold}
-  .wrap{overflow:auto;background:#fff;border:1px solid #ccc}
-  table{border-collapse:collapse;font-size:11px;white-space:nowrap}
-  th,td{border:1px solid var(--borde);padding:4px 6px;text-align:center;vertical-align:middle}
-  thead th{background:var(--azul);color:#fff;font-weight:bold;position:sticky;top:0;z-index:2}
-  td.fecha{background:var(--amarillo);font-weight:bold}
-  td.obs{text-align:left;max-width:320px;white-space:normal}
-  td.neg{color:var(--rojo)}
-  td.excedente-hl{background:#fff2a8}
-  td.num{text-align:right;font-variant-numeric:tabular-nums}
-  tr.sep td{border-top:2px solid #333}
-  .leyenda{font-size:11px;color:#666;margin-top:8px}
-  .resumen{margin-top:12px;padding:10px;background:#fff;border:1px solid #ddd;border-radius:4px;display:flex;gap:20px;flex-wrap:wrap}
-  .resumen .kpi{min-width:150px}
-  .resumen .kpi .lbl{font-size:10px;color:#666;text-transform:uppercase}
-  .resumen .kpi .val{font-size:16px;font-weight:bold;color:var(--azul)}
-  .pend{background:#fff4e0}
-  td.ci-ok{background:#d9f5d9}
+  .status{
+    font-size:12px;color:var(--texto-suave);margin-left:auto;
+    display:inline-flex;align-items:center;gap:6px;
+  }
+  .status::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--verde);box-shadow:0 0 0 3px rgba(14,138,95,.18)}
+  .status.error{color:var(--rojo);font-weight:600}
+  .status.error::before{background:var(--rojo);box-shadow:0 0 0 3px rgba(192,57,43,.18)}
+
+  /* Resumen (KPIs) */
+  .resumen{
+    margin-bottom:16px;padding:0;background:transparent;border:none;
+    display:grid;gap:12px;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  }
+  .resumen .kpi{
+    background:var(--bg-card);
+    border:1px solid var(--borde);
+    border-radius:var(--radio);
+    padding:14px 16px;
+    box-shadow:var(--sombra-sm);
+    transition:var(--transicion);
+    position:relative;overflow:hidden;
+  }
+  .resumen .kpi::before{
+    content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+    background:linear-gradient(180deg,var(--azul-medio),var(--azul));
+  }
+  .resumen .kpi:hover{transform:translateY(-2px);box-shadow:var(--sombra-md)}
+  .resumen .kpi .lbl{
+    font-size:10.5px;color:var(--texto-mas-suave);text-transform:uppercase;
+    letter-spacing:.08em;font-weight:600;margin-bottom:4px;
+  }
+  .resumen .kpi .val{
+    font-size:22px;font-weight:700;color:var(--azul);letter-spacing:-.01em;
+    font-family:'Inter',sans-serif;
+  }
+
+  /* Panels */
+  .panel{
+    margin-top:16px;padding:16px 18px;
+    background:var(--bg-card);
+    border:1px solid var(--borde);
+    border-radius:var(--radio);
+    box-shadow:var(--sombra-sm);
+  }
+  .panel h3{
+    margin:0 0 12px 0;font-size:13px;color:var(--azul);
+    font-weight:600;letter-spacing:-.01em;
+    display:flex;align-items:center;gap:8px;
+  }
+  .panel h3::before{
+    content:'';width:4px;height:14px;background:var(--amarillo);border-radius:2px;
+  }
+
+  /* Banners */
+  .banner{
+    padding:11px 14px;margin-top:10px;border-radius:var(--radio-sm);
+    font-size:12.5px;font-weight:500;
+    border-left:3px solid;
+    display:flex;gap:8px;align-items:flex-start;
+  }
+  .banner.info{background:#eaf2fb;border-color:var(--azul-medio);color:#15305c}
+  .banner.warn{background:#fff4dd;border-color:#e0921b;color:#7a4a00}
+  .banner.err{background:#fde8e6;border-color:var(--rojo);color:#8a1e12}
+  .banner.ok{background:#e5f6ec;border-color:var(--verde);color:#0b5a3d}
+
+  /* Histórico — badges */
+  .mes-item{
+    display:inline-flex;align-items:center;gap:6px;margin:2px 6px 2px 0;
+    padding:5px 10px 5px 12px;
+    background:linear-gradient(180deg,#fff,#f6f9ff);
+    border:1px solid var(--borde);border-radius:999px;font-size:11.5px;
+    box-shadow:0 1px 2px rgba(15,23,42,.04);
+    color:var(--azul);font-weight:500;
+    transition:var(--transicion);
+  }
+  .mes-item:hover{border-color:var(--azul-claro);box-shadow:var(--sombra-sm)}
+  .mes-item b{color:var(--azul-oscuro);font-weight:600}
+  .mes-item button{
+    background:transparent;border:none;color:var(--texto-mas-suave);cursor:pointer;
+    padding:2px 4px;font-size:14px;line-height:1;border-radius:50%;
+    transition:var(--transicion);
+  }
+  .mes-item button:hover{color:var(--rojo);background:#fde8e6}
+
+  details{margin-top:8px}
+  details summary{
+    cursor:pointer;color:var(--azul);font-size:12px;font-weight:500;
+    padding:4px 0;user-select:none;
+  }
+  details summary:hover{color:var(--azul-oscuro)}
+  .discrepancias{max-height:240px;overflow:auto;margin-top:8px;font-size:11.5px;border-radius:var(--radio-sm);border:1px solid var(--borde)}
+
+  /* Tablas */
+  .wrap{
+    overflow:auto;background:var(--bg-card);
+    border:1px solid var(--borde);border-radius:var(--radio);
+    box-shadow:var(--sombra-sm);
+  }
+  table{
+    border-collapse:separate;border-spacing:0;
+    font-size:11.5px;white-space:nowrap;width:100%;
+  }
+  th,td{
+    border-bottom:1px solid var(--borde);
+    border-right:1px solid var(--borde);
+    padding:7px 9px;text-align:center;vertical-align:middle;
+  }
+  th:last-child,td:last-child{border-right:none}
+  thead th{
+    background:var(--bg-header-tabla);color:#fff;
+    font-weight:600;position:sticky;top:0;z-index:2;
+    font-size:11px;letter-spacing:.02em;
+    padding:10px 9px;
+    border-bottom:2px solid var(--azul-oscuro);
+    border-right:1px solid rgba(255,255,255,.12);
+    text-transform:uppercase;
+  }
+  thead th:last-child{border-right:none}
+  tbody tr{transition:background 120ms ease}
+  tbody tr:hover td{background:#f0f6ff !important}
+  tbody tr:hover td.fecha{background:#f5c942 !important}
+  tbody tr:hover td.ci-ok{background:#bce7be !important}
+  tbody tr:hover td.ci-err{background:#ffc3c3 !important}
+  td.fecha{background:linear-gradient(180deg,#f5b300,#e8a400);color:#3a2400;font-weight:700;letter-spacing:.02em}
+  td.obs{text-align:left;max-width:340px;white-space:normal;line-height:1.35;color:var(--texto-suave)}
+  td.neg{color:var(--rojo);font-weight:600}
+  td.excedente-hl{background:#fff3c2;font-weight:600}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;font-family:'JetBrains Mono','Inter',monospace;font-size:11px}
+  tr.sep td{border-top:2px solid var(--borde-tabla)}
+  tr.sep:first-child td{border-top:none}
+  tr.pend td{background:#fff4dd}
+  tr.editado td{background:#fff7cf !important}
+  td.ci-ok{background:#d8f5dc}
   td.ci-err{background:#ffd6d6}
-  .ci-badge{display:inline-block;margin-left:4px;font-weight:bold;font-size:10px}
-  .ci-badge.ok{color:#1a7a1a}
-  .ci-badge.err{color:#b00000}
-  .panel{margin-top:12px;padding:10px 12px;background:#fff;border:1px solid #ddd;border-radius:4px}
-  .panel h3{margin:0 0 8px 0;font-size:13px;color:var(--azul)}
-  .banner{padding:8px 12px;margin-top:8px;border-radius:4px;font-size:12px}
-  .banner.info{background:#e7f0fa;border:1px solid #b6cfec;color:#1f3864}
-  .banner.warn{background:#fff4e0;border:1px solid #f0c374;color:#7a4a00}
-  .banner.err{background:#ffe0e0;border:1px solid #e09a9a;color:#7a0000}
-  .banner.ok{background:#e8f7e8;border:1px solid #9ed59e;color:#1a5c1a}
-  .mes-item{display:inline-flex;align-items:center;gap:4px;margin:2px 4px 2px 0;padding:3px 8px;background:var(--gris);border-radius:3px;font-size:11px}
-  .mes-item button{background:transparent;border:none;color:#999;cursor:pointer;padding:0 2px;font-size:12px}
-  .mes-item button:hover{color:var(--rojo)}
-  details{margin-top:6px}
-  details summary{cursor:pointer;color:var(--azul);font-size:11px}
-  .discrepancias{max-height:200px;overflow:auto;margin-top:6px;font-size:11px}
-  .discrepancias table{font-size:11px}
-  .discrepancias th{background:var(--rojo)}
-  td.editable{background:#fffbea;cursor:text}
-  td.editable:focus{outline:2px solid var(--azul-bajo);background:#fff}
-  td.editable:hover{background:#fff4cf}
-  tr.editado td{background:#fff7d6 !important}
-  .hint-edit{font-size:11px;color:#666;margin-top:6px}
+  .ci-badge{
+    display:inline-block;margin-left:5px;font-weight:700;font-size:11px;
+    padding:1px 5px;border-radius:4px;
+  }
+  .ci-badge.ok{color:#065f3f;background:#c6f0d0}
+  .ci-badge.err{color:#7a1b10;background:#ffc3c3}
+
+  /* Edición in-line */
+  td.editable{
+    background:#fffdf0;cursor:text;
+    position:relative;
+  }
+  td.editable::after{
+    content:'✎';position:absolute;right:4px;top:50%;transform:translateY(-50%);
+    font-size:9px;color:#d0a400;opacity:0;transition:var(--transicion);pointer-events:none;
+  }
+  td.editable:hover::after{opacity:1}
+  td.editable:focus{outline:2px solid var(--azul-medio);outline-offset:-2px;background:#fff}
+  td.editable:hover{background:#fff4c2}
+
+  /* Input tipo texto */
+  input[type=text]{
+    padding:7px 10px;border:1px solid var(--borde);border-radius:var(--radio-sm);
+    font-size:12px;font-family:inherit;color:var(--texto);
+    transition:var(--transicion);background:#fff;
+  }
+  input[type=text]:focus{outline:none;border-color:var(--azul-medio);box-shadow:0 0 0 3px rgba(47,84,150,.15)}
+
+  label.inline{
+    display:inline-flex;align-items:center;gap:8px;font-size:11.5px;
+    color:var(--texto-suave);font-weight:500;
+  }
+
+  kbd{
+    background:#fff;border:1px solid var(--borde);border-bottom-width:2px;
+    border-radius:4px;padding:1px 6px;font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;color:var(--texto);
+  }
+
+  .leyenda{font-size:11.5px;color:var(--texto-suave);margin-top:10px;line-height:1.55}
+  .leyenda b{color:var(--azul)}
+  .hint-edit{
+    font-size:11.5px;color:var(--texto-suave);margin-top:10px;line-height:1.55;
+    padding:10px 12px;background:#fffbec;border:1px solid #f5e2a8;border-radius:var(--radio-sm);
+  }
+  .hint-edit b{color:var(--ambar)}
+
+  /* Scroll */
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-track{background:#f0f4f9}
+  ::-webkit-scrollbar-thumb{background:#c6d0dd;border-radius:8px;border:2px solid #f0f4f9}
+  ::-webkit-scrollbar-thumb:hover{background:#9fadbf}
+
+  @media (max-width: 720px){
+    .app{padding:14px}
+    .appbar{flex-direction:column;align-items:flex-start}
+    .appbar h1{font-size:16px}
+  }
 </style>
 </head>
 <body>
 
-<h1>Cuadro de Consumo — Reprodata (Contrato 276580)</h1>
+<div class="app">
+
+<header class="appbar">
+  <div>
+    <h1><span class="dot"></span>Cuadro de Consumo — Reprodata</h1>
+    <div class="subtitulo">Contrato 276580 · HOTELERA COSTA DEL PACIFICO S.A.</div>
+  </div>
+  <div class="chip" id="chipEstado">Importador mensual de facturación</div>
+</header>
 
 <div class="toolbar">
-  <button id="btnCargarRepo">Cargar PDF del repositorio</button>
-  <label for="fileInput" class="secundario" style="cursor:pointer">Importar otro PDF…</label>
+  <button id="btnCargarRepo">📥 Cargar PDF del repositorio</button>
+  <label for="fileInput" class="btn secundario">📁 Importar otro PDF…</label>
   <input type="file" id="fileInput" accept="application/pdf">
-  <button class="secundario" id="btnExportCsv">Exportar CSV</button>
+  <button class="secundario" id="btnExportCsv">📄 Exportar CSV</button>
   <button id="btnGuardarMes">💾 Guardar este mes</button>
-  <button class="secundario" id="btnExportHist">Exportar histórico</button>
-  <label for="histInput" class="secundario" style="cursor:pointer">Importar histórico…</label>
+  <button class="secundario" id="btnExportHist">⬇ Exportar histórico</button>
+  <label for="histInput" class="btn secundario">⬆ Importar histórico…</label>
   <input type="file" id="histInput" accept="application/json" style="display:none">
   <span class="status" id="status">Listo. Cargue el PDF para procesar.</span>
 </div>
@@ -134,14 +374,14 @@
 
 <div class="panel" id="panelSAP">
   <h3>Asiento contable SAP</h3>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
-    <label style="font-size:11px">N° Factura:
-      <input type="text" id="inpFactura" value="01-F020-00027840" style="padding:4px 6px;border:1px solid #ccc;border-radius:3px;width:180px;font-size:12px">
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+    <label class="inline">N° Factura
+      <input type="text" id="inpFactura" value="01-F020-00027840" style="width:200px">
     </label>
-    <button id="btnGenSAP">Generar asiento SAP</button>
-    <button class="secundario" id="btnCopiarSAP">📋 Copiar al portapapeles (TSV)</button>
-    <button class="secundario" id="btnDescargarXLSX">⬇ Descargar .xlsx (completo)</button>
-    <span id="statusSAP" style="font-size:11px;color:#555"></span>
+    <button id="btnGenSAP">⚙ Generar asiento SAP</button>
+    <button class="secundario" id="btnCopiarSAP">📋 Copiar (TSV)</button>
+    <button class="secundario" id="btnDescargarXLSX">⬇ Descargar .xlsx</button>
+    <span id="statusSAP" style="font-size:11.5px;color:var(--texto-suave);font-weight:500"></span>
   </div>
   <div class="wrap" style="max-height:340px">
     <table id="tablaSAP">
@@ -462,7 +702,7 @@ function renderizar(equipos, meta){
     }
   }
 
-  document.getElementById('resumen').style.display = 'flex';
+  document.getElementById('resumen').style.display = 'grid';
   document.getElementById('kpiPeriodo').textContent = meta.periodo || '—';
   document.getElementById('kpiEquipos').textContent = equipos.length;
   document.getElementById('kpiRenta').textContent = 'S/ '+fmtNum(meta.totalRenta || totalRentaCalc);
@@ -1286,5 +1526,6 @@ function aplicarEstiloHojaMes(aoaBase, meta){
 }
 </script>
 
+</div><!-- /.app -->
 </body>
 </html>
