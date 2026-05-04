@@ -253,6 +253,16 @@
   tr.sep:first-child td{border-top:none}
   tr.pend td{background:#fff4dd}
   tr.editado td{background:#fff7cf !important}
+  tr.fila-total td{
+    background:linear-gradient(180deg,#fff4cf,#ffe88a) !important;
+    border-top:2.5px solid var(--azul-oscuro) !important;
+    border-bottom:2.5px solid var(--azul-oscuro) !important;
+    font-weight:700;color:var(--azul-oscuro);
+    font-size:12px;letter-spacing:.01em;
+    padding:9px 9px;
+  }
+  tr.fila-total:hover td{background:linear-gradient(180deg,#fff4cf,#ffe88a) !important}
+  tr.fila-total td.num{font-family:'JetBrains Mono','Inter',monospace}
   td.ci-ok{background:#d8f5dc}
   td.ci-err{background:#ffd6d6}
   .ci-badge{
@@ -720,6 +730,8 @@ function renderizar(equipos, meta){
 
   let totalExcedenteCalc = 0;
   let totalRentaCalc = 0;
+  // Acumuladores para la fila TOTAL al pie de la tabla
+  const sums = {cantidad:0, consumo:0, volMax:0, excedente:0, totalImporte:0, alquiler:0};
 
   for(const eq of equipos){
     const m = MAESTRO[eq.sn] || {};
@@ -734,6 +746,8 @@ function renderizar(equipos, meta){
     const centroCosto = m.centroCosto || '';
     const alquilerFijo = m.alquilerFijo || 51.68;
     totalRentaCalc += alquilerFijo;
+    sums.cantidad += cantidad;
+    sums.alquiler += alquilerFijo;
 
     for(let i=0;i<FORMATOS.length;i++){
       const fmt = FORMATOS[i];
@@ -745,6 +759,11 @@ function renderizar(equipos, meta){
         : d.cantExc;
       const totalCalc = volMax !== null ? excedenteReal * d.precio : d.total;
       if(totalCalc > 0) totalExcedenteCalc += totalCalc;
+
+      sums.consumo += consumo || 0;
+      sums.volMax += (volMax !== null) ? volMax : 0;
+      sums.excedente += excedenteReal || 0;
+      sums.totalImporte += totalCalc || 0;
 
       const tr = document.createElement('tr');
       if(i===0) tr.classList.add('sep');
@@ -813,6 +832,31 @@ function renderizar(equipos, meta){
       tr.innerHTML = html;
       tbody.appendChild(tr);
     }
+  }
+
+  // Fila TOTAL al pie de la tabla
+  if(equipos.length){
+    const trTotal = document.createElement('tr');
+    trTotal.classList.add('fila-total');
+    const colsExtras = mesAnterior ? '<td></td><td></td>' : '';
+    trTotal.innerHTML = `
+      <td colspan="5" style="text-align:right;letter-spacing:.04em">TOTAL DEL MES</td>
+      <td style="text-align:left">${equipos.length} equipos</td>
+      <td class="num">${fmtInt(sums.cantidad)}</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      ${colsExtras}
+      <td></td>
+      <td class="num">${fmtInt(sums.consumo)}</td>
+      <td class="num">${fmtInt(sums.volMax)}</td>
+      <td class="num ${sums.excedente<0?'neg':''}">${fmtNum(sums.excedente)}</td>
+      <td></td>
+      <td class="num ${sums.totalImporte<0?'neg':''}">S/ ${fmtNum(sums.totalImporte)}</td>
+      <td class="num">S/ ${fmtNum(sums.alquiler)}</td>
+      <td colspan="2" style="text-align:right">Total facturado: <b>S/ ${fmtNum(sums.alquiler + sums.totalImporte)}</b></td>
+    `;
+    tbody.appendChild(trTotal);
   }
 
   document.getElementById('resumen').style.display = 'grid';
