@@ -336,6 +336,7 @@
   <button class="secundario" id="btnExportHist">⬇ Exportar histórico</button>
   <label for="histInput" class="btn secundario">⬆ Importar histórico…</label>
   <input type="file" id="histInput" accept="application/json" style="display:none">
+  <button class="secundario" id="btnLimpiar" title="Vacía la pantalla. El histórico local se mantiene.">🔄 Limpiar</button>
   <span class="status" id="status">Listo. Cargue el PDF para procesar.</span>
 </div>
 
@@ -477,6 +478,7 @@ function setStatus(msg, error=false){
 
 document.getElementById('btnCargarRepo').addEventListener('click', async () => {
   try{
+    resetearEstadoPdf({procesando:true});
     setStatus('Descargando PDF del repositorio…');
     const url = 'CUADRO DE CONSUMO DEL CONTRATO 276580 PERIODO 2026 MES DE MARZO.pdf';
     const resp = await fetch(url);
@@ -492,18 +494,20 @@ document.getElementById('fileInput').addEventListener('change', async (ev) => {
   const f = ev.target.files[0];
   if(!f) return;
   try{
+    resetearEstadoPdf({procesando:true});
     setStatus('Leyendo '+f.name+'…');
     const buf = await f.arrayBuffer();
     await procesarPdf(buf, f.name);
+    ev.target.value = '';
   }catch(e){
     setStatus('Error: '+e.message, true);
   }
 });
 
 async function procesarPdf(buf, nombre){
-  setStatus('Procesando PDF…');
   // Reset completo del estado anterior antes de procesar el PDF nuevo
-  resetearEstadoPdf();
+  resetearEstadoPdf({procesando:true});
+  setStatus('Procesando PDF…');
   const pdf = await pdfjsLib.getDocument({data:buf}).promise;
   const lines = await extraerLineas(pdf);
   const meta = detectarMeta(lines);
@@ -514,10 +518,18 @@ async function procesarPdf(buf, nombre){
   setStatus(`Listo. ${equipos.length} equipos detectados.${aviso}`);
 }
 
-function resetearEstadoPdf(){
+function resetearEstadoPdf(opts){
+  const procesando = !!(opts && opts.procesando);
   // Tabla principal
   const tbody = document.getElementById('tbody');
-  if(tbody) tbody.innerHTML = '<tr><td colspan="19" style="padding:20px;color:#888">— Procesando… —</td></tr>';
+  if(tbody) tbody.innerHTML = `<tr><td colspan="19" style="padding:20px;color:#888">— ${procesando ? 'Procesando…' : 'Sin datos. Importe un PDF para ver la tabla'} —</td></tr>`;
+  // Resumen / KPIs: ocultar el bloque entero hasta tener datos del PDF nuevo
+  const resumen = document.getElementById('resumen');
+  if(resumen) resumen.style.display = 'none';
+  ['kpiPeriodo','kpiEquipos','kpiRenta','kpiExcedente','kpiValidacion'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el){ el.textContent = '—'; el.style.color = ''; }
+  });
   // Banner / panel de discrepancias
   const banner = document.getElementById('bannerCompara');
   if(banner) banner.innerHTML = '';
@@ -525,9 +537,6 @@ function resetearEstadoPdf(){
   if(detalle) detalle.style.display = 'none';
   const tablaDisc = document.getElementById('tablaDiscrepancias');
   if(tablaDisc) tablaDisc.innerHTML = '';
-  // KPIs
-  const kpiVal = document.getElementById('kpiValidacion');
-  if(kpiVal){ kpiVal.textContent = '—'; kpiVal.style.color = ''; }
   // Tabla SAP — limpiar y borrar el asiento previo
   const tbodySAP = document.getElementById('tbodySAP');
   if(tbodySAP) tbodySAP.innerHTML = '<tr><td colspan="15" style="padding:16px;color:#888">— Cargue un PDF y presione <b>Generar asiento SAP</b> —</td></tr>';
@@ -538,6 +547,9 @@ function resetearEstadoPdf(){
   window._ultimaMeta = null;
   window._ultimasDiscrepancias = null;
   window._ultimoSAP = null;
+  window._dupAvisoPdf = 0;
+  // Status global
+  if(!procesando) setStatus('Listo. Cargue el PDF para procesar.');
 }
 
 async function extraerLineas(pdf){
@@ -965,6 +977,12 @@ document.getElementById('histInput').addEventListener('change', async (ev) => {
 });
 
 actualizarListaMeses();
+
+document.getElementById('btnLimpiar').addEventListener('click', () => {
+  resetearEstadoPdf();
+  document.getElementById('fileInput').value = '';
+  setStatus('✓ Pantalla limpia. Listo para importar otro PDF.');
+});
 
 // ====== Asiento SAP ======
 const SAP_HEADERS = [
