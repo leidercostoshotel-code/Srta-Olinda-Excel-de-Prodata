@@ -731,7 +731,12 @@ function renderizar(equipos, meta){
   let totalExcedenteCalc = 0;
   let totalRentaCalc = 0;
   // Acumuladores para la fila TOTAL al pie de la tabla
-  const sums = {cantidad:0, consumo:0, volMax:0, excedente:0, totalImporte:0, alquiler:0};
+  const sums = {
+    cantidad:0, consumo:0, volMax:0,
+    excPositivo:0, excNegativo:0,
+    importeBruto:0, importeNegativo:0,
+    alquiler:0
+  };
 
   for(const eq of equipos){
     const m = MAESTRO[eq.sn] || {};
@@ -762,8 +767,10 @@ function renderizar(equipos, meta){
 
       sums.consumo += consumo || 0;
       sums.volMax += (volMax !== null) ? volMax : 0;
-      sums.excedente += excedenteReal || 0;
-      sums.totalImporte += totalCalc || 0;
+      if(excedenteReal > 0) sums.excPositivo += excedenteReal;
+      else if(excedenteReal < 0) sums.excNegativo += excedenteReal;
+      if(totalCalc > 0) sums.importeBruto += totalCalc;
+      else if(totalCalc < 0) sums.importeNegativo += totalCalc;
 
       const tr = document.createElement('tr');
       if(i===0) tr.classList.add('sep');
@@ -839,6 +846,10 @@ function renderizar(equipos, meta){
     const trTotal = document.createElement('tr');
     trTotal.classList.add('fila-total');
     const colsExtras = mesAnterior ? '<td></td><td></td>' : '';
+    const totalFacturado = sums.alquiler + sums.importeBruto;
+    const tipCred = sums.importeNegativo < 0
+      ? ` title="El proveedor sólo cobra excedentes positivos. Hay ${fmtNum(Math.abs(sums.importeNegativo))} en créditos por consumo bajo que NO se descuentan de esta factura."`
+      : '';
     trTotal.innerHTML = `
       <td colspan="5" style="text-align:right;letter-spacing:.04em">TOTAL DEL MES</td>
       <td style="text-align:left">${equipos.length} equipos</td>
@@ -850,11 +861,11 @@ function renderizar(equipos, meta){
       <td></td>
       <td class="num">${fmtInt(sums.consumo)}</td>
       <td class="num">${fmtInt(sums.volMax)}</td>
-      <td class="num ${sums.excedente<0?'neg':''}">${fmtNum(sums.excedente)}</td>
+      <td class="num"${tipCred}>${fmtInt(sums.excPositivo)}${sums.excNegativo<0?` <span style="color:#94a3b8;font-weight:500">(${fmtInt(sums.excNegativo)})</span>`:''}</td>
       <td></td>
-      <td class="num ${sums.totalImporte<0?'neg':''}">S/ ${fmtNum(sums.totalImporte)}</td>
+      <td class="num"${tipCred}>S/ ${fmtNum(sums.importeBruto)}</td>
       <td class="num">S/ ${fmtNum(sums.alquiler)}</td>
-      <td colspan="2" style="text-align:right">Total facturado: <b>S/ ${fmtNum(sums.alquiler + sums.totalImporte)}</b></td>
+      <td colspan="2" style="text-align:right">Total facturado: <b>S/ ${fmtNum(totalFacturado)}</b></td>
     `;
     tbody.appendChild(trTotal);
   }
@@ -863,7 +874,7 @@ function renderizar(equipos, meta){
   document.getElementById('kpiPeriodo').textContent = meta.periodo || '—';
   document.getElementById('kpiEquipos').textContent = equipos.length;
   document.getElementById('kpiRenta').textContent = 'S/ '+fmtNum(meta.totalRenta || totalRentaCalc);
-  document.getElementById('kpiExcedente').textContent = 'S/ '+fmtNum(meta.totalExcedente || totalExcedenteCalc);
+  document.getElementById('kpiExcedente').textContent = 'S/ '+fmtNum(meta.totalExcedente || sums.importeBruto || totalExcedenteCalc);
 
   const kpiVal = document.getElementById('kpiValidacion');
   const banner = document.getElementById('bannerCompara');
