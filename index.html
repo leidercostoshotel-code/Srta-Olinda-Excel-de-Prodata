@@ -509,7 +509,9 @@ async function procesarPdf(buf, nombre){
   const meta = detectarMeta(lines);
   const equipos = parsearEquipos(lines);
   renderizar(equipos, meta);
-  setStatus(`Listo. ${equipos.length} equipos detectados.`);
+  const dups = window._dupAvisoPdf || 0;
+  const aviso = dups > 0 ? ` (PDF acumulativo: ${dups} S/N duplicados omitidos, se mantuvo la primera ocurrencia)` : '';
+  setStatus(`Listo. ${equipos.length} equipos detectados.${aviso}`);
 }
 
 function resetearEstadoPdf(){
@@ -567,21 +569,32 @@ async function extraerLineas(pdf){
 }
 
 function detectarMeta(lines){
+  // Si el PDF trae varios períodos juntos, usamos el PRIMERO encontrado
+  // (que coincide con la sección que se renderiza en la tabla, ya que
+  //  parsearEquipos también se queda con la primera ocurrencia de cada S/N).
   const meta = {periodo:'', totalRenta:0, totalExcedente:0};
   for(const l of lines){
     const txt = l.items.map(i=>i.text).join(' ');
-    const pm = txt.match(/PERIODO\s+(\d{4})\s+MES\s+DE\s+(\w+)/i);
-    if(pm){ meta.periodo = `${pm[2]} ${pm[1]}`.toUpperCase(); }
-    const rm = txt.match(/TOTAL RENTA MENSUAL:\s*\$?\s*([\d,.]+)/i);
-    if(rm){ meta.totalRenta = parseFloat(rm[1].replace(/,/g,'')); }
-    const em = txt.match(/TOTAL EXCEDENTE:\s*\$?\s*([\d,.]+)/i);
-    if(em){ meta.totalExcedente = parseFloat(em[1].replace(/,/g,'')); }
+    if(!meta.periodo){
+      const pm = txt.match(/PERIODO\s+(\d{4})\s+MES\s+DE\s+(\w+)/i);
+      if(pm) meta.periodo = `${pm[2]} ${pm[1]}`.toUpperCase();
+    }
+    if(!meta.totalRenta){
+      const rm = txt.match(/TOTAL RENTA MENSUAL:\s*\$?\s*([\d,.]+)/i);
+      if(rm) meta.totalRenta = parseFloat(rm[1].replace(/,/g,''));
+    }
+    if(!meta.totalExcedente){
+      const em = txt.match(/TOTAL EXCEDENTE:\s*\$?\s*([\d,.]+)/i);
+      if(em) meta.totalExcedente = parseFloat(em[1].replace(/,/g,''));
+    }
   }
   return meta;
 }
 
 function parsearEquipos(lines){
   const equipos = [];
+  const porSn = new Map();
+  let duplicados = 0;
   let actual = null;
   const FMTS = ['A4BN','A3BN','A4CL','A3CL'];
   const reEquip = /^([A-Z0-9]+)\s*[-–]\s*([A-Z0-9][A-Z0-9-]*)(?:\s*[-–]\s*(Bolsa\s*\d+))?/i;
@@ -617,13 +630,22 @@ function parsearEquipos(lines){
     if(fmt === 'A4BN'){
       const em = leftText.match(reEquip);
       if(em){
+        const sn = em[1];
+        if(porSn.has(sn)){
+          // S/N repetido en el PDF (cuadro acumulativo de varios meses).
+          // Mantenemos sólo la primera ocurrencia de cada equipo.
+          duplicados++;
+          actual = null;
+          continue;
+        }
         actual = {
-          sn: em[1],
+          sn,
           modeloPdf: em[2],
           bolsaPdf: em[3] ? em[3].replace(/\s+/,' ').trim() : 'SIN BOLSA',
           direccion: '',
           formatos: {}
         };
+        porSn.set(sn, actual);
         equipos.push(actual);
       }else{
         actual = null;
@@ -639,6 +661,11 @@ function parsearEquipos(lines){
     }
   }
 
+  if(duplicados > 0){
+    window._dupAvisoPdf = duplicados;
+  } else {
+    window._dupAvisoPdf = 0;
+  }
   return equipos;
 }
 
