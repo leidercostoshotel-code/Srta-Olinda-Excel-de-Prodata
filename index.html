@@ -41,13 +41,30 @@
   body{
     font-family:'Inter','Segoe UI',system-ui,-apple-system,Arial,sans-serif;
     margin:0;padding:0;
-    background:var(--bg);
     color:var(--texto);
     font-size:13px;
     line-height:1.45;
     -webkit-font-smoothing:antialiased;
     -moz-osx-font-smoothing:grayscale;
+    background-color:#eef3fa;
+    background-image:
+      radial-gradient(at 12% 8%,  rgba(47,84,150,.18) 0%, transparent 42%),
+      radial-gradient(at 88% 6%,  rgba(245,179,0,.10) 0%, transparent 40%),
+      radial-gradient(at 92% 92%, rgba(75,111,168,.16) 0%, transparent 45%),
+      radial-gradient(at 8% 96%,  rgba(31,56,100,.10) 0%, transparent 42%),
+      linear-gradient(180deg, #f3f7fc 0%, #e7eef8 100%);
+    background-attachment:fixed;
+    background-repeat:no-repeat;
+    position:relative;
   }
+  body::before{
+    content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image: radial-gradient(circle at 1px 1px, rgba(31,56,100,.045) 1px, transparent 0);
+    background-size: 22px 22px;
+    mask-image: radial-gradient(ellipse at center, #000 30%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 80%);
+  }
+  .app{position:relative;z-index:1}
   .app{max-width:1600px;margin:0 auto;padding:24px 28px 48px}
 
   /* Header */
