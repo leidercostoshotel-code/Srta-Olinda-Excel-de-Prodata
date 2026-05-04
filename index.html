@@ -485,12 +485,40 @@ document.getElementById('fileInput').addEventListener('change', async (ev) => {
 
 async function procesarPdf(buf, nombre){
   setStatus('Procesando PDF…');
+  // Reset completo del estado anterior antes de procesar el PDF nuevo
+  resetearEstadoPdf();
   const pdf = await pdfjsLib.getDocument({data:buf}).promise;
   const lines = await extraerLineas(pdf);
   const meta = detectarMeta(lines);
   const equipos = parsearEquipos(lines);
   renderizar(equipos, meta);
   setStatus(`Listo. ${equipos.length} equipos detectados.`);
+}
+
+function resetearEstadoPdf(){
+  // Tabla principal
+  const tbody = document.getElementById('tbody');
+  if(tbody) tbody.innerHTML = '<tr><td colspan="19" style="padding:20px;color:#888">— Procesando… —</td></tr>';
+  // Banner / panel de discrepancias
+  const banner = document.getElementById('bannerCompara');
+  if(banner) banner.innerHTML = '';
+  const detalle = document.getElementById('detalleDiscrepancias');
+  if(detalle) detalle.style.display = 'none';
+  const tablaDisc = document.getElementById('tablaDiscrepancias');
+  if(tablaDisc) tablaDisc.innerHTML = '';
+  // KPIs
+  const kpiVal = document.getElementById('kpiValidacion');
+  if(kpiVal){ kpiVal.textContent = '—'; kpiVal.style.color = ''; }
+  // Tabla SAP — limpiar y borrar el asiento previo
+  const tbodySAP = document.getElementById('tbodySAP');
+  if(tbodySAP) tbodySAP.innerHTML = '<tr><td colspan="15" style="padding:16px;color:#888">— Cargue un PDF y presione <b>Generar asiento SAP</b> —</td></tr>';
+  const statusSAP = document.getElementById('statusSAP');
+  if(statusSAP){ statusSAP.textContent = ''; statusSAP.style.color = ''; }
+  // Estado en memoria
+  window._ultimosEquipos = null;
+  window._ultimaMeta = null;
+  window._ultimasDiscrepancias = null;
+  window._ultimoSAP = null;
 }
 
 async function extraerLineas(pdf){
