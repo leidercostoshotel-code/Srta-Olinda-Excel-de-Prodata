@@ -470,17 +470,73 @@ const MAESTRO = {
   "9502370Y":{marca:"Sharp",modelo:"MX-M3070",ip:"10.72.8.207",observacion:"3er Piso - Contabilidad",cantidad:1,cuenta:941231308,centroCosto:403,alquilerFijo:51.68}
 };
 
-// Volumen Máximo POR EQUIPO (no el total de la bolsa).
-// Bolsa 1 son sólo B/N (Canon IR-*, MX-M3070): 3250 A4BN, 0 color.
-// Bolsas 2..5 (multifuncionales color): 188 A4BN + 563 A4CL por equipo.
+// Volumen Máximo TOTAL POR BOLSA (no por equipo).
+// Reprodata calcula el excedente sumando el consumo de TODOS los equipos
+// de una bolsa y comparándolo con este volumen total.
+// Bolsa 1 son sólo B/N (Canon IR-*, MX-M3070): 13000 A4BN, 0 color.
+// Bolsa 2..5 (multifuncionales color): A4BN + A4CL.
 const VOL_MAX_BOLSA = {
-  "Bolsa 1":{A4BN:3250,A3BN:0,A4CL:0,A3CL:0},
-  "Bolsa 2":{A4BN:188,A3BN:0,A4CL:563,A3CL:0},
-  "Bolsa 3":{A4BN:188,A3BN:0,A4CL:563,A3CL:0},
+  "Bolsa 1":{A4BN:13000,A3BN:0,A4CL:0,A3CL:0},
+  "Bolsa 2":{A4BN:1504,A3BN:0,A4CL:4504,A3CL:0},
+  "Bolsa 3":{A4BN:1128,A3BN:0,A4CL:3378,A3CL:0},
   "Bolsa 4":{A4BN:188,A3BN:0,A4CL:563,A3CL:0},
   "Bolsa 5":{A4BN:188,A3BN:0,A4CL:563,A3CL:0},
   "SIN BOLSA":{A4BN:0,A3BN:0,A4CL:0,A3CL:0}
 };
+
+// Calcula excedentes AGREGADOS por bolsa+formato (método del proveedor)
+// y reparte el cobro entre los equipos proporcional a su consumo.
+function calcularBolsasAgregadas(equipos){
+  const FMTS = ['A4BN','A3BN','A4CL','A3CL'];
+  const bolsas = {};
+  for(const eq of equipos){
+    const b = eq.bolsaPdf || 'SIN BOLSA';
+    if(!bolsas[b]){
+      bolsas[b] = {};
+      for(const f of FMTS) bolsas[b][f] = {consTotal:0, equipos:[], precio:0};
+    }
+    for(const f of FMTS){
+      const d = eq.formatos[f] || {};
+      const c = d.consumo || 0;
+      bolsas[b][f].consTotal += c;
+      bolsas[b][f].equipos.push({sn: eq.sn, consumo: c});
+      if((d.precio||0) > 0) bolsas[b][f].precio = d.precio;
+    }
+  }
+  // Excedente y cobro por bolsa+formato
+  for(const b of Object.keys(bolsas)){
+    for(const f of FMTS){
+      const data = bolsas[b][f];
+      const volMax = (VOL_MAX_BOLSA[b] && VOL_MAX_BOLSA[b][f] != null) ? VOL_MAX_BOLSA[b][f] : 0;
+      const exc = Math.max(0, data.consTotal - volMax);
+      data.volMax = volMax;
+      data.excedente = exc;
+      data.cobroTotal = Math.round(exc * data.precio * 10000) / 10000;
+      // Repartir cobro entre equipos proporcional al consumo
+      for(const e of data.equipos){
+        e.excAsignado = (data.consTotal > 0) ? (e.consumo / data.consTotal) * exc : 0;
+        e.cobroAsignado = (data.consTotal > 0) ? (e.consumo / data.consTotal) * data.cobroTotal : 0;
+      }
+    }
+  }
+  return bolsas;
+}
+
+// Devuelve el monto que el proveedor cobra al equipo (suma de cobros
+// asignados de los 4 formatos según el agregado por bolsa).
+function calcularCobroEquipo(eq, bolsasCalc){
+  const FMTS = ['A4BN','A3BN','A4CL','A3CL'];
+  const b = eq.bolsaPdf || 'SIN BOLSA';
+  let total = 0;
+  if(!bolsasCalc[b]) return 0;
+  for(const f of FMTS){
+    const data = bolsasCalc[b][f];
+    if(!data) continue;
+    const eqData = data.equipos.find(x => x.sn === eq.sn);
+    if(eqData) total += eqData.cobroAsignado || 0;
+  }
+  return Math.round(total * 10000) / 10000;
+}
 
 const statusEl = document.getElementById('status');
 function setStatus(msg, error=false){
@@ -730,6 +786,8 @@ function renderizar(equipos, meta){
 
   let totalExcedenteCalc = 0;
   let totalRentaCalc = 0;
+  // Pre-calcular agregado por bolsa (método correcto del proveedor)
+  const bolsasCalc = calcularBolsasAgregadas(equipos);
   // Acumuladores para la fila TOTAL al pie de la tabla
   const sums = {
     cantidad:0, consumo:0, volMax:0,
@@ -737,6 +795,7 @@ function renderizar(equipos, meta){
     importeBruto:0, importeNegativo:0,
     alquiler:0
   };
+  window._bolsasCalc = bolsasCalc;
 
   for(const eq of equipos){
     const m = MAESTRO[eq.sn] || {};
@@ -757,20 +816,27 @@ function renderizar(equipos, meta){
     for(let i=0;i<FORMATOS.length;i++){
       const fmt = FORMATOS[i];
       const d = eq.formatos[fmt] || {ci:0,cf:0,consumo:0,volEst:0,cantExc:0,precio:0,total:0};
-      const volMax = (VOL_MAX_BOLSA[bolsa] && VOL_MAX_BOLSA[bolsa][fmt] != null) ? VOL_MAX_BOLSA[bolsa][fmt] : null;
+      const volMaxTotal = (VOL_MAX_BOLSA[bolsa] && VOL_MAX_BOLSA[bolsa][fmt] != null) ? VOL_MAX_BOLSA[bolsa][fmt] : null;
       const consumo = d.consumo;
-      const excedenteReal = (volMax !== null)
-        ? (consumo === 0 ? 0 : consumo - volMax)
-        : d.cantExc;
-      const totalCalc = volMax !== null ? excedenteReal * d.precio : d.total;
+      // Cálculo correcto: el excedente y cobro se asignan proporcional
+      // al consumo del equipo dentro del agregado de su bolsa.
+      const bolsaInfo = bolsasCalc[bolsa] && bolsasCalc[bolsa][fmt];
+      const eqInfo = bolsaInfo && bolsaInfo.equipos.find(x => x.sn === eq.sn);
+      const excedenteReal = eqInfo ? Math.round(eqInfo.excAsignado * 100) / 100 : 0;
+      const totalCalc = eqInfo ? Math.round(eqInfo.cobroAsignado * 10000) / 10000 : 0;
+      // Mostramos el volumen máximo TOTAL de la bolsa (mismo en todas las
+      // filas de la bolsa) — es la cifra que usa el proveedor.
+      const volMax = volMaxTotal;
       if(totalCalc > 0) totalExcedenteCalc += totalCalc;
 
       sums.consumo += consumo || 0;
-      sums.volMax += (volMax !== null) ? volMax : 0;
+      // Para no contar el volMax de la bolsa N veces, sólo lo sumamos en
+      // el primer equipo de la bolsa por formato.
+      if(bolsaInfo && bolsaInfo.equipos[0] && bolsaInfo.equipos[0].sn === eq.sn){
+        sums.volMax += (volMaxTotal !== null) ? volMaxTotal : 0;
+      }
       if(excedenteReal > 0) sums.excPositivo += excedenteReal;
-      else if(excedenteReal < 0) sums.excNegativo += excedenteReal;
       if(totalCalc > 0) sums.importeBruto += totalCalc;
-      else if(totalCalc < 0) sums.importeNegativo += totalCalc;
 
       const tr = document.createElement('tr');
       if(i===0) tr.classList.add('sep');
@@ -1086,19 +1152,14 @@ const SAP_HEADERS = [
   'Socio Negocios','Fecha Registro Ventas'
 ];
 
-function montoConsumoEquipo(eq){
-  const FMTS = ['A4BN','A3BN','A4CL','A3CL'];
-  const bolsa = eq.bolsaPdf;
-  let total = 0;
-  for(const fmt of FMTS){
-    const d = eq.formatos[fmt] || {};
-    const volMax = (VOL_MAX_BOLSA[bolsa] && VOL_MAX_BOLSA[bolsa][fmt] != null) ? VOL_MAX_BOLSA[bolsa][fmt] : null;
-    const cons = d.consumo || 0;
-    const exc = (volMax != null) ? (cons === 0 ? 0 : cons - volMax) : (d.cantExc||0);
-    const t = (volMax != null) ? exc * (d.precio||0) : (d.total||0);
-    total += t;
-  }
-  return Math.round(total * 10000) / 10000;
+function montoConsumoEquipo(eq, bolsasCalc){
+  // Si no se pasa bolsasCalc, lo recalculamos sólo para este equipo no
+  // tendría sentido (el cobro depende del agregado de toda la bolsa).
+  // Por eso requerimos el bolsasCalc completo, calculado para todos los
+  // equipos del PDF.
+  if(!bolsasCalc) bolsasCalc = window._bolsasCalc;
+  if(!bolsasCalc) return 0;
+  return calcularCobroEquipo(eq, bolsasCalc);
 }
 
 function generarAsientoSAP(equipos, meta, numFactura){
@@ -1113,7 +1174,8 @@ function generarAsientoSAP(equipos, meta, numFactura){
 
   const totalRenta = meta.totalRenta || (equipos.length * 51.6819047619048);
   const alquiler = totalRenta / equipos.length;
-  const totalExc = equipos.reduce((s,e) => s + montoConsumoEquipo(e), 0);
+  const bolsasCalc = calcularBolsasAgregadas(equipos);
+  const totalExc = equipos.reduce((s,e) => s + montoConsumoEquipo(e, bolsasCalc), 0);
   const montoTotal = Math.round((totalRenta + totalExc) * 100) / 100;
 
   const ordenados = [...equipos].sort((a,b) => {
@@ -1148,7 +1210,7 @@ function generarAsientoSAP(equipos, meta, numFactura){
     filas.push(rowAlquiler);
     idx++;
 
-    const consumo = montoConsumoEquipo(eq);
+    const consumo = montoConsumoEquipo(eq, bolsasCalc);
     const rowConsumo = {
       Datos: '',
       Monto: '',
