@@ -373,6 +373,8 @@
         <th>Bolsa</th>
         <th>Formatos</th>
         <th>Contador<br>Inicial</th>
+        <th id="thCfAnt" style="display:none;background:linear-gradient(180deg,#3a5c97,#27406a)">CF<br><span id="thCfAntMes">mes ant.</span></th>
+        <th id="thDelta" style="display:none;background:linear-gradient(180deg,#3a5c97,#27406a)">Δ<br>vs CI</th>
         <th>Contador<br>Final</th>
         <th>Consumo<br>del Mes</th>
         <th>Volumen Máximo<br>Establecido</th>
@@ -385,7 +387,7 @@
       </tr>
     </thead>
     <tbody id="tbody">
-      <tr><td colspan="19" style="padding:20px;color:#888">— Sin datos. Importe un PDF para ver la tabla —</td></tr>
+      <tr><td colspan="21" style="padding:20px;color:#888">— Sin datos. Importe un PDF para ver la tabla —</td></tr>
     </tbody>
   </table>
 </div>
@@ -522,7 +524,7 @@ function resetearEstadoPdf(opts){
   const procesando = !!(opts && opts.procesando);
   // Tabla principal
   const tbody = document.getElementById('tbody');
-  if(tbody) tbody.innerHTML = `<tr><td colspan="19" style="padding:20px;color:#888">— ${procesando ? 'Procesando…' : 'Sin datos. Importe un PDF para ver la tabla'} —</td></tr>`;
+  if(tbody) tbody.innerHTML = `<tr><td colspan="21" style="padding:20px;color:#888">— ${procesando ? 'Procesando…' : 'Sin datos. Importe un PDF para ver la tabla'} —</td></tr>`;
   // Resumen / KPIs: ocultar el bloque entero hasta tener datos del PDF nuevo
   const resumen = document.getElementById('resumen');
   if(resumen) resumen.style.display = 'none';
@@ -701,6 +703,21 @@ function renderizar(equipos, meta){
   const discrepancias = [];
   let totalCI = 0, okCI = 0;
 
+  // Mostrar/ocultar columnas extra "CF mes anterior" + "Δ"
+  const thCfAnt = document.getElementById('thCfAnt');
+  const thDelta = document.getElementById('thDelta');
+  const thCfAntMes = document.getElementById('thCfAntMes');
+  if(thCfAnt && thDelta){
+    if(mesAnterior){
+      thCfAnt.style.display = '';
+      thDelta.style.display = '';
+      if(thCfAntMes) thCfAntMes.textContent = mesAnterior.meta.periodo || 'mes ant.';
+    } else {
+      thCfAnt.style.display = 'none';
+      thDelta.style.display = 'none';
+    }
+  }
+
   let totalExcedenteCalc = 0;
   let totalRentaCalc = 0;
 
@@ -748,27 +765,39 @@ function renderizar(equipos, meta){
 
       let ciClass = 'num';
       let ciBadge = '';
+      let cfAntCellHtml = '';
+      let deltaCellHtml = '';
       if(mesAnterior){
         const equipoAnt = (mesAnterior.equipos || []).find(x => x.sn === eq.sn);
         const cfAnt = equipoAnt && equipoAnt.formatos && equipoAnt.formatos[fmt] ? equipoAnt.formatos[fmt].cf : null;
         if(cfAnt !== null && cfAnt !== undefined){
           totalCI++;
+          const dif = d.ci - cfAnt;
           if(cfAnt === d.ci){
             ciClass += ' ci-ok';
             ciBadge = `<span class="ci-badge ok" title="Coincide con CF de ${mesAnterior.meta.periodo}">✓</span>`;
             okCI++;
+            cfAntCellHtml = `<td class="num ci-ok">${fmtInt(cfAnt)}</td>`;
+            deltaCellHtml = `<td class="num ci-ok"><b>0</b></td>`;
           } else {
             ciClass += ' ci-err';
-            const dif = d.ci - cfAnt;
             ciBadge = `<span class="ci-badge err" title="Esperado ${fmtInt(cfAnt)} (CF de ${mesAnterior.meta.periodo}), diferencia ${dif>0?'+':''}${fmtInt(dif)}">✗</span>`;
             discrepancias.push({
               sn: eq.sn, modelo: MAESTRO[eq.sn]?.modelo || eq.modeloPdf, obs: MAESTRO[eq.sn]?.observacion || '',
               formato: fmt, ciPdf: d.ci, cfAnterior: cfAnt, diferencia: dif
             });
+            cfAntCellHtml = `<td class="num ci-err">${fmtInt(cfAnt)}</td>`;
+            const signo = dif > 0 ? '+' : '';
+            deltaCellHtml = `<td class="num ci-err" title="${dif>0?'El proveedor le cobra MÁS de lo esperado':'El proveedor le cobra MENOS / hubo retroceso'}"><b>${signo}${fmtInt(dif)}</b></td>`;
           }
+        } else {
+          cfAntCellHtml = `<td class="num" style="color:#94a3b8">—</td>`;
+          deltaCellHtml = `<td class="num" style="color:#94a3b8">—</td>`;
         }
       }
       html += `<td class="${ciClass}">${fmtInt(d.ci)}${ciBadge}</td>`;
+      html += cfAntCellHtml;
+      html += deltaCellHtml;
       html += `<td class="num">${fmtInt(d.cf)}</td>`;
       html += `<td class="num">${fmtInt(consumo)}</td>`;
       html += `<td class="num">${volMax!==null?fmtInt(volMax):''}</td>`;
@@ -816,11 +845,18 @@ function renderizar(equipos, meta){
   } else {
     kpiVal.textContent = `${okCI}/${totalCI} OK — ${discrepancias.length} ✗`;
     kpiVal.style.color = '#b00000';
-    banner.innerHTML = `<div class="banner err">⚠ <b>${discrepancias.length} discrepancia(s)</b> entre el Contador Inicial del PDF actual y el Contador Final del ${mesAnterior.meta.periodo}. Revisar antes de pagar la factura.</div>`;
+    banner.innerHTML = `<div class="banner err">⚠ <b>${discrepancias.length} discrepancia(s)</b> entre el Contador Inicial del PDF actual (${meta.periodo}) y el Contador Final de ${mesAnterior.meta.periodo}. Revisar antes de pagar la factura — la columna <b>Δ vs CI</b> en la tabla muestra la diferencia.</div>`;
     sumDisc.textContent = `Ver ${discrepancias.length} discrepancia(s) detectada(s)`;
-    let h = '<table><thead><tr><th>S/N</th><th>Modelo</th><th>Observación</th><th>Formato</th><th>CI del PDF</th><th>CF '+mesAnterior.meta.periodo+'</th><th>Diferencia</th></tr></thead><tbody>';
+    let h = `<table>
+      <thead><tr>
+        <th>S/N</th><th>Modelo</th><th>Observación</th><th>Formato</th>
+        <th>CF ${mesAnterior.meta.periodo}<br>(esperado)</th>
+        <th>CI ${meta.periodo}<br>(facturado)</th>
+        <th>Δ</th>
+      </tr></thead><tbody>`;
     for(const d of discrepancias){
-      h += `<tr><td>${d.sn}</td><td>${d.modelo||''}</td><td style="text-align:left">${d.obs||''}</td><td>${d.formato}</td><td class="num">${fmtInt(d.ciPdf)}</td><td class="num">${fmtInt(d.cfAnterior)}</td><td class="num neg"><b>${d.diferencia>0?'+':''}${fmtInt(d.diferencia)}</b></td></tr>`;
+      const signo = d.diferencia>0 ? '+' : '';
+      h += `<tr><td><b>${d.sn}</b></td><td>${d.modelo||''}</td><td style="text-align:left">${d.obs||''}</td><td>${d.formato}</td><td class="num">${fmtInt(d.cfAnterior)}</td><td class="num">${fmtInt(d.ciPdf)}</td><td class="num neg"><b>${signo}${fmtInt(d.diferencia)}</b></td></tr>`;
     }
     h += '</tbody></table>';
     tablaDisc.innerHTML = h;
