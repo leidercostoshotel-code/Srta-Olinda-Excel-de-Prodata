@@ -483,12 +483,11 @@ const MAESTRO = {
   "9502370Y":{marca:"Sharp",modelo:"MX-M3070",ip:"10.72.8.207",observacion:"3er Piso - Contabilidad",cantidad:1,cuenta:941231308,centroCosto:403,alquilerFijo:51.68}
 };
 
-// Volumen Máximo TOTAL POR BOLSA (no por equipo).
+// Volumen Máximo TOTAL POR BOLSA (no por equipo) — fallback si el
+// PDF no trae los bloques de bolsa. Para el contrato 276580.
 // Reprodata calcula el excedente sumando el consumo de TODOS los equipos
 // de una bolsa y comparándolo con este volumen total.
-// Bolsa 1 son sólo B/N (Canon IR-*, MX-M3070): 13000 A4BN, 0 color.
-// Bolsa 2..5 (multifuncionales color): A4BN + A4CL.
-const VOL_MAX_BOLSA = {
+const VOL_MAX_BOLSA_FALLBACK = {
   "Bolsa 1":{A4BN:13000,A3BN:0,A4CL:0,A3CL:0},
   "Bolsa 2":{A4BN:1504,A3BN:0,A4CL:4504,A3CL:0},
   "Bolsa 3":{A4BN:1128,A3BN:0,A4CL:3378,A3CL:0},
@@ -496,6 +495,49 @@ const VOL_MAX_BOLSA = {
   "Bolsa 5":{A4BN:188,A3BN:0,A4CL:563,A3CL:0},
   "SIN BOLSA":{A4BN:0,A3BN:0,A4CL:0,A3CL:0}
 };
+
+// VOL_MAX_BOLSA dinámico: leído del PDF al importar. Cae al fallback
+// si el PDF no tiene los bloques esperados.
+let VOL_MAX_BOLSA = JSON.parse(JSON.stringify(VOL_MAX_BOLSA_FALLBACK));
+let PRECIOS_BOLSA = null; // se llena al importar el PDF
+
+// Lee los bloques "BOLSA N° #X" del PDF y devuelve {[bolsa]: {[fmt]: {volMax, precio}}}.
+// Estos bloques aparecen al final del cuadro con el resumen agregado por bolsa.
+function extraerVolumenesPDF(lines){
+  const result = {};
+  const FMTS = ['A4BN','A3BN','A4CL','A3CL'];
+  const isNum = t => /^-?\d+(\.\d+)?$/.test(String(t).replace(/,/g,''));
+  for(let i=0;i<lines.length;i++){
+    const txt = lines[i].items.map(it=>it.text).join(' ').replace(/\s+/g,' ').trim();
+    // Estricto: requiere "N°" + "#" para distinguir del header de sección
+    const bm = txt.match(/BOLSA\s+N°\s*#\s*(\d+)/i);
+    if(!bm) continue;
+    const bolsa = `Bolsa ${bm[1]}`;
+    if(!result[bolsa]) result[bolsa] = {};
+    // Buscar las 4 líneas siguientes con formato A4BN/A3BN/A4CL/A3CL
+    let vistos = 0;
+    for(let j=i+1; j<Math.min(lines.length, i+18) && vistos<4; j++){
+      const tokens = [];
+      for(const it of lines[j].items) for(const t of String(it.text).split(/\s+/)) if(t) tokens.push(t);
+      const fmtIdx = tokens.findIndex(t => FMTS.includes(t));
+      if(fmtIdx < 0) continue;
+      const fmt = tokens[fmtIdx];
+      const nums = [];
+      for(let k=fmtIdx+1; k<tokens.length && nums.length<5; k++){
+        if(isNum(tokens[k])) nums.push(parseFloat(tokens[k].replace(/,/g,'')));
+        else break;
+      }
+      // Bloque BOLSA tiene 5 números: cons, volMax, exc, precio, cobro
+      if(nums.length >= 5){
+        if(!result[bolsa][fmt]){
+          result[bolsa][fmt] = { volMax: nums[1], precio: nums[3] };
+        }
+        vistos++;
+      }
+    }
+  }
+  return result;
+}
 
 // Calcula excedentes AGREGADOS por bolsa+formato (método del proveedor)
 // y reparte el cobro entre los equipos proporcional a su consumo.
@@ -521,10 +563,14 @@ function calcularBolsasAgregadas(equipos){
     for(const f of FMTS){
       const data = bolsas[b][f];
       const volMax = (VOL_MAX_BOLSA[b] && VOL_MAX_BOLSA[b][f] != null) ? VOL_MAX_BOLSA[b][f] : 0;
+      // Precio: prefiere el del bloque BOLSA del PDF (más confiable que
+      // el de cada equipo individual). Fallback al de los equipos.
+      const precioPdf = (PRECIOS_BOLSA && PRECIOS_BOLSA[b] && PRECIOS_BOLSA[b][f]) || data.precio;
+      data.precio = precioPdf;
       const exc = Math.max(0, data.consTotal - volMax);
       data.volMax = volMax;
       data.excedente = exc;
-      data.cobroTotal = Math.round(exc * data.precio * 10000) / 10000;
+      data.cobroTotal = Math.round(exc * precioPdf * 10000) / 10000;
       // Repartir cobro entre equipos proporcional al consumo
       for(const e of data.equipos){
         e.excAsignado = (data.consTotal > 0) ? (e.consumo / data.consTotal) * exc : 0;
@@ -592,6 +638,23 @@ async function procesarPdf(buf, nombre){
   const pdf = await pdfjsLib.getDocument({data:buf}).promise;
   const lines = await extraerLineas(pdf);
   const meta = detectarMeta(lines);
+  // Lectura dinámica de volúmenes y precios DESDE EL PDF
+  const volsPdf = extraerVolumenesPDF(lines);
+  if(Object.keys(volsPdf).length){
+    VOL_MAX_BOLSA = JSON.parse(JSON.stringify(VOL_MAX_BOLSA_FALLBACK));
+    PRECIOS_BOLSA = {};
+    for(const bolsa of Object.keys(volsPdf)){
+      VOL_MAX_BOLSA[bolsa] = VOL_MAX_BOLSA[bolsa] || {A4BN:0,A3BN:0,A4CL:0,A3CL:0};
+      PRECIOS_BOLSA[bolsa] = {};
+      for(const fmt of Object.keys(volsPdf[bolsa])){
+        VOL_MAX_BOLSA[bolsa][fmt] = volsPdf[bolsa][fmt].volMax;
+        PRECIOS_BOLSA[bolsa][fmt] = volsPdf[bolsa][fmt].precio;
+      }
+    }
+  } else {
+    VOL_MAX_BOLSA = JSON.parse(JSON.stringify(VOL_MAX_BOLSA_FALLBACK));
+    PRECIOS_BOLSA = null;
+  }
   const equipos = parsearEquipos(lines);
   renderizar(equipos, meta);
   const dups = window._dupAvisoPdf || 0;
@@ -662,10 +725,15 @@ async function extraerLineas(pdf){
 }
 
 function detectarMeta(lines){
-  // Si el PDF trae varios períodos juntos, usamos el PRIMERO encontrado
-  // (que coincide con la sección que se renderiza en la tabla, ya que
-  //  parsearEquipos también se queda con la primera ocurrencia de cada S/N).
-  const meta = {periodo:'', totalRenta:0, totalExcedente:0};
+  // Toma:
+  //  - periodo: PRIMER "PERIODO YYYY MES DE X" (si el PDF acumula meses,
+  //             nos quedamos con el más reciente, que aparece arriba).
+  //  - totalRenta y totalExcedente: del bloque resumen FINAL del PDF
+  //    ("TOTAL RENTA MENSUAL  $ 1092.96" sin colon), si existe; sino
+  //    del primer match con colon (compatibilidad con PDFs viejos).
+  //  - totalFacturacion: del bloque final.
+  const meta = {periodo:'', totalRenta:0, totalExcedente:0, totalFacturacion:0};
+  // Primera pasada: período (primero) + totales con colon (primero)
   for(const l of lines){
     const txt = l.items.map(i=>i.text).join(' ');
     if(!meta.periodo){
@@ -680,6 +748,32 @@ function detectarMeta(lines){
       const em = txt.match(/TOTAL EXCEDENTE:\s*\$?\s*([\d,.]+)/i);
       if(em) meta.totalExcedente = parseFloat(em[1].replace(/,/g,''));
     }
+  }
+  // Segunda pasada: bloque FINAL del PDF (sin colon, son los totales reales).
+  // Sólo asignar si los valores aún no se detectaron arriba (PDF acumulativo
+  // tiene varios bloques; nos quedamos con el primero -> el mes más reciente).
+  let rentaFinal = 0, excedenteFinal = 0;
+  for(const l of lines){
+    const txt = l.items.map(i=>i.text).join(' ').replace(/\s+/g,' ');
+    let m;
+    if(rentaFinal === 0 && (m = txt.match(/TOTAL RENTA MENSUAL\s+\$?\s*([\d,.]+)\s*$/i))){
+      rentaFinal = parseFloat(m[1].replace(/,/g,''));
+    }
+    if(excedenteFinal === 0 && (m = txt.match(/TOTAL EXCEDENTES\s+\$?\s*([\d,.]+)\s*$/i))){
+      excedenteFinal = parseFloat(m[1].replace(/,/g,''));
+    }
+    if(meta.totalFacturacion === 0 && (m = txt.match(/TOTAL FACTURACI[ÓO]N\s+\$?\s*([\d,.]+)\s*$/i))){
+      meta.totalFacturacion = parseFloat(m[1].replace(/,/g,''));
+    }
+  }
+  // El bloque final, cuando existe, tiene los totales OFICIALES (incluye
+  // bolsas adicionales como "SIN BOLSA" sumadas). Solo si difiere y no hay
+  // riesgo de venir de otro mes acumulativo, lo preferimos.
+  if(rentaFinal > 0 && (meta.totalRenta === 0 || rentaFinal >= meta.totalRenta)){
+    meta.totalRenta = rentaFinal;
+  }
+  if(excedenteFinal > 0 && meta.totalExcedente === 0){
+    meta.totalExcedente = excedenteFinal;
   }
   return meta;
 }
