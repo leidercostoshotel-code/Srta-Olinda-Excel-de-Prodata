@@ -373,6 +373,12 @@
 
 <div id="bannerCompara"></div>
 
+<div class="panel" id="panelSelectorMes" style="display:none">
+  <h3>El PDF contiene varios meses</h3>
+  <div style="font-size:12px;color:var(--texto-suave);margin-bottom:8px">Seleccione qué mes procesar (cada mes se calcula con sus propios datos):</div>
+  <div id="botonesMes" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+</div>
+
 <div class="panel" id="panelHistorico">
   <h3>Histórico local (navegador)</h3>
   <div id="listaMeses" style="min-height:24px">— sin meses guardados —</div>
@@ -631,12 +637,72 @@ document.getElementById('fileInput').addEventListener('change', async (ev) => {
   }
 });
 
+function detectarMesesPDF(lines){
+  // Devuelve [{periodo:'MARZO 2026', startIdx:0}, ...] con todas las
+  // ocurrencias de "PERIODO YYYY MES DE X" en el PDF, ordenadas por
+  // posición. Sirve para PDFs acumulativos.
+  const meses = [];
+  for(let i=0;i<lines.length;i++){
+    const txt = lines[i].items.map(it=>it.text).join(' ');
+    const pm = txt.match(/PERIODO\s+(\d{4})\s+MES\s+DE\s+(\w+)/i);
+    if(pm){
+      meses.push({periodo: `${pm[2]} ${pm[1]}`.toUpperCase(), startIdx: i});
+    }
+  }
+  // Asignar endIdx: hasta el inicio del siguiente mes o el final del PDF
+  for(let i=0;i<meses.length;i++){
+    meses[i].endIdx = (i+1 < meses.length) ? meses[i+1].startIdx : lines.length;
+  }
+  return meses;
+}
+
 async function procesarPdf(buf, nombre){
   // Reset completo del estado anterior antes de procesar el PDF nuevo
   resetearEstadoPdf({procesando:true});
   setStatus('Procesando PDF…');
   const pdf = await pdfjsLib.getDocument({data:buf}).promise;
   const lines = await extraerLineas(pdf);
+  // Guardar para poder re-procesar si el usuario cambia de mes
+  window._lineasPdf = lines;
+  // Detectar todos los meses (PDF acumulativo)
+  const mesesEnPdf = detectarMesesPDF(lines);
+  const panelSel = document.getElementById('panelSelectorMes');
+  const botMes = document.getElementById('botonesMes');
+  if(mesesEnPdf.length > 1){
+    panelSel.style.display = '';
+    botMes.innerHTML = '';
+    mesesEnPdf.forEach((m, idx) => {
+      const btn = document.createElement('button');
+      btn.textContent = m.periodo;
+      btn.dataset.idx = idx;
+      btn.className = idx === 0 ? '' : 'secundario';
+      btn.addEventListener('click', () => seleccionarMes(idx));
+      botMes.appendChild(btn);
+    });
+    window._mesesPdf = mesesEnPdf;
+    return procesarRango(lines.slice(mesesEnPdf[0].startIdx, mesesEnPdf[0].endIdx));
+  } else {
+    panelSel.style.display = 'none';
+    return procesarRango(lines);
+  }
+}
+
+function seleccionarMes(idx){
+  const lines = window._lineasPdf;
+  const meses = window._mesesPdf;
+  if(!lines || !meses || !meses[idx]) return;
+  // Resetear visual pero mantener el PDF en memoria
+  resetearEstadoPdf({procesando:true});
+  // Actualizar estilos de botones
+  const botMes = document.getElementById('botonesMes');
+  Array.from(botMes.querySelectorAll('button')).forEach((b,i) => {
+    b.className = (i === idx) ? '' : 'secundario';
+  });
+  document.getElementById('panelSelectorMes').style.display = '';
+  procesarRango(lines.slice(meses[idx].startIdx, meses[idx].endIdx));
+}
+
+async function procesarRango(lines){
   const meta = detectarMeta(lines);
   // Lectura dinámica de volúmenes y precios DESDE EL PDF
   const volsPdf = extraerVolumenesPDF(lines);
@@ -686,6 +752,9 @@ function resetearEstadoPdf(opts){
   if(tbodySAP) tbodySAP.innerHTML = '<tr><td colspan="15" style="padding:16px;color:#888">— Cargue un PDF y presione <b>Generar asiento SAP</b> —</td></tr>';
   const statusSAP = document.getElementById('statusSAP');
   if(statusSAP){ statusSAP.textContent = ''; statusSAP.style.color = ''; }
+  // Selector de mes (PDF acumulativo)
+  const panelSel = document.getElementById('panelSelectorMes');
+  if(panelSel) panelSel.style.display = 'none';
   // Estado en memoria
   window._ultimosEquipos = null;
   window._ultimaMeta = null;
@@ -1035,7 +1104,15 @@ function renderizar(equipos, meta){
     const trTotal = document.createElement('tr');
     trTotal.classList.add('fila-total');
     const colsExtras = mesAnterior ? '<td></td><td></td>' : '';
-    const totalFacturado = sums.alquiler + sums.importeBruto;
+    // Renta: usar el valor OFICIAL del PDF (más exacto que 21 × 51.68
+    // que pierde 4 centavos por redondeo). Si no hay PDF, fallback a la suma.
+    const rentaOficial = meta.totalRenta || sums.alquiler;
+    const excedenteOficial = (meta.totalExcedente !== undefined && meta.totalExcedente > 0)
+      ? meta.totalExcedente
+      : sums.importeBruto;
+    const totalFacturado = (meta.totalFacturacion && meta.totalFacturacion > 0)
+      ? meta.totalFacturacion
+      : (rentaOficial + excedenteOficial);
     const tipCred = sums.importeNegativo < 0
       ? ` title="El proveedor sólo cobra excedentes positivos. Hay ${fmtNum(Math.abs(sums.importeNegativo))} en créditos por consumo bajo que NO se descuentan de esta factura."`
       : '';
@@ -1052,8 +1129,8 @@ function renderizar(equipos, meta){
       <td class="num">${fmtInt(sums.volMax)}</td>
       <td class="num"${tipCred}>${fmtInt(sums.excPositivo)}${sums.excNegativo<0?` <span style="color:#94a3b8;font-weight:500">(${fmtInt(sums.excNegativo)})</span>`:''}</td>
       <td></td>
-      <td class="num"${tipCred}>S/ ${fmtNum(sums.importeBruto)}</td>
-      <td class="num">S/ ${fmtNum(sums.alquiler)}</td>
+      <td class="num"${tipCred}>S/ ${fmtNum(excedenteOficial)}</td>
+      <td class="num">S/ ${fmtNum(rentaOficial)}</td>
       <td colspan="2" style="text-align:right">Total facturado: <b>S/ ${fmtNum(totalFacturado)}</b></td>
     `;
     tbody.appendChild(trTotal);
