@@ -862,15 +862,8 @@ function parsearEquipos(lines){
   let actual = null;
   const FMTS = ['A4BN','A3BN','A4CL','A3CL'];
   const reEquip = /^([A-Z0-9]+)\s*[-–]\s*([A-Z0-9][A-Z0-9-]*)(?:\s*[-–]\s*(Bolsa\s*\d+))?/i;
-  const normalizarNumTxt = (t) => {
-    let txt = String(t || '').trim()
-      .replace(/[−–—]/g, '-') // menos unicode/en dash/em dash
-      .replace(/\s+/g, '');
-    if(/^\(.*\)$/.test(txt)) txt = '-' + txt.slice(1, -1); // (123.45) => -123.45
-    return txt;
-  };
-  const esNum = (t) => /^-?[\d]{1,3}(,\d{3})*(\.\d+)?$|^-?\d+(\.\d+)?$/.test(normalizarNumTxt(t));
-  const aNum = (t) => parseFloat(normalizarNumTxt(t).replace(/,/g,'')) || 0;
+  const esNum = (t) => /^-?[\d]{1,3}(,\d{3})*(\.\d+)?$|^-?\d+(\.\d+)?$/.test(t);
+  const aNum = (t) => parseFloat(String(t).replace(/,/g,'')) || 0;
 
   for(const line of lines){
     const tokens = [];
@@ -1333,24 +1326,10 @@ const SAP_HEADERS = [
 ];
 
 function montoConsumoEquipo(eq, bolsasCalc){
-  // Si la tabla del PDF trae columna TOTAL por formato, usamos ese neto
-  // del equipo (puede ser positivo o negativo). Esto permite que montos
-  // negativos vayan a Crédito (ME) en positivo al generar SAP.
-  const FMTS = ['A4BN','A3BN','A4CL','A3CL'];
-  let totalNetoEquipo = 0;
-  let tieneTotal = false;
-  for(const f of FMTS){
-    const d = (eq && eq.formatos && eq.formatos[f]) ? eq.formatos[f] : null;
-    if(!d) continue;
-    const t = Number(d.total);
-    if(Number.isFinite(t)){
-      totalNetoEquipo += t;
-      tieneTotal = true;
-    }
-  }
-  if(tieneTotal) return Math.round(totalNetoEquipo * 10000) / 10000;
-
-  // Fallback: cálculo agregado por bolsa cuando no exista TOTAL en el PDF.
+  // Si no se pasa bolsasCalc, lo recalculamos sólo para este equipo no
+  // tendría sentido (el cobro depende del agregado de toda la bolsa).
+  // Por eso requerimos el bolsasCalc completo, calculado para todos los
+  // equipos del PDF.
   if(!bolsasCalc) bolsasCalc = window._bolsasCalc;
   if(!bolsasCalc) return 0;
   return calcularCobroEquipo(eq, bolsasCalc);
