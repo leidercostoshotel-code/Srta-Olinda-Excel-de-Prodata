@@ -343,6 +343,26 @@
     .appbar{flex-direction:column;align-items:flex-start}
     .appbar h1{font-size:16px}
   }
+
+  .creditos{
+    margin:32px auto 12px;text-align:center;font-size:11px;color:var(--texto-suave);
+    padding:14px 16px;
+    border-top:1px solid var(--borde);
+  }
+  .creditos .nombre{
+    font-size:13px;font-weight:600;color:var(--azul);letter-spacing:.01em;
+    display:inline-flex;align-items:center;gap:8px;
+  }
+  .creditos .nombre::before, .creditos .nombre::after{
+    content:'';display:inline-block;width:24px;height:1px;background:var(--borde);
+  }
+  .creditos .rol{
+    font-size:10.5px;text-transform:uppercase;letter-spacing:.14em;
+    color:var(--texto-mas-suave);font-weight:500;margin-top:2px;
+  }
+  .creditos .marca{
+    font-size:10px;color:var(--texto-mas-suave);margin-top:6px;font-weight:400;
+  }
 </style>
 </head>
 <body>
@@ -1921,6 +1941,12 @@ function aplicarEstiloHojaMes(aoaBase, meta){
   return ws;
 }
 </script>
+
+<footer class="creditos">
+  <div>Creado por</div>
+  <div class="nombre">Olinda Orellana</div>
+  <div class="rol">Accountant</div>
+</footer>
 
 </div><!-- /.app -->
 </body>
