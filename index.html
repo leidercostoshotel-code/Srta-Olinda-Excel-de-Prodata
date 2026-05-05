@@ -1385,11 +1385,12 @@ function generarAsientoSAP(equipos, meta, numFactura){
     idx++;
 
     const consumo = montoConsumoEquipo(eq, bolsasCalc);
+    const montoUsdConsumo = consumo > 0 ? -round4(Math.abs(consumo)) : round4(consumo);
     const rowConsumo = {
       Datos: '',
       Monto: '',
       Modelo: modelo, 'S/N': eq.sn, IP: ip, CECO: ceco,
-      'Monto USD': round4(consumo),
+      'Monto USD': montoUsdConsumo,
       Cuenta: cuenta,
       'Débito (ME)': consumo >= 0 ? round4(consumo) : 0,
       'Crédito (ME)': consumo < 0 ? round4(Math.abs(consumo)) : 0,
