@@ -862,8 +862,15 @@ function parsearEquipos(lines){
   let actual = null;
   const FMTS = ['A4BN','A3BN','A4CL','A3CL'];
   const reEquip = /^([A-Z0-9]+)\s*[-–]\s*([A-Z0-9][A-Z0-9-]*)(?:\s*[-–]\s*(Bolsa\s*\d+))?/i;
-  const esNum = (t) => /^-?[\d]{1,3}(,\d{3})*(\.\d+)?$|^-?\d+(\.\d+)?$/.test(t);
-  const aNum = (t) => parseFloat(String(t).replace(/,/g,'')) || 0;
+  const normalizarNumTxt = (t) => {
+    let txt = String(t || '').trim()
+      .replace(/[−–—]/g, '-') // menos unicode/en dash/em dash
+      .replace(/\s+/g, '');
+    if(/^\(.*\)$/.test(txt)) txt = '-' + txt.slice(1, -1); // (123.45) => -123.45
+    return txt;
+  };
+  const esNum = (t) => /^-?[\d]{1,3}(,\d{3})*(\.\d+)?$|^-?\d+(\.\d+)?$/.test(normalizarNumTxt(t));
+  const aNum = (t) => parseFloat(normalizarNumTxt(t).replace(/,/g,'')) || 0;
 
   for(const line of lines){
     const tokens = [];
