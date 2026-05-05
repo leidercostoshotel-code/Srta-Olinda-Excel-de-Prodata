@@ -247,7 +247,20 @@
   td.fecha{background:linear-gradient(180deg,#f5b300,#e8a400);color:#3a2400;font-weight:700;letter-spacing:.02em}
   td.obs{text-align:left;max-width:340px;white-space:normal;line-height:1.35;color:var(--texto-suave)}
   td.neg{color:var(--rojo);font-weight:600}
-  td.excedente-hl{background:#fff3c2;font-weight:600}
+  td.excedente-hl{
+    background:linear-gradient(180deg,#ffe0e0,#ffd0d0)!important;
+    color:#8a1e12;font-weight:700;
+    box-shadow:inset 0 0 0 1px rgba(192,57,43,.18);
+  }
+  td.total-rojo{
+    background:linear-gradient(180deg,#ffe0e0,#ffd0d0)!important;
+    color:#8a1e12;font-weight:700;
+    box-shadow:inset 0 0 0 1px rgba(192,57,43,.18);
+  }
+  tr.tiene-excedente td.obs{
+    border-left:3px solid var(--rojo);
+    color:var(--rojo);font-weight:600;
+  }
   td.num{text-align:right;font-variant-numeric:tabular-nums;font-family:'JetBrains Mono','Inter',monospace;font-size:11px}
   tr.sep td{border-top:2px solid var(--borde-tabla)}
   tr.sep:first-child td{border-top:none}
@@ -813,6 +826,14 @@ function renderizar(equipos, meta){
     sums.cantidad += cantidad;
     sums.alquiler += alquilerFijo;
 
+    // ¿El equipo tiene excedente en algún formato? -> resaltar la fila
+    let equipoTieneExcedente = false;
+    for(const f of FORMATOS){
+      const bi = bolsasCalc[bolsa] && bolsasCalc[bolsa][f];
+      const ei = bi && bi.equipos.find(x => x.sn === eq.sn);
+      if(ei && (ei.cobroAsignado || 0) > 0.005){ equipoTieneExcedente = true; break; }
+    }
+
     for(let i=0;i<FORMATOS.length;i++){
       const fmt = FORMATOS[i];
       const d = eq.formatos[fmt] || {ci:0,cf:0,consumo:0,volEst:0,cantExc:0,precio:0,total:0};
@@ -834,13 +855,17 @@ function renderizar(equipos, meta){
       // el primer equipo de la bolsa por formato.
       if(bolsaInfo && bolsaInfo.equipos[0] && bolsaInfo.equipos[0].sn === eq.sn){
         sums.volMax += (volMaxTotal !== null) ? volMaxTotal : 0;
+        // Y también acumulamos el excedente y cobro AGREGADO de la bolsa
+        // sólo una vez (no por equipo). Así la fila TOTAL coincide al
+        // centavo con el PDF, sin errores de redondeo del reparto.
+        if((bolsaInfo.excedente || 0) > 0) sums.excPositivo += bolsaInfo.excedente;
+        if((bolsaInfo.cobroTotal || 0) > 0) sums.importeBruto += bolsaInfo.cobroTotal;
       }
-      if(excedenteReal > 0) sums.excPositivo += excedenteReal;
-      if(totalCalc > 0) sums.importeBruto += totalCalc;
 
       const tr = document.createElement('tr');
       if(i===0) tr.classList.add('sep');
       if(sinMaestro) tr.classList.add('pend');
+      if(equipoTieneExcedente) tr.classList.add('tiene-excedente');
 
       let html = '';
       if(i===0){
@@ -891,12 +916,16 @@ function renderizar(equipos, meta){
       html += cfAntCellHtml;
       html += deltaCellHtml;
       html += `<td class="num">${fmtInt(d.cf)}</td>`;
-      html += `<td class="num">${fmtInt(consumo)}</td>`;
+      // Resaltado: rojo si el formato del equipo aporta excedente al cobro
+      const consumoExcede = (volMax !== null) && (consumo > volMax);
+      const consumoClass = consumoExcede ? 'excedente-hl' : '';
+      html += `<td class="num ${consumoClass}">${fmtInt(consumo)}</td>`;
       html += `<td class="num">${volMax!==null?fmtInt(volMax):''}</td>`;
-      const excClass = excedenteReal < 0 ? 'neg' : (excedenteReal>0?'excedente-hl':'');
-      html += `<td class="num ${excClass}">${fmtNum(excedenteReal)}</td>`;
+      const excClass = totalCalc > 0.005 ? 'excedente-hl' : (excedenteReal < 0 ? 'neg' : '');
+      html += `<td class="num ${excClass}" title="${totalCalc>0.005?'Esta área se pasó del volumen contratado — ver acción correctiva':''}">${fmtNum(excedenteReal)}</td>`;
       html += `<td class="num">${fmtNum(d.precio,4)}</td>`;
-      html += `<td class="num ${totalCalc<0?'neg':''}">${fmtNum(totalCalc)}</td>`;
+      const totalClass = totalCalc > 0.005 ? 'total-rojo' : (totalCalc<0?'neg':'');
+      html += `<td class="num ${totalClass}">${fmtNum(totalCalc)}</td>`;
       if(i===0){
         html += `<td rowspan="4" class="num">${fmtNum(alquilerFijo)}</td>`;
         html += `<td rowspan="4">${cuenta}</td>`;
