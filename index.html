@@ -1428,17 +1428,24 @@ function generarAsientoSAP(equipos, meta, numFactura){
     idx++;
   }
 
-  // Cuadre con cuenta 421111101: iguala Débito (ME) y Crédito (ME).
+  // Cuadre con cuenta 421111101: hace que TOTAL Débito (ME) =
+  // TOTAL Crédito (ME) = monto facturado oficial del PDF.
+  // (Antes sólo igualaba débito y crédito, pero al editar montos a
+  //  negativo la suma se reducía y dejaba de coincidir con la factura.)
+  const montoObjetivo = (meta.totalFacturacion && meta.totalFacturacion > 0)
+    ? meta.totalFacturacion
+    : (totalRenta + totalExc);
   const debPre = filas.reduce((s,r) => s + (Number(r['Débito (ME)']) || 0), 0);
   const credPre = filas.reduce((s,r) => s + (Number(r['Crédito (ME)']) || 0), 0);
-  const dif = round4(debPre - credPre);
-  if(Math.abs(dif) > 0.001){
+  const cuadreDeb = round4(montoObjetivo - debPre);
+  const cuadreCred = round4(montoObjetivo - credPre);
+  if(Math.abs(cuadreDeb) > 0.001 || Math.abs(cuadreCred) > 0.001){
     filas.push({
       Datos:'', Monto:'', Modelo:'', 'S/N':'', IP:'', CECO:'',
-      'Monto USD': round4(Math.abs(dif)),
+      'Monto USD': round4(cuadreCred - cuadreDeb),
       Cuenta: 421111101,
-      'Débito (ME)': dif < 0 ? round4(Math.abs(dif)) : 0,
-      'Crédito (ME)': dif > 0 ? round4(dif) : 0,
+      'Débito (ME)':  cuadreDeb  > 0 ? cuadreDeb  : 0,
+      'Crédito (ME)': cuadreCred > 0 ? cuadreCred : 0,
       'Débito':'', 'Crédito':'',
       'Débito (MS)':'', 'Crédito (MS)':'',
       Comentarios: 'CUADRE - DIFERENCIA POR TIPO DE CAMBIO',
@@ -1611,11 +1618,17 @@ function recalcularTotalSAP(){
       debSinCuadre += (Number(filas[i]['Débito (ME)']) || 0);
       credSinCuadre += (Number(filas[i]['Crédito (ME)']) || 0);
     }
-    const dif = Math.round((debSinCuadre - credSinCuadre) * 10000) / 10000;
-    if(!cuadreFila._editado){
-      cuadreFila['Débito (ME)'] = dif < 0 ? Math.abs(dif) : 0;
-      cuadreFila['Crédito (ME)'] = dif > 0 ? dif : 0;
-      cuadreFila['Monto USD'] = Math.abs(dif);
+    // Cuadre que apunta al monto facturado del PDF (no sólo balancea).
+    const meta = window._ultimaMeta || {};
+    const montoObjetivo = (meta.totalFacturacion && meta.totalFacturacion > 0)
+      ? meta.totalFacturacion
+      : ((meta.totalRenta || 0) + (meta.totalExcedente || 0));
+    if(!cuadreFila._editado && montoObjetivo > 0){
+      const cuadreDeb  = Math.round((montoObjetivo - debSinCuadre)  * 10000) / 10000;
+      const cuadreCred = Math.round((montoObjetivo - credSinCuadre) * 10000) / 10000;
+      cuadreFila['Débito (ME)']  = cuadreDeb  > 0 ? cuadreDeb  : 0;
+      cuadreFila['Crédito (ME)'] = cuadreCred > 0 ? cuadreCred : 0;
+      cuadreFila['Monto USD']    = Math.round((cuadreCred - cuadreDeb) * 10000) / 10000;
     }
   }
 
