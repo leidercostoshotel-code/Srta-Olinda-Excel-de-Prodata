@@ -195,8 +195,15 @@
     box-shadow:0 1px 2px rgba(15,23,42,.04);
     color:var(--azul);font-weight:500;
     transition:var(--transicion);
+    cursor:pointer;
   }
-  .mes-item:hover{border-color:var(--azul-claro);box-shadow:var(--sombra-sm)}
+  .mes-item:hover{
+    border-color:var(--azul-medio);
+    box-shadow:var(--sombra-md);
+    background:linear-gradient(180deg,#eaf2fb,#dfe9f7);
+    transform:translateY(-1px);
+  }
+  .mes-item:active{transform:translateY(0)}
   .mes-item b{color:var(--azul-oscuro);font-weight:600}
   .mes-item button{
     background:transparent;border:none;color:var(--texto-mas-suave);cursor:pointer;
@@ -336,6 +343,26 @@
     .appbar{flex-direction:column;align-items:flex-start}
     .appbar h1{font-size:16px}
   }
+
+  .creditos{
+    margin:32px auto 12px;text-align:center;font-size:11px;color:var(--texto-suave);
+    padding:14px 16px;
+    border-top:1px solid var(--borde);
+  }
+  .creditos .nombre{
+    font-size:13px;font-weight:600;color:var(--azul);letter-spacing:.01em;
+    display:inline-flex;align-items:center;gap:8px;
+  }
+  .creditos .nombre::before, .creditos .nombre::after{
+    content:'';display:inline-block;width:24px;height:1px;background:var(--borde);
+  }
+  .creditos .rol{
+    font-size:10.5px;text-transform:uppercase;letter-spacing:.14em;
+    color:var(--texto-mas-suave);font-weight:500;margin-top:2px;
+  }
+  .creditos .marca{
+    font-size:10px;color:var(--texto-mas-suave);margin-top:6px;font-weight:400;
+  }
 </style>
 </head>
 <body>
@@ -351,14 +378,9 @@
 </header>
 
 <div class="toolbar">
-  <button id="btnCargarRepo">📥 Cargar PDF del repositorio</button>
-  <label for="fileInput" class="btn secundario">📁 Importar otro PDF…</label>
+  <label for="fileInput" class="btn">📁 Importar PDF</label>
   <input type="file" id="fileInput" accept="application/pdf">
-  <button class="secundario" id="btnExportCsv">📄 Exportar CSV</button>
   <button id="btnGuardarMes">💾 Guardar este mes</button>
-  <button class="secundario" id="btnExportHist">⬇ Exportar histórico</button>
-  <label for="histInput" class="btn secundario">⬆ Importar histórico…</label>
-  <input type="file" id="histInput" accept="application/json" style="display:none">
   <button class="secundario" id="btnLimpiar" title="Vacía la pantalla. El histórico local se mantiene.">🔄 Limpiar</button>
   <span class="status" id="status">Listo. Cargue el PDF para procesar.</span>
 </div>
@@ -608,20 +630,6 @@ function setStatus(msg, error=false){
   statusEl.textContent = msg;
   statusEl.classList.toggle('error', !!error);
 }
-
-document.getElementById('btnCargarRepo').addEventListener('click', async () => {
-  try{
-    resetearEstadoPdf({procesando:true});
-    setStatus('Descargando PDF del repositorio…');
-    const url = 'CUADRO DE CONSUMO DEL CONTRATO 276580 PERIODO 2026 MES DE MARZO.pdf';
-    const resp = await fetch(url);
-    if(!resp.ok) throw new Error('No se encontró el PDF en el repositorio ('+resp.status+')');
-    const buf = await resp.arrayBuffer();
-    await procesarPdf(buf);
-  }catch(e){
-    setStatus('Error: '+e.message, true);
-  }
-});
 
 document.getElementById('fileInput').addEventListener('change', async (ev) => {
   const f = ev.target.files[0];
@@ -1212,11 +1220,33 @@ function guardarMes(equipos, meta){
   const payload = {
     guardadoEn: new Date().toISOString(),
     meta,
-    equipos: equipos.map(e => ({sn:e.sn, modeloPdf:e.modeloPdf, bolsaPdf:e.bolsaPdf, direccion:e.direccion, formatos:e.formatos}))
+    equipos: equipos.map(e => ({sn:e.sn, modeloPdf:e.modeloPdf, bolsaPdf:e.bolsaPdf, direccion:e.direccion, formatos:e.formatos})),
+    // Guardar también los volúmenes y precios contractuales del período
+    // para que al recargar el mes desde el histórico los cálculos sean
+    // exactos aunque cambien las tarifas en el futuro.
+    volMaxBolsa: VOL_MAX_BOLSA,
+    preciosBolsa: PRECIOS_BOLSA
   };
   localStorage.setItem(STORAGE_PREFIX + k, JSON.stringify(payload));
   actualizarListaMeses();
   setStatus(`✓ Guardado ${meta.periodo} (${equipos.length} equipos) en este navegador.`);
+}
+
+function cargarMesGuardado(clave){
+  const raw = localStorage.getItem(STORAGE_PREFIX + clave);
+  if(!raw){ setStatus('No se encontró el mes guardado: '+clave, true); return; }
+  let data;
+  try{ data = JSON.parse(raw); } catch(e){ setStatus('Error leyendo el mes guardado.', true); return; }
+  // Reset visual sin tocar el histórico
+  resetearEstadoPdf({procesando:true});
+  setStatus(`📂 Cargando ${data.meta.periodo} desde el histórico…`);
+  // Restaurar volúmenes y precios del período guardado
+  if(data.volMaxBolsa) VOL_MAX_BOLSA = data.volMaxBolsa;
+  else VOL_MAX_BOLSA = JSON.parse(JSON.stringify(VOL_MAX_BOLSA_FALLBACK));
+  PRECIOS_BOLSA = data.preciosBolsa || null;
+  // Renderizar (asume que data.equipos viene en formato igual a parsearEquipos)
+  renderizar(data.equipos, data.meta);
+  setStatus(`📂 Mostrando ${data.meta.periodo} (guardado el ${new Date(data.guardadoEn).toLocaleString('es-PE')}). Sin PDF cargado — use "Importar otro PDF" para procesar uno nuevo.`);
 }
 
 function listarMeses(){
@@ -1257,80 +1287,23 @@ function actualizarListaMeses(){
   const meses = listarMeses();
   if(!meses.length){ cont.innerHTML = '<span style="color:#888">— sin meses guardados —</span>'; return; }
   cont.innerHTML = meses.map(m =>
-    `<span class="mes-item" title="Guardado el ${new Date(m.guardadoEn).toLocaleString('es-PE')}"><b>${m.periodo}</b> · ${m.equipos} equipos <button onclick="eliminarMes('${m.clave}')" title="Eliminar">✕</button></span>`
+    `<span class="mes-item" data-clave="${m.clave}" title="Click para cargar este mes (guardado el ${new Date(m.guardadoEn).toLocaleString('es-PE')})"><b>${m.periodo}</b> · ${m.equipos} equipos <button onclick="event.stopPropagation(); eliminarMes('${m.clave}')" title="Eliminar">✕</button></span>`
   ).join('');
+  // Hacer clickable cada badge para cargar el mes
+  cont.querySelectorAll('.mes-item').forEach(el => {
+    el.addEventListener('click', (ev) => {
+      // Si el click vino del botón ✕ (eliminar), no cargamos
+      if(ev.target.tagName === 'BUTTON') return;
+      cargarMesGuardado(el.dataset.clave);
+    });
+  });
 }
-
-document.getElementById('btnExportCsv').addEventListener('click', () => {
-  const equipos = window._ultimosEquipos;
-  if(!equipos || !equipos.length){ setStatus('Nada que exportar. Cargue un PDF primero.', true); return; }
-  const meta = window._ultimaMeta || {};
-  const FORMATOS = ['A4BN','A3BN','A4CL','A3CL'];
-  const header = ['Fecha','Marca','Modelo','S/N','IP','Observacion','CantImp','Bolsa','Formato','ContadorInicial','ContadorFinal','Consumo','VolMax','VolExc','Precio','Total','AlquilerFijo','Cuenta','CentroCosto'];
-  const rows = [header];
-  for(const eq of equipos){
-    const m = MAESTRO[eq.sn] || {};
-    for(const fmt of FORMATOS){
-      const d = eq.formatos[fmt] || {};
-      const volMax = (VOL_MAX_BOLSA[eq.bolsaPdf] && VOL_MAX_BOLSA[eq.bolsaPdf][fmt] != null) ? VOL_MAX_BOLSA[eq.bolsaPdf][fmt] : null;
-      const cons = d.consumo||0;
-      const exc = volMax!=null ? (cons===0 ? 0 : cons - volMax) : (d.cantExc||0);
-      const total = volMax!=null ? exc*(d.precio||0) : (d.total||0);
-      rows.push([
-        meta.periodo||'', m.marca||'', m.modelo||eq.modeloPdf||'', eq.sn, m.ip||'',
-        (m.observacion||eq.direccion||'').replace(/,/g,' '), m.cantidad||1, eq.bolsaPdf||'',
-        fmt, d.ci||0, d.cf||0, d.consumo||0, volMax||'', exc, d.precio||0, total.toFixed(2),
-        (m.alquilerFijo||51.68).toFixed(2), m.cuenta||'', m.centroCosto||''
-      ]);
-    }
-  }
-  const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `cuadro_consumo_${(meta.periodo||'export').replace(/\s+/g,'_')}.csv`;
-  a.click();
-});
 
 document.getElementById('btnGuardarMes').addEventListener('click', () => {
   if(!window._ultimosEquipos || !window._ultimosEquipos.length){
     setStatus('Cargue un PDF antes de guardar.', true); return;
   }
   guardarMes(window._ultimosEquipos, window._ultimaMeta);
-});
-
-document.getElementById('btnExportHist').addEventListener('click', () => {
-  const meses = listarMeses();
-  if(!meses.length){ setStatus('Nada que exportar: no hay meses guardados.', true); return; }
-  const data = {};
-  for(const m of meses){
-    data[m.clave] = JSON.parse(localStorage.getItem(STORAGE_PREFIX + m.clave));
-  }
-  const blob = new Blob([JSON.stringify({exportadoEn:new Date().toISOString(), meses:data}, null, 2)], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `reprodata_historico_${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-});
-
-document.getElementById('histInput').addEventListener('change', async (ev) => {
-  const f = ev.target.files[0];
-  if(!f) return;
-  try{
-    const txt = await f.text();
-    const j = JSON.parse(txt);
-    const meses = j.meses || j;
-    let n = 0;
-    for(const k of Object.keys(meses)){
-      localStorage.setItem(STORAGE_PREFIX + k, JSON.stringify(meses[k]));
-      n++;
-    }
-    actualizarListaMeses();
-    setStatus(`✓ Importados ${n} mes(es) al histórico local.`);
-  }catch(e){
-    setStatus('Error al importar: '+e.message, true);
-  }
-  ev.target.value = '';
 });
 
 actualizarListaMeses();
@@ -1968,6 +1941,12 @@ function aplicarEstiloHojaMes(aoaBase, meta){
   return ws;
 }
 </script>
+
+<footer class="creditos">
+  <div>Creado por</div>
+  <div class="nombre">Olinda Orellana</div>
+  <div class="rol">Accountant</div>
+</footer>
 
 </div><!-- /.app -->
 </body>
