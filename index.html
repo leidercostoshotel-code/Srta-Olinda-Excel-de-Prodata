@@ -712,6 +712,30 @@ function seleccionarMes(idx){
 
 async function procesarRango(lines){
   const meta = detectarMeta(lines);
+  // Si el mes ya está en el histórico, avisar y preguntar antes de procesar
+  const claveMesActual = claveMes(meta.periodo);
+  if(claveMesActual){
+    const existeRaw = localStorage.getItem(STORAGE_PREFIX + claveMesActual);
+    if(existeRaw){
+      let fechaGuardado = '';
+      try{
+        const data = JSON.parse(existeRaw);
+        fechaGuardado = data.guardadoEn ? new Date(data.guardadoEn).toLocaleString('es-PE') : '';
+      } catch(e){}
+      const msg =
+        `⚠ El mes ${meta.periodo} ya está guardado en el histórico` +
+        (fechaGuardado ? ` (guardado el ${fechaGuardado}).` : '.') +
+        `\n\n¿Deseas REEMPLAZARLO con los datos del PDF actual?\n\n` +
+        `• Aceptar: continuar y, al presionar "Guardar este mes", sobrescribir el anterior.\n` +
+        `• Cancelar: no procesar este mes (puedes eliminarlo del histórico antes ✕).`;
+      if(!confirm(msg)){
+        resetearEstadoPdf();
+        setStatus(`✋ Importación cancelada. ${meta.periodo} ya está en el histórico — no se modificó. Use ✕ en el badge para eliminarlo si quiere reimportar.`, true);
+        return;
+      }
+    }
+  }
+
   // Lectura dinámica de volúmenes y precios DESDE EL PDF
   const volsPdf = extraerVolumenesPDF(lines);
   if(Object.keys(volsPdf).length){
