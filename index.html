@@ -1333,10 +1333,24 @@ const SAP_HEADERS = [
 ];
 
 function montoConsumoEquipo(eq, bolsasCalc){
-  // Si no se pasa bolsasCalc, lo recalculamos sólo para este equipo no
-  // tendría sentido (el cobro depende del agregado de toda la bolsa).
-  // Por eso requerimos el bolsasCalc completo, calculado para todos los
-  // equipos del PDF.
+  // Si la tabla del PDF trae columna TOTAL por formato, usamos ese neto
+  // del equipo (puede ser positivo o negativo). Esto permite que montos
+  // negativos vayan a Crédito (ME) en positivo al generar SAP.
+  const FMTS = ['A4BN','A3BN','A4CL','A3CL'];
+  let totalNetoEquipo = 0;
+  let tieneTotal = false;
+  for(const f of FMTS){
+    const d = (eq && eq.formatos && eq.formatos[f]) ? eq.formatos[f] : null;
+    if(!d) continue;
+    const t = Number(d.total);
+    if(Number.isFinite(t)){
+      totalNetoEquipo += t;
+      tieneTotal = true;
+    }
+  }
+  if(tieneTotal) return Math.round(totalNetoEquipo * 10000) / 10000;
+
+  // Fallback: cálculo agregado por bolsa cuando no exista TOTAL en el PDF.
   if(!bolsasCalc) bolsasCalc = window._bolsasCalc;
   if(!bolsasCalc) return 0;
   return calcularCobroEquipo(eq, bolsasCalc);
