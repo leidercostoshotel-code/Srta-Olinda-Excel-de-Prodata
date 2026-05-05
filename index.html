@@ -195,8 +195,15 @@
     box-shadow:0 1px 2px rgba(15,23,42,.04);
     color:var(--azul);font-weight:500;
     transition:var(--transicion);
+    cursor:pointer;
   }
-  .mes-item:hover{border-color:var(--azul-claro);box-shadow:var(--sombra-sm)}
+  .mes-item:hover{
+    border-color:var(--azul-medio);
+    box-shadow:var(--sombra-md);
+    background:linear-gradient(180deg,#eaf2fb,#dfe9f7);
+    transform:translateY(-1px);
+  }
+  .mes-item:active{transform:translateY(0)}
   .mes-item b{color:var(--azul-oscuro);font-weight:600}
   .mes-item button{
     background:transparent;border:none;color:var(--texto-mas-suave);cursor:pointer;
@@ -1212,11 +1219,33 @@ function guardarMes(equipos, meta){
   const payload = {
     guardadoEn: new Date().toISOString(),
     meta,
-    equipos: equipos.map(e => ({sn:e.sn, modeloPdf:e.modeloPdf, bolsaPdf:e.bolsaPdf, direccion:e.direccion, formatos:e.formatos}))
+    equipos: equipos.map(e => ({sn:e.sn, modeloPdf:e.modeloPdf, bolsaPdf:e.bolsaPdf, direccion:e.direccion, formatos:e.formatos})),
+    // Guardar también los volúmenes y precios contractuales del período
+    // para que al recargar el mes desde el histórico los cálculos sean
+    // exactos aunque cambien las tarifas en el futuro.
+    volMaxBolsa: VOL_MAX_BOLSA,
+    preciosBolsa: PRECIOS_BOLSA
   };
   localStorage.setItem(STORAGE_PREFIX + k, JSON.stringify(payload));
   actualizarListaMeses();
   setStatus(`✓ Guardado ${meta.periodo} (${equipos.length} equipos) en este navegador.`);
+}
+
+function cargarMesGuardado(clave){
+  const raw = localStorage.getItem(STORAGE_PREFIX + clave);
+  if(!raw){ setStatus('No se encontró el mes guardado: '+clave, true); return; }
+  let data;
+  try{ data = JSON.parse(raw); } catch(e){ setStatus('Error leyendo el mes guardado.', true); return; }
+  // Reset visual sin tocar el histórico
+  resetearEstadoPdf({procesando:true});
+  setStatus(`📂 Cargando ${data.meta.periodo} desde el histórico…`);
+  // Restaurar volúmenes y precios del período guardado
+  if(data.volMaxBolsa) VOL_MAX_BOLSA = data.volMaxBolsa;
+  else VOL_MAX_BOLSA = JSON.parse(JSON.stringify(VOL_MAX_BOLSA_FALLBACK));
+  PRECIOS_BOLSA = data.preciosBolsa || null;
+  // Renderizar (asume que data.equipos viene en formato igual a parsearEquipos)
+  renderizar(data.equipos, data.meta);
+  setStatus(`📂 Mostrando ${data.meta.periodo} (guardado el ${new Date(data.guardadoEn).toLocaleString('es-PE')}). Sin PDF cargado — use "Importar otro PDF" para procesar uno nuevo.`);
 }
 
 function listarMeses(){
@@ -1257,8 +1286,16 @@ function actualizarListaMeses(){
   const meses = listarMeses();
   if(!meses.length){ cont.innerHTML = '<span style="color:#888">— sin meses guardados —</span>'; return; }
   cont.innerHTML = meses.map(m =>
-    `<span class="mes-item" title="Guardado el ${new Date(m.guardadoEn).toLocaleString('es-PE')}"><b>${m.periodo}</b> · ${m.equipos} equipos <button onclick="eliminarMes('${m.clave}')" title="Eliminar">✕</button></span>`
+    `<span class="mes-item" data-clave="${m.clave}" title="Click para cargar este mes (guardado el ${new Date(m.guardadoEn).toLocaleString('es-PE')})"><b>${m.periodo}</b> · ${m.equipos} equipos <button onclick="event.stopPropagation(); eliminarMes('${m.clave}')" title="Eliminar">✕</button></span>`
   ).join('');
+  // Hacer clickable cada badge para cargar el mes
+  cont.querySelectorAll('.mes-item').forEach(el => {
+    el.addEventListener('click', (ev) => {
+      // Si el click vino del botón ✕ (eliminar), no cargamos
+      if(ev.target.tagName === 'BUTTON') return;
+      cargarMesGuardado(el.dataset.clave);
+    });
+  });
 }
 
 document.getElementById('btnExportCsv').addEventListener('click', () => {
