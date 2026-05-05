@@ -358,14 +358,9 @@
 </header>
 
 <div class="toolbar">
-  <button id="btnCargarRepo">📥 Cargar PDF del repositorio</button>
-  <label for="fileInput" class="btn secundario">📁 Importar otro PDF…</label>
+  <label for="fileInput" class="btn">📁 Importar PDF</label>
   <input type="file" id="fileInput" accept="application/pdf">
-  <button class="secundario" id="btnExportCsv">📄 Exportar CSV</button>
   <button id="btnGuardarMes">💾 Guardar este mes</button>
-  <button class="secundario" id="btnExportHist">⬇ Exportar histórico</button>
-  <label for="histInput" class="btn secundario">⬆ Importar histórico…</label>
-  <input type="file" id="histInput" accept="application/json" style="display:none">
   <button class="secundario" id="btnLimpiar" title="Vacía la pantalla. El histórico local se mantiene.">🔄 Limpiar</button>
   <span class="status" id="status">Listo. Cargue el PDF para procesar.</span>
 </div>
@@ -615,20 +610,6 @@ function setStatus(msg, error=false){
   statusEl.textContent = msg;
   statusEl.classList.toggle('error', !!error);
 }
-
-document.getElementById('btnCargarRepo').addEventListener('click', async () => {
-  try{
-    resetearEstadoPdf({procesando:true});
-    setStatus('Descargando PDF del repositorio…');
-    const url = 'CUADRO DE CONSUMO DEL CONTRATO 276580 PERIODO 2026 MES DE MARZO.pdf';
-    const resp = await fetch(url);
-    if(!resp.ok) throw new Error('No se encontró el PDF en el repositorio ('+resp.status+')');
-    const buf = await resp.arrayBuffer();
-    await procesarPdf(buf);
-  }catch(e){
-    setStatus('Error: '+e.message, true);
-  }
-});
 
 document.getElementById('fileInput').addEventListener('change', async (ev) => {
   const f = ev.target.files[0];
@@ -1298,76 +1279,11 @@ function actualizarListaMeses(){
   });
 }
 
-document.getElementById('btnExportCsv').addEventListener('click', () => {
-  const equipos = window._ultimosEquipos;
-  if(!equipos || !equipos.length){ setStatus('Nada que exportar. Cargue un PDF primero.', true); return; }
-  const meta = window._ultimaMeta || {};
-  const FORMATOS = ['A4BN','A3BN','A4CL','A3CL'];
-  const header = ['Fecha','Marca','Modelo','S/N','IP','Observacion','CantImp','Bolsa','Formato','ContadorInicial','ContadorFinal','Consumo','VolMax','VolExc','Precio','Total','AlquilerFijo','Cuenta','CentroCosto'];
-  const rows = [header];
-  for(const eq of equipos){
-    const m = MAESTRO[eq.sn] || {};
-    for(const fmt of FORMATOS){
-      const d = eq.formatos[fmt] || {};
-      const volMax = (VOL_MAX_BOLSA[eq.bolsaPdf] && VOL_MAX_BOLSA[eq.bolsaPdf][fmt] != null) ? VOL_MAX_BOLSA[eq.bolsaPdf][fmt] : null;
-      const cons = d.consumo||0;
-      const exc = volMax!=null ? (cons===0 ? 0 : cons - volMax) : (d.cantExc||0);
-      const total = volMax!=null ? exc*(d.precio||0) : (d.total||0);
-      rows.push([
-        meta.periodo||'', m.marca||'', m.modelo||eq.modeloPdf||'', eq.sn, m.ip||'',
-        (m.observacion||eq.direccion||'').replace(/,/g,' '), m.cantidad||1, eq.bolsaPdf||'',
-        fmt, d.ci||0, d.cf||0, d.consumo||0, volMax||'', exc, d.precio||0, total.toFixed(2),
-        (m.alquilerFijo||51.68).toFixed(2), m.cuenta||'', m.centroCosto||''
-      ]);
-    }
-  }
-  const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `cuadro_consumo_${(meta.periodo||'export').replace(/\s+/g,'_')}.csv`;
-  a.click();
-});
-
 document.getElementById('btnGuardarMes').addEventListener('click', () => {
   if(!window._ultimosEquipos || !window._ultimosEquipos.length){
     setStatus('Cargue un PDF antes de guardar.', true); return;
   }
   guardarMes(window._ultimosEquipos, window._ultimaMeta);
-});
-
-document.getElementById('btnExportHist').addEventListener('click', () => {
-  const meses = listarMeses();
-  if(!meses.length){ setStatus('Nada que exportar: no hay meses guardados.', true); return; }
-  const data = {};
-  for(const m of meses){
-    data[m.clave] = JSON.parse(localStorage.getItem(STORAGE_PREFIX + m.clave));
-  }
-  const blob = new Blob([JSON.stringify({exportadoEn:new Date().toISOString(), meses:data}, null, 2)], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `reprodata_historico_${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-});
-
-document.getElementById('histInput').addEventListener('change', async (ev) => {
-  const f = ev.target.files[0];
-  if(!f) return;
-  try{
-    const txt = await f.text();
-    const j = JSON.parse(txt);
-    const meses = j.meses || j;
-    let n = 0;
-    for(const k of Object.keys(meses)){
-      localStorage.setItem(STORAGE_PREFIX + k, JSON.stringify(meses[k]));
-      n++;
-    }
-    actualizarListaMeses();
-    setStatus(`✓ Importados ${n} mes(es) al histórico local.`);
-  }catch(e){
-    setStatus('Error al importar: '+e.message, true);
-  }
-  ev.target.value = '';
 });
 
 actualizarListaMeses();
