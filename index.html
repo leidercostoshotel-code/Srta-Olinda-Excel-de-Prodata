@@ -862,8 +862,31 @@ function parsearEquipos(lines){
   let actual = null;
   const FMTS = ['A4BN','A3BN','A4CL','A3CL'];
   const reEquip = /^([A-Z0-9]+)\s*[-–]\s*([A-Z0-9][A-Z0-9-]*)(?:\s*[-–]\s*(Bolsa\s*\d+))?/i;
-  const esNum = (t) => /^-?[\d]{1,3}(,\d{3})*(\.\d+)?$|^-?\d+(\.\d+)?$/.test(t);
-  const aNum = (t) => parseFloat(String(t).replace(/,/g,'')) || 0;
+  const normalizarNumTxt = (t) => {
+    let txt = String(t || '').trim()
+      .replace(/[−–—]/g, '-') // normalizar signos menos unicode
+      .replace(/ /g, ' ') // nbsp -> espacio normal
+      .replace(/\s+/g, '');
+
+    // Formato contable: (123.45) o (123,45)
+    if(/^\(.*\)$/.test(txt)) txt = '-' + txt.slice(1, -1);
+    // Menos al final: 123.45-
+    if(/^[\d.,]+-$/.test(txt)) txt = '-' + txt.slice(0, -1);
+
+    // Soportar decimales con coma: 1.234,56 o -0,6536
+    if(/^-?[\d.]+,\d+$/.test(txt)){
+      txt = txt.replace(/\./g, '').replace(',', '.');
+    }
+
+    // Miles con coma estilo US: 1,234.56
+    if(/^-?[\d,]+\.\d+$/.test(txt)){
+      txt = txt.replace(/,/g, '');
+    }
+
+    return txt;
+  };
+  const esNum = (t) => /^-?\d+(\.\d+)?$/.test(normalizarNumTxt(t));
+  const aNum = (t) => parseFloat(normalizarNumTxt(t)) || 0;
 
   for(const line of lines){
     const tokens = [];
