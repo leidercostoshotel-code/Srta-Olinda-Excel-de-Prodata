@@ -1469,6 +1469,7 @@ function renderSAPPreview(filas){
       const v = r[c];
       if(['Monto','Monto USD','Débito (ME)','Crédito (ME)','Débito','Crédito'].includes(c)) td.classList.add('num');
       if(c === 'Comentarios') td.classList.add('obs');
+      if(c === 'Monto USD' && typeof v === 'number' && v < 0) td.classList.add('neg');
       td.textContent = fmtCell(v, c);
       if(!esTotal && (EDITABLES_NUM.has(c) || EDITABLES_TXT.has(c))){
         td.classList.add('editable');
