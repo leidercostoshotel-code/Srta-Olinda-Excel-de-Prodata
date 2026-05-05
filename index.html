@@ -1096,7 +1096,8 @@ function renderizar(equipos, meta){
       html += `<td class="num ${excClass}" title="${totalCalc>0.005?'Esta área se pasó del volumen contratado — ver acción correctiva':''}">${fmtNum(excedenteReal)}</td>`;
       html += `<td class="num">${fmtNum(d.precio,4)}</td>`;
       const totalClass = totalCalc > 0.005 ? 'total-rojo' : (totalCalc<0?'neg':'');
-      html += `<td class="num ${totalClass}">${fmtNum(totalCalc)}</td>`;
+      const totalDisplay = totalCalc > 0.005 ? -Math.abs(totalCalc) : totalCalc;
+      html += `<td class="num ${totalClass}">${fmtNum(totalDisplay)}</td>`;
       if(i===0){
         html += `<td rowspan="4" class="num">${fmtNum(alquilerFijo)}</td>`;
         html += `<td rowspan="4">${cuenta}</td>`;
