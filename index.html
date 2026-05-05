@@ -1096,7 +1096,8 @@ function renderizar(equipos, meta){
       html += `<td class="num ${excClass}" title="${totalCalc>0.005?'Esta área se pasó del volumen contratado — ver acción correctiva':''}">${fmtNum(excedenteReal)}</td>`;
       html += `<td class="num">${fmtNum(d.precio,4)}</td>`;
       const totalClass = totalCalc > 0.005 ? 'total-rojo' : (totalCalc<0?'neg':'');
-      html += `<td class="num ${totalClass}">${fmtNum(totalCalc)}</td>`;
+      const totalDisplay = totalCalc > 0.005 ? -Math.abs(totalCalc) : totalCalc;
+      html += `<td class="num ${totalClass}">${fmtNum(totalDisplay)}</td>`;
       if(i===0){
         html += `<td rowspan="4" class="num">${fmtNum(alquilerFijo)}</td>`;
         html += `<td rowspan="4">${cuenta}</td>`;
@@ -1384,11 +1385,12 @@ function generarAsientoSAP(equipos, meta, numFactura){
     idx++;
 
     const consumo = montoConsumoEquipo(eq, bolsasCalc);
+    const montoUsdConsumo = consumo > 0 ? -round4(Math.abs(consumo)) : round4(consumo);
     const rowConsumo = {
       Datos: '',
       Monto: '',
       Modelo: modelo, 'S/N': eq.sn, IP: ip, CECO: ceco,
-      'Monto USD': round4(consumo),
+      'Monto USD': montoUsdConsumo,
       Cuenta: cuenta,
       'Débito (ME)': consumo >= 0 ? round4(consumo) : 0,
       'Crédito (ME)': consumo < 0 ? round4(Math.abs(consumo)) : 0,
@@ -1467,6 +1469,7 @@ function renderSAPPreview(filas){
       const v = r[c];
       if(['Monto','Monto USD','Débito (ME)','Crédito (ME)','Débito','Crédito'].includes(c)) td.classList.add('num');
       if(c === 'Comentarios') td.classList.add('obs');
+      if(c === 'Monto USD' && typeof v === 'number' && v < 0) td.classList.add('neg');
       td.textContent = fmtCell(v, c);
       if(!esTotal && (EDITABLES_NUM.has(c) || EDITABLES_TXT.has(c))){
         td.classList.add('editable');
