@@ -1456,6 +1456,23 @@ function generarAsientoSAP(equipos, meta, numFactura){
     Comentarios: 'TOTAL'
   });
 
+  // Normalización final de signos por seguridad: regla contable
+  //   Monto USD positivo  -> Débito (ME) = monto,  Crédito (ME) = 0
+  //   Monto USD negativo  -> Débito (ME) = 0,      Crédito (ME) = |monto|
+  // (no se aplica a la fila TOTAL; sí a la de cuadre 421111101).
+  for(const f of filas){
+    if(f.Comentarios === 'TOTAL') continue;
+    const v = Number(f['Monto USD']);
+    if(isNaN(v) || v === undefined || f['Monto USD'] === '') continue;
+    if(v >= 0){
+      f['Débito (ME)']  = round4(v);
+      f['Crédito (ME)'] = 0;
+    } else {
+      f['Débito (ME)']  = 0;
+      f['Crédito (ME)'] = round4(Math.abs(v));
+    }
+  }
+
   return filas;
 }
 
