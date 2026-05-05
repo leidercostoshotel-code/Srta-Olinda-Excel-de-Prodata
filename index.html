@@ -1035,7 +1035,15 @@ function renderizar(equipos, meta){
     const trTotal = document.createElement('tr');
     trTotal.classList.add('fila-total');
     const colsExtras = mesAnterior ? '<td></td><td></td>' : '';
-    const totalFacturado = sums.alquiler + sums.importeBruto;
+    // Renta: usar el valor OFICIAL del PDF (más exacto que 21 × 51.68
+    // que pierde 4 centavos por redondeo). Si no hay PDF, fallback a la suma.
+    const rentaOficial = meta.totalRenta || sums.alquiler;
+    const excedenteOficial = (meta.totalExcedente !== undefined && meta.totalExcedente > 0)
+      ? meta.totalExcedente
+      : sums.importeBruto;
+    const totalFacturado = (meta.totalFacturacion && meta.totalFacturacion > 0)
+      ? meta.totalFacturacion
+      : (rentaOficial + excedenteOficial);
     const tipCred = sums.importeNegativo < 0
       ? ` title="El proveedor sólo cobra excedentes positivos. Hay ${fmtNum(Math.abs(sums.importeNegativo))} en créditos por consumo bajo que NO se descuentan de esta factura."`
       : '';
@@ -1052,8 +1060,8 @@ function renderizar(equipos, meta){
       <td class="num">${fmtInt(sums.volMax)}</td>
       <td class="num"${tipCred}>${fmtInt(sums.excPositivo)}${sums.excNegativo<0?` <span style="color:#94a3b8;font-weight:500">(${fmtInt(sums.excNegativo)})</span>`:''}</td>
       <td></td>
-      <td class="num"${tipCred}>S/ ${fmtNum(sums.importeBruto)}</td>
-      <td class="num">S/ ${fmtNum(sums.alquiler)}</td>
+      <td class="num"${tipCred}>S/ ${fmtNum(excedenteOficial)}</td>
+      <td class="num">S/ ${fmtNum(rentaOficial)}</td>
       <td colspan="2" style="text-align:right">Total facturado: <b>S/ ${fmtNum(totalFacturado)}</b></td>
     `;
     tbody.appendChild(trTotal);
