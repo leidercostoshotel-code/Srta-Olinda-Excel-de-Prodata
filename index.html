@@ -1535,6 +1535,39 @@ function renderSAPPreview(filas){
       fila._editado = true;
       tr.classList.add('editado');
       td.textContent = fmtCell(nuevoVal, col);
+
+      // Sincronización entre Monto USD <-> Débito (ME) / Crédito (ME)
+      // Reglas contables:
+      //   Monto USD positivo  ->  Débito (ME) = monto,  Crédito (ME) = 0
+      //   Monto USD negativo  ->  Débito (ME) = 0,      Crédito (ME) = |monto|
+      // Si el usuario edita Débito (ME) o Crédito (ME) directamente, se
+      // ajusta el Monto USD (con signo) y la celda contraria se pone en 0.
+      const sincronizar = (sourceCol) => {
+        if(sourceCol === 'Monto USD'){
+          const v = Number(fila['Monto USD']) || 0;
+          fila['Débito (ME)']  = v >= 0 ? Math.round(v * 10000) / 10000 : 0;
+          fila['Crédito (ME)'] = v <  0 ? Math.round(Math.abs(v) * 10000) / 10000 : 0;
+        } else if(sourceCol === 'Débito (ME)'){
+          const v = Number(fila['Débito (ME)']) || 0;
+          fila['Monto USD']    = Math.round(v * 10000) / 10000;
+          fila['Crédito (ME)'] = 0;
+        } else if(sourceCol === 'Crédito (ME)'){
+          const v = Number(fila['Crédito (ME)']) || 0;
+          fila['Monto USD']    = -Math.round(v * 10000) / 10000;
+          fila['Débito (ME)']  = 0;
+        }
+        // Refrescar visualmente las celdas hermanas
+        const cols = ['Monto USD','Débito (ME)','Crédito (ME)'];
+        for(const c of cols){
+          if(c === sourceCol) continue;
+          const otraTd = tr.querySelector(`td[data-col="${c.replace(/"/g,'\\"')}"]`);
+          if(otraTd) otraTd.textContent = fmtCell(fila[c], c);
+        }
+      };
+      if(['Monto USD','Débito (ME)','Crédito (ME)'].includes(col)){
+        sincronizar(col);
+      }
+
       recalcularTotalSAP();
       const s = document.getElementById('statusSAP');
       s.textContent = `✎ Editado: ${fila['S/N']||''} ${col}. ${(window._ultimoSAP.filter(x=>x._editado).length)} fila(s) modificada(s).`;
