@@ -1953,15 +1953,31 @@ document.getElementById('btnDescargarXLSX').addEventListener('click', () => {
   XLSX.utils.book_append_sheet(wb, wsSAP, 'SAP');
 
   const FORMATOS = ['A4BN','A3BN','A4CL','A3CL'];
+  const equipos = window._ultimosEquipos || [];
+  const mesAnterior = obtenerMesAnterior(meta.periodo);
   const cabMes = [
-    meta.periodo||'','Marca','Modelo','S/N','IP','Observación','Cantidad Impresoras',
-    'Bolsa','Formatos','Contador Inicial','Contador Final','Consumo del Mes',
-    'Volumen Maximo Establecido','Volumen Excedente','Precio','Total','alquiler fijo',
-    'Cuenta','Centro Costo'
+    meta.periodo||'', 'Marca', 'Modelo', 'S/N', 'IP', 'Observación',
+    'Cantidad Impresoras', 'Bolsa', 'Formatos', 'Contador Inicial'
   ];
+  if(mesAnterior){
+    cabMes.push('CF ' + mesAnterior.meta.periodo);
+    cabMes.push('Δ vs CI');
+  }
+  cabMes.push('Contador Final', 'Consumo del Mes', 'Volumen Maximo Establecido',
+              'Volumen Excedente', 'Precio', 'Total', 'alquiler fijo',
+              'Cuenta', 'Centro Costo');
+
   const aoaMes = [cabMes];
-  for(const eq of (window._ultimosEquipos||[])){
+  // Acumuladores para la fila TOTAL al pie
+  const sumas = {cantidad:0, consumo:0, volMax:0, exc:0, tot:0, alquiler:0};
+
+  for(const eq of equipos){
     const m = MAESTRO[eq.sn] || {};
+    const cant = m.cantidad || 1;
+    const alq = m.alquilerFijo || 51.68;
+    sumas.cantidad += cant;
+    sumas.alquiler += alq;
+    const equipoAnt = mesAnterior ? (mesAnterior.equipos||[]).find(x => x.sn === eq.sn) : null;
     for(let i=0;i<FORMATOS.length;i++){
       const fmt = FORMATOS[i];
       const d = eq.formatos[fmt] || {};
@@ -1969,25 +1985,61 @@ document.getElementById('btnDescargarXLSX').addEventListener('click', () => {
       const consFmt = d.consumo || 0;
       const exc = volMax!=null ? (consFmt===0 ? 0 : consFmt - volMax) : (d.cantExc||0);
       const tot = volMax!=null ? exc*(d.precio||0) : (d.total||0);
-      aoaMes.push([
+      sumas.consumo += consFmt;
+      sumas.volMax  += (volMax || 0);
+      sumas.exc     += exc;
+      sumas.tot     += tot;
+
+      let cfAnt = '';
+      let delta = '';
+      if(equipoAnt && equipoAnt.formatos && equipoAnt.formatos[fmt]){
+        cfAnt = equipoAnt.formatos[fmt].cf;
+        delta = (d.ci||0) - (cfAnt || 0);
+      }
+
+      const fila = [
         i===0 ? (meta.periodo||'') : '',
         i===0 ? (m.marca||'') : '',
         i===0 ? (m.modelo||eq.modeloPdf||'') : '',
         i===0 ? eq.sn : '',
         i===0 ? (m.ip||'') : '',
         i===0 ? (m.observacion||eq.direccion||'') : '',
-        i===0 ? (m.cantidad||1) : '',
+        i===0 ? cant : '',
         i===0 ? (eq.bolsaPdf||'') : '',
         fmt,
-        d.ci||0, d.cf||0, d.consumo||0,
-        volMax!=null ? volMax : '', exc, d.precio||0, Math.round(tot*100)/100,
-        i===0 ? (m.alquilerFijo||51.68) : '',
+        d.ci || 0
+      ];
+      if(mesAnterior){
+        fila.push(cfAnt === '' ? '' : cfAnt);
+        fila.push(delta === '' ? '' : delta);
+      }
+      fila.push(
+        d.cf || 0, d.consumo || 0,
+        volMax!=null ? volMax : '', exc,
+        d.precio || 0, Math.round(tot*100)/100,
+        i===0 ? alq : '',
         i===0 ? (m.cuenta||'') : '',
         i===0 ? (m.centroCosto||'') : ''
-      ]);
+      );
+      aoaMes.push(fila);
     }
   }
-  const wsMes = aplicarEstiloHojaMes(aoaMes, meta);
+
+  // Fila TOTAL al pie
+  if(equipos.length){
+    const filaTotal = [
+      'TOTAL DEL MES', '', '', equipos.length + ' equipos', '', '',
+      sumas.cantidad, '', '', ''
+    ];
+    if(mesAnterior){ filaTotal.push(''); filaTotal.push(''); }
+    filaTotal.push(
+      '', sumas.consumo, sumas.volMax, sumas.exc,
+      '', Math.round(sumas.tot * 100) / 100,
+      Math.round(sumas.alquiler * 100) / 100, '', ''
+    );
+    aoaMes.push(filaTotal);
+  }
+  const wsMes = aplicarEstiloHojaMes(aoaMes, meta, equipos.length, !!mesAnterior);
   XLSX.utils.book_append_sheet(wb, wsMes, meta.periodo ? meta.periodo.replace(/\s+/,'-') : 'Mes');
 
   const nombre = `Reprodata_${(meta.periodo||'export').replace(/\s+/g,'_')}.xlsx`;
@@ -1996,7 +2048,7 @@ document.getElementById('btnDescargarXLSX').addEventListener('click', () => {
   s.style.color = '#1a7a1a';
 });
 
-function aplicarEstiloHojaMes(aoaBase, meta){
+function aplicarEstiloHojaMes(aoaBase, meta, numEquipos, conMesAnterior){
   const NCOLS = aoaBase[0].length;
   const vacia = () => Array(NCOLS).fill('');
   const titulo = `REPORTE DE CONSUMO MENSUAL — REPRODATA  ·  ${meta.periodo||''}`;
@@ -2007,7 +2059,33 @@ function aplicarEstiloHojaMes(aoaBase, meta){
     ...aoaBase.slice(1)
   ];
   const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws['!merges'] = [{s:{r:0,c:0}, e:{r:0,c:NCOLS-1}}];
+
+  // Merges: título de toda la fila + celdas con rowspan 4 para los datos
+  // comunes del equipo (Fecha, Marca, Modelo, S/N, IP, Observación,
+  // Cantidad, Bolsa, alquiler fijo, Cuenta, Centro Costo).
+  const merges = [{s:{r:0,c:0}, e:{r:0,c:NCOLS-1}}];
+  // Columnas que se mergean cada 4 filas (índices base sin contar CF/Δ)
+  // 0=Fecha 1=Marca 2=Modelo 3=S/N 4=IP 5=Observación 6=Cantidad 7=Bolsa
+  const colsMergeIzq = [0,1,2,3,4,5,6,7];
+  // Para las últimas 3 columnas (alquiler fijo, Cuenta, Centro Costo)
+  // los índices dependen de si hay columnas CF/Δ
+  const offsetExtra = conMesAnterior ? 2 : 0;
+  const idxAlquiler = 16 + offsetExtra;
+  const idxCuenta   = 17 + offsetExtra;
+  const idxCeco     = 18 + offsetExtra;
+  const colsMergeDer = [idxAlquiler, idxCuenta, idxCeco];
+  for(let i = 0; i < numEquipos; i++){
+    const filaInicio = 3 + i*4;
+    const filaFin = filaInicio + 3;
+    for(const c of colsMergeIzq) merges.push({s:{r:filaInicio,c}, e:{r:filaFin,c}});
+    for(const c of colsMergeDer) merges.push({s:{r:filaInicio,c}, e:{r:filaFin,c}});
+  }
+  // Fila TOTAL (la última si numEquipos > 0): merge de columnas iniciales
+  const filaTotalIdx = 3 + numEquipos*4;
+  if(numEquipos > 0 && aoa[filaTotalIdx]){
+    merges.push({s:{r:filaTotalIdx,c:0}, e:{r:filaTotalIdx,c:2}});
+  }
+  ws['!merges'] = merges;
   ws['!rows'] = [{hpt:28}, {hpt:8}, {hpt:34}];
 
   const brd = {top:{style:'thin',color:{rgb:'8AA4C8'}}, bottom:{style:'thin',color:{rgb:'8AA4C8'}}, left:{style:'thin',color:{rgb:'8AA4C8'}}, right:{style:'thin',color:{rgb:'8AA4C8'}}};
@@ -2016,12 +2094,10 @@ function aplicarEstiloHojaMes(aoaBase, meta){
   const stCell = {font:{name:'Segoe UI',sz:10,color:{rgb:'1F3864'}}, alignment:{horizontal:'center',vertical:'center'}, border:brd};
   const stLeft = {...stCell, alignment:{horizontal:'left',vertical:'center',wrapText:true}};
   const stNum  = {...stCell, alignment:{horizontal:'right',vertical:'center'}};
-  const stZebraC = {...stCell, fill:{patternType:'solid', fgColor:{rgb:'F7FAFF'}}};
-  const stZebraL = {...stLeft, fill:{patternType:'solid', fgColor:{rgb:'F7FAFF'}}};
-  const stZebraN = {...stNum,  fill:{patternType:'solid', fgColor:{rgb:'F7FAFF'}}};
-  const stGroup  = {...stCell, fill:{patternType:'solid', fgColor:{rgb:'E7EEF7'}}, font:{name:'Segoe UI',sz:10,bold:true,color:{rgb:'1F3864'}}};
-  const stGroupL = {...stGroup, alignment:{horizontal:'left',vertical:'center',wrapText:true}};
-  const stGroupN = {...stGroup, alignment:{horizontal:'right',vertical:'center'}};
+  const stFecha = {...stCell, fill:{patternType:'solid', fgColor:{rgb:'F5B300'}}, font:{name:'Segoe UI',sz:10,bold:true,color:{rgb:'3A2400'}}};
+  const stTotal = {font:{name:'Segoe UI',sz:11,bold:true,color:{rgb:'000000'}}, fill:{patternType:'solid', fgColor:{rgb:'FFEB00'}}, alignment:{horizontal:'center',vertical:'center'}, border:{top:{style:'medium',color:{rgb:'000000'}},bottom:{style:'medium',color:{rgb:'000000'}},left:{style:'thin',color:{rgb:'000000'}},right:{style:'thin',color:{rgb:'000000'}}}};
+  const stTotalNum = {...stTotal, alignment:{horizontal:'right',vertical:'center'}};
+  const stTotalLeft = {...stTotal, alignment:{horizontal:'left',vertical:'center'}};
 
   // Título
   for(let c=0;c<NCOLS;c++){
@@ -2035,32 +2111,69 @@ function aplicarEstiloHojaMes(aoaBase, meta){
     if(!ws[a]) ws[a] = {t:'s',v: aoaBase[0][c]};
     ws[a].s = stHdr;
   }
-  // Datos
-  const COL_LEFT = new Set([5]);     // Observación
-  const COL_CENTER_FIRST = new Set([0,1,2,3,4,6,7]); // Fecha, Marca, Modelo, S/N, IP, Cantidad, Bolsa
-  const COL_NUM = new Set([9,10,11,12,13,14,15,16,17,18]); // Contadores, precios, totales, cuentas
-  const range = XLSX.utils.decode_range(ws['!ref']);
-  const fmtUSD = '#,##0.00';
+
+  const COL_OBS = 5;
+  const COL_FECHA = 0;
+  // Columnas numéricas: contadores (9..15+ext) y precios/total/alq/cuenta/ceco
+  const colsNumIniciales = [9, 10 + offsetExtra, 11 + offsetExtra,
+                             12 + offsetExtra, 13 + offsetExtra,
+                             14 + offsetExtra, 15 + offsetExtra,
+                             16 + offsetExtra, 17 + offsetExtra,
+                             18 + offsetExtra];
+  if(conMesAnterior){
+    colsNumIniciales.push(10, 11); // CF anterior y Δ
+  }
+  const COL_NUM = new Set(colsNumIniciales);
+  const fmtUSD2 = '#,##0.00';
   const fmtInt = '0';
+  const range = XLSX.utils.decode_range(ws['!ref']);
+
   for(let R = 3; R <= range.e.r; R++){
-    const grupo = Math.floor((R-3)/4);
-    const zebra = grupo % 2 === 1;
-    const primeraDeGrupo = ((R-3) % 4) === 0;
+    const esTotal = (numEquipos > 0 && R === filaTotalIdx);
     for(let C = 0; C < NCOLS; C++){
       const a = XLSX.utils.encode_cell({r:R,c:C});
       if(!ws[a]) ws[a] = {t:'s',v:''};
-      // formato número
-      if([9,10,11,12,13].includes(C) && typeof ws[a].v === 'number'){ ws[a].z = fmtInt; ws[a].t = 'n'; }
-      if([14,15,16].includes(C) && typeof ws[a].v === 'number'){ ws[a].z = fmtUSD; ws[a].t = 'n'; }
-      if([17,18].includes(C) && typeof ws[a].v === 'number'){ ws[a].z = fmtInt; ws[a].t = 'n'; }
+      // Formato numérico
+      if([9, idxAlquiler, idxCuenta, idxCeco].includes(C) && typeof ws[a].v === 'number'){
+        if(C === idxAlquiler) { ws[a].z = fmtUSD2; }
+        else { ws[a].z = fmtInt; }
+        ws[a].t = 'n';
+      }
+      // Contadores y consumos: enteros
+      const idxCF = 10 + offsetExtra;
+      const idxConsumo = 11 + offsetExtra;
+      const idxVolMax = 12 + offsetExtra;
+      const idxExc = 13 + offsetExtra;
+      const idxPrecio = 14 + offsetExtra;
+      const idxTotal = 15 + offsetExtra;
+      if([idxCF, idxConsumo, idxVolMax].includes(C) && typeof ws[a].v === 'number'){
+        ws[a].z = fmtInt; ws[a].t = 'n';
+      }
+      if(C === idxExc && typeof ws[a].v === 'number'){
+        ws[a].z = fmtUSD2; ws[a].t = 'n';
+      }
+      if(C === idxPrecio && typeof ws[a].v === 'number'){
+        ws[a].z = '0.0000'; ws[a].t = 'n';
+      }
+      if(C === idxTotal && typeof ws[a].v === 'number'){
+        ws[a].z = fmtUSD2; ws[a].t = 'n';
+      }
+      // Columnas CF anterior / Δ
+      if(conMesAnterior && (C === 10 || C === 11) && typeof ws[a].v === 'number'){
+        ws[a].z = fmtInt; ws[a].t = 'n';
+      }
+      // Estilo
       let sty;
-      if(primeraDeGrupo && [0,1,2,3,4,5,6,7,17,18].includes(C)){
-        // Primera fila del equipo con info: resaltar ligeramente
-        sty = COL_LEFT.has(C) ? stGroupL : (COL_NUM.has(C) ? stGroupN : stGroup);
-      } else if(zebra){
-        sty = COL_LEFT.has(C) ? stZebraL : (COL_NUM.has(C) ? stZebraN : stZebraC);
+      if(esTotal){
+        sty = COL_NUM.has(C) ? stTotalNum : (C <= 5 ? stTotalLeft : stTotal);
+      } else if(C === COL_FECHA){
+        sty = stFecha;
+      } else if(C === COL_OBS){
+        sty = stLeft;
+      } else if(COL_NUM.has(C)){
+        sty = stNum;
       } else {
-        sty = COL_LEFT.has(C) ? stLeft : (COL_NUM.has(C) ? stNum : stCell);
+        sty = stCell;
       }
       ws[a].s = sty;
     }
@@ -2070,9 +2183,13 @@ function aplicarEstiloHojaMes(aoaBase, meta){
     if(h === 'Observación') return {wch: 40};
     if(h === 'S/N' || h === 'IP') return {wch: 14};
     if(h === 'Modelo' || h === 'Marca') return {wch: 12};
+    if(h && h.startsWith && h.startsWith('CF ')) return {wch: 14};
+    if(h === 'Δ vs CI') return {wch: 10};
     if(h === 'Contador Inicial' || h === 'Contador Final' || h === 'Volumen Maximo Establecido') return {wch: 14};
-    if(h === 'Consumo del Mes' || h === 'Volumen Excedente') return {wch: 12};
+    if(h === 'Consumo del Mes' || h === 'Volumen Excedente') return {wch: 13};
     if(h === 'Cuenta' || h === 'Centro Costo' || h === 'Cantidad Impresoras') return {wch: 12};
+    if(h === 'alquiler fijo') return {wch: 12};
+    if(h === 'Total') return {wch: 12};
     return {wch: 11};
   });
   return ws;
