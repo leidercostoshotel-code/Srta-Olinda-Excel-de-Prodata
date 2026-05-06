@@ -1417,15 +1417,17 @@ function generarAsientoSAP(equipos, meta, numFactura){
       Modelo: modelo, 'S/N': eq.sn, IP: ip, CECO: ceco,
       'Monto USD': montoUsdConsumo,
       Cuenta: cuenta,
-      // Regla contable: positivo (cobro de excedente) -> Débito (ME);
-      // negativo (crédito manual / ajuste) -> Crédito (ME) en abs.
-      'Débito (ME)':  consumo >= 0 ? round4(consumo) : 0,
-      'Crédito (ME)': consumo <  0 ? round4(Math.abs(consumo)) : 0,
+      // Estos valores los rellena absorberNegativosAlAlquiler() según
+      // el signo del Monto USD: positivo -> Débito (ME); negativo ->
+      // suma al alquiler del mismo equipo Y queda como Crédito (ME).
+      'Débito (ME)':  0,
+      'Crédito (ME)': 0,
       'Débito': '', 'Crédito': '',
       'Débito (MS)': '', 'Crédito (MS)': '',
       Comentarios: `CONSUMO DE COPIAS ${eq.sn}`,
       'Referencia 2': refFactura,
-      'Centro de Costo': ceco
+      'Centro de Costo': ceco,
+      _tipo: 'consumo'
     };
     filas.push(rowConsumo);
     idx++;
