@@ -321,6 +321,14 @@
     transition:width 0.5s ease;
   }
   .progress-bar.exceso{background:linear-gradient(90deg, var(--rojo), #a93226);}
+  #progressContainer,
+  #excesoProgressContainer{
+    height:auto;
+    overflow:visible;
+    background:transparent;
+    margin-top:12px;
+    border-radius:0;
+  }
   .format-breakdown{
     display:flex;
     gap:10px;
@@ -989,14 +997,15 @@ function actualizarEstadisticas(equipos, meta){
   let excedenteTotalGeneral = 0;
   let costoExcedenteTotal = 0;
   
-  const consumoPorCentro = new Map();
-  const excesoPorCentro = new Map();
-  const costoExcesoPorCentro = new Map();
+  const consumoPorArea = new Map();
+  const excesoPorArea = new Map();
+  const costoExcesoPorArea = new Map();
   
   for(const eq of equipos){
     const m = MAESTRO[eq.sn] || {};
-    const centro = m.centroCosto || 0;
-    const nombreArea = m.observacion || eq.direccion || `Centro ${centro}`;
+    const centroRaw = (m.centroCosto ?? '').toString().trim();
+    const centro = centroRaw === '' ? '0' : centroRaw;
+    const nombreArea = (m.observacion || eq.direccion || `Centro ${centro}`).toString().trim();
     let consumoEquipo = 0;
     let excedenteEquipo = 0;
     let costoExcedenteEquipo = 0;
@@ -1019,32 +1028,36 @@ function actualizarEstadisticas(equipos, meta){
     excedenteTotalGeneral += excedenteEquipo;
     costoExcedenteTotal += costoExcedenteEquipo;
     
-    if(!consumoPorCentro.has(centro)){
-      consumoPorCentro.set(centro, { centro, nombre: nombreArea, totalConsumo: 0, equipos: [], formatosDetalle: {A4BN:0,A3BN:0,A4CL:0,A3CL:0} });
-      excesoPorCentro.set(centro, 0);
-      costoExcesoPorCentro.set(centro, 0);
+    const areaKey = `${centro}::${nombreArea.toLowerCase()}`;
+    if(!consumoPorArea.has(areaKey)){
+      consumoPorArea.set(areaKey, { centro, nombre: nombreArea, totalConsumo: 0, equipos: [], formatosDetalle: {A4BN:0,A3BN:0,A4CL:0,A3CL:0} });
+      excesoPorArea.set(areaKey, 0);
+      costoExcesoPorArea.set(areaKey, 0);
     }
-    consumoPorCentro.get(centro).totalConsumo += consumoEquipo;
-    consumoPorCentro.get(centro).equipos.push(eq.sn);
+    consumoPorArea.get(areaKey).totalConsumo += consumoEquipo;
+    consumoPorArea.get(areaKey).equipos.push(eq.sn);
     for(const fmt of formatos){
       const d = eq.formatos[fmt] || {};
-      consumoPorCentro.get(centro).formatosDetalle[fmt] += d.consumo || 0;
+      consumoPorArea.get(areaKey).formatosDetalle[fmt] += d.consumo || 0;
     }
-    excesoPorCentro.set(centro, (excesoPorCentro.get(centro)||0) + excedenteEquipo);
-    costoExcesoPorCentro.set(centro, (costoExcesoPorCentro.get(centro)||0) + costoExcedenteEquipo);
-    if(m.observacion && m.observacion.length > (consumoPorCentro.get(centro).nombre.length || 0)){
-      consumoPorCentro.get(centro).nombre = m.observacion;
+    excesoPorArea.set(areaKey, (excesoPorArea.get(areaKey)||0) + excedenteEquipo);
+    costoExcesoPorArea.set(areaKey, (costoExcesoPorArea.get(areaKey)||0) + costoExcedenteEquipo);
+    if(m.observacion){
+      const nombreObservacion = m.observacion.toString().trim();
+      if(nombreObservacion.length > (consumoPorArea.get(areaKey).nombre.length || 0)){
+        consumoPorArea.get(areaKey).nombre = nombreObservacion;
+      }
     }
   }
   
-  const rankingConsumo = Array.from(consumoPorCentro.values()).filter(c=>c.totalConsumo>0).sort((a,b)=>b.totalConsumo-a.totalConsumo);
+  const rankingConsumo = Array.from(consumoPorArea.values()).filter(c=>c.totalConsumo>0).sort((a,b)=>b.totalConsumo-a.totalConsumo);
   const rankingExcesos = [];
-  for(const [centro, exceso] of excesoPorCentro){
+  for(const [areaKey, exceso] of excesoPorArea){
     if(exceso > 0){
-      const areaInfo = consumoPorCentro.get(centro);
+      const areaInfo = consumoPorArea.get(areaKey);
       rankingExcesos.push({
-        centro, nombre: areaInfo.nombre, exceso: Math.round(exceso*100)/100, 
-        costo: Math.round((costoExcesoPorCentro.get(centro)||0)*100)/100,
+        centro: areaInfo.centro, nombre: areaInfo.nombre, exceso: Math.round(exceso*100)/100, 
+        costo: Math.round((costoExcesoPorArea.get(areaKey)||0)*100)/100,
         equipos: areaInfo.equipos.length
       });
     }
