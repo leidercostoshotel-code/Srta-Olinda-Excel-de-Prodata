@@ -1450,8 +1450,8 @@ function generarAsientoSAP(equipos, meta, numFactura){
       Datos:'', Monto:'', Modelo:'', 'S/N':'', IP:'', CECO:'',
       'Monto USD': round4(Math.abs(dif)),
       Cuenta: 421111101,
-      'Débito (ME)':  dif < 0 ? round4(Math.abs(dif)) : '',
-      'Crédito (ME)': dif > 0 ? round4(dif) : '',
+      'Débito (ME)':  dif < 0 ? round4(Math.abs(dif)) : 0,
+      'Crédito (ME)': dif > 0 ? round4(dif) : 0,
       'Débito':'', 'Crédito':'',
       'Débito (MS)':'', 'Crédito (MS)':'',
       Comentarios: 'CUADRE - DIFERENCIA POR TIPO DE CAMBIO',
@@ -1503,17 +1503,17 @@ function absorberNegativosAlAlquiler(filas){
       if(filaAlq){
         filaAlq['Débito (ME)'] = round4((Number(filaAlq['Débito (ME)']) || 0) + Math.abs(monto));
       }
-      // En la fila de consumo negativo: Débito (ME) vacío, Crédito (ME) = |monto|
-      f['Débito (ME)']  = '';
+      // En la fila de consumo negativo: Débito (ME) = 0, Crédito (ME) = |monto|
+      f['Débito (ME)']  = 0;
       f['Crédito (ME)'] = round4(Math.abs(monto));
     } else if(monto > 0){
-      // Consumo positivo: Débito (ME) = monto, Crédito (ME) vacío
+      // Consumo positivo: Débito (ME) = monto, Crédito (ME) = 0
       f['Débito (ME)']  = round4(monto);
-      f['Crédito (ME)'] = '';
+      f['Crédito (ME)'] = 0;
     } else {
-      // Cero: vacíos
-      f['Débito (ME)']  = '';
-      f['Crédito (ME)'] = '';
+      // Cero: ambos en 0 (mostrar USD 0.00, no vacío)
+      f['Débito (ME)']  = 0;
+      f['Crédito (ME)'] = 0;
     }
   }
 }
@@ -1663,8 +1663,8 @@ function recalcularTotalSAP(){
     // contablemente correcto).
     if(!cuadreFila._editado){
       const dif = Math.round((debSinCuadre - credSinCuadre) * 10000) / 10000;
-      cuadreFila['Débito (ME)']  = dif < 0 ? Math.abs(dif) : '';
-      cuadreFila['Crédito (ME)'] = dif > 0 ? dif : '';
+      cuadreFila['Débito (ME)']  = dif < 0 ? Math.abs(dif) : 0;
+      cuadreFila['Crédito (ME)'] = dif > 0 ? dif : 0;
       cuadreFila['Monto USD']    = Math.round(Math.abs(dif) * 10000) / 10000;
     }
   }
@@ -1790,8 +1790,10 @@ document.getElementById('btnDescargarXLSX').addEventListener('click', () => {
     aoaSAP.push(SAP_HEADERS.map(h => {
       const v = r[h];
       if(v !== undefined && v !== '') return v;
-      // Las columnas Débito (ME) y Crédito (ME) van vacías cuando no
-      // aplican (no como USD 0.00), igual que en la vista previa.
+      // Débito (ME) y Crédito (ME) siempre llevan número (0 -> "USD 0.00")
+      // para que las celdas no queden en blanco. Las otras columnas
+      // (Débito, Crédito, Débito MS, Crédito MS) sí quedan vacías.
+      if(h === 'Débito (ME)' || h === 'Crédito (ME)') return 0;
       return '';
     }));
   }
