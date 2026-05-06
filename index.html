@@ -1147,9 +1147,12 @@ function renderizar(equipos, meta){
     // Renta: usar el valor OFICIAL del PDF (más exacto que 21 × 51.68
     // que pierde 4 centavos por redondeo). Si no hay PDF, fallback a la suma.
     const rentaOficial = meta.totalRenta || sums.alquiler;
+    // En algunos PDFs (ej. abril) el parser puede leer un excedente menor
+    // al real; en ese caso conservamos el mayor entre PDF y cálculo detallado.
+    const excedenteCalculado = sums.importeBruto;
     const excedenteOficial = (meta.totalExcedente !== undefined && meta.totalExcedente > 0)
-      ? meta.totalExcedente
-      : sums.importeBruto;
+      ? Math.max(meta.totalExcedente, excedenteCalculado)
+      : excedenteCalculado;
     const totalFacturado = (meta.totalFacturacion && meta.totalFacturacion > 0)
       ? meta.totalFacturacion
       : (rentaOficial + excedenteOficial);
@@ -1180,7 +1183,7 @@ function renderizar(equipos, meta){
   document.getElementById('kpiPeriodo').textContent = meta.periodo || '—';
   document.getElementById('kpiEquipos').textContent = equipos.length;
   document.getElementById('kpiRenta').textContent = 'S/ '+fmtNum(meta.totalRenta || totalRentaCalc);
-  document.getElementById('kpiExcedente').textContent = 'S/ '+fmtNum(meta.totalExcedente || sums.importeBruto || totalExcedenteCalc);
+  document.getElementById('kpiExcedente').textContent = 'S/ '+fmtNum(Math.max(meta.totalExcedente || 0, sums.importeBruto || totalExcedenteCalc || 0));
 
   const kpiVal = document.getElementById('kpiValidacion');
   const banner = document.getElementById('bannerCompara');
