@@ -321,6 +321,14 @@
     transition:width 0.5s ease;
   }
   .progress-bar.exceso{background:linear-gradient(90deg, var(--rojo), #a93226);}
+  #progressContainer,
+  #excesoProgressContainer{
+    height:auto;
+    overflow:visible;
+    background:transparent;
+    margin-top:12px;
+    border-radius:0;
+  }
   .format-breakdown{
     display:flex;
     gap:10px;
@@ -995,8 +1003,9 @@ function actualizarEstadisticas(equipos, meta){
   
   for(const eq of equipos){
     const m = MAESTRO[eq.sn] || {};
-    const centro = m.centroCosto || 0;
-    const nombreArea = m.observacion || eq.direccion || `Centro ${centro}`;
+    const centroRaw = (m.centroCosto ?? '').toString().trim();
+    const centro = centroRaw === '' ? '0' : centroRaw;
+    const nombreArea = (m.observacion || eq.direccion || `Centro ${centro}`).toString().trim();
     let consumoEquipo = 0;
     let excedenteEquipo = 0;
     let costoExcedenteEquipo = 0;
@@ -1032,8 +1041,11 @@ function actualizarEstadisticas(equipos, meta){
     }
     excesoPorCentro.set(centro, (excesoPorCentro.get(centro)||0) + excedenteEquipo);
     costoExcesoPorCentro.set(centro, (costoExcesoPorCentro.get(centro)||0) + costoExcedenteEquipo);
-    if(m.observacion && m.observacion.length > (consumoPorCentro.get(centro).nombre.length || 0)){
-      consumoPorCentro.get(centro).nombre = m.observacion;
+    if(m.observacion){
+      const nombreObservacion = m.observacion.toString().trim();
+      if(nombreObservacion.length > (consumoPorCentro.get(centro).nombre.length || 0)){
+        consumoPorCentro.get(centro).nombre = nombreObservacion;
+      }
     }
   }
   
