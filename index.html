@@ -511,14 +511,17 @@ const MAESTRO = {
   "9502370Y":{marca:"Sharp",modelo:"MX-M3070",ip:"10.72.8.207",observacion:"3er Piso - Contabilidad",cantidad:1,cuenta:941231308,centroCosto:403,alquilerFijo:51.68}
 };
 
-// Volumen Máximo TOTAL POR BOLSA (no por equipo) — fallback si el
-// PDF no trae los bloques de bolsa. Para el contrato 276580.
-// Reprodata calcula el excedente sumando el consumo de TODOS los equipos
-// de una bolsa y comparándolo con este volumen total.
+// Volumen Máximo POR EQUIPO (no el total de la bolsa).
+// Esta es la convención que usa Olinda en su Excel (Ejemplo.html):
+// cada equipo tiene su propio volumen contractual, y al exceder se
+// genera un cobro y al consumir bajo el volumen se genera un crédito
+// (consumo - volMax negativo).
+// Bolsa 1 son sólo B/N (Canon IR-*, MX-M3070): 3250 A4BN, 0 color.
+// Bolsas 2..5 (multifuncionales color): 188 A4BN + 563 A4CL por equipo.
 const VOL_MAX_BOLSA_FALLBACK = {
-  "Bolsa 1":{A4BN:13000,A3BN:0,A4CL:0,A3CL:0},
-  "Bolsa 2":{A4BN:1504,A3BN:0,A4CL:4504,A3CL:0},
-  "Bolsa 3":{A4BN:1128,A3BN:0,A4CL:3378,A3CL:0},
+  "Bolsa 1":{A4BN:3250,A3BN:0,A4CL:0,A3CL:0},
+  "Bolsa 2":{A4BN:188,A3BN:0,A4CL:563,A3CL:0},
+  "Bolsa 3":{A4BN:188,A3BN:0,A4CL:563,A3CL:0},
   "Bolsa 4":{A4BN:188,A3BN:0,A4CL:563,A3CL:0},
   "Bolsa 5":{A4BN:188,A3BN:0,A4CL:563,A3CL:0},
   "SIN BOLSA":{A4BN:0,A3BN:0,A4CL:0,A3CL:0}
@@ -994,8 +997,6 @@ function renderizar(equipos, meta){
 
   let totalExcedenteCalc = 0;
   let totalRentaCalc = 0;
-  // Pre-calcular agregado por bolsa (método correcto del proveedor)
-  const bolsasCalc = calcularBolsasAgregadas(equipos);
   // Acumuladores para la fila TOTAL al pie de la tabla
   const sums = {
     cantidad:0, consumo:0, volMax:0,
@@ -1003,7 +1004,6 @@ function renderizar(equipos, meta){
     importeBruto:0, importeNegativo:0,
     alquiler:0
   };
-  window._bolsasCalc = bolsasCalc;
 
   for(const eq of equipos){
     const m = MAESTRO[eq.sn] || {};
@@ -1024,38 +1024,31 @@ function renderizar(equipos, meta){
     // ¿El equipo tiene excedente en algún formato? -> resaltar la fila
     let equipoTieneExcedente = false;
     for(const f of FORMATOS){
-      const bi = bolsasCalc[bolsa] && bolsasCalc[bolsa][f];
-      const ei = bi && bi.equipos.find(x => x.sn === eq.sn);
-      if(ei && (ei.cobroAsignado || 0) > 0.005){ equipoTieneExcedente = true; break; }
+      const dd = eq.formatos[f] || {};
+      const vm = (VOL_MAX_BOLSA[bolsa] && VOL_MAX_BOLSA[bolsa][f] != null) ? VOL_MAX_BOLSA[bolsa][f] : null;
+      const cc = dd.consumo || 0;
+      const ee = (vm != null) ? (cc === 0 ? 0 : cc - vm) : (dd.cantExc||0);
+      if(ee > 0){ equipoTieneExcedente = true; break; }
     }
 
     for(let i=0;i<FORMATOS.length;i++){
       const fmt = FORMATOS[i];
       const d = eq.formatos[fmt] || {ci:0,cf:0,consumo:0,volEst:0,cantExc:0,precio:0,total:0};
-      const volMaxTotal = (VOL_MAX_BOLSA[bolsa] && VOL_MAX_BOLSA[bolsa][fmt] != null) ? VOL_MAX_BOLSA[bolsa][fmt] : null;
+      const volMax = (VOL_MAX_BOLSA[bolsa] && VOL_MAX_BOLSA[bolsa][fmt] != null) ? VOL_MAX_BOLSA[bolsa][fmt] : null;
       const consumo = d.consumo;
-      // Cálculo correcto: el excedente y cobro se asignan proporcional
-      // al consumo del equipo dentro del agregado de su bolsa.
-      const bolsaInfo = bolsasCalc[bolsa] && bolsasCalc[bolsa][fmt];
-      const eqInfo = bolsaInfo && bolsaInfo.equipos.find(x => x.sn === eq.sn);
-      const excedenteReal = eqInfo ? Math.round(eqInfo.excAsignado * 100) / 100 : 0;
-      const totalCalc = eqInfo ? Math.round(eqInfo.cobroAsignado * 10000) / 10000 : 0;
-      // Mostramos el volumen máximo TOTAL de la bolsa (mismo en todas las
-      // filas de la bolsa) — es la cifra que usa el proveedor.
-      const volMax = volMaxTotal;
+      // Cálculo POR EQUIPO (estilo Ejemplo.html):
+      //   exc = consumo - volMax_equipo (puede ser negativo)
+      //   total = exc * precio
+      const excedenteReal = (volMax !== null) ? (consumo === 0 ? 0 : consumo - volMax) : (d.cantExc || 0);
+      const totalCalc = (volMax !== null) ? excedenteReal * d.precio : (d.total || 0);
       if(totalCalc > 0) totalExcedenteCalc += totalCalc;
 
       sums.consumo += consumo || 0;
-      // Para no contar el volMax de la bolsa N veces, sólo lo sumamos en
-      // el primer equipo de la bolsa por formato.
-      if(bolsaInfo && bolsaInfo.equipos[0] && bolsaInfo.equipos[0].sn === eq.sn){
-        sums.volMax += (volMaxTotal !== null) ? volMaxTotal : 0;
-        // Y también acumulamos el excedente y cobro AGREGADO de la bolsa
-        // sólo una vez (no por equipo). Así la fila TOTAL coincide al
-        // centavo con el PDF, sin errores de redondeo del reparto.
-        if((bolsaInfo.excedente || 0) > 0) sums.excPositivo += bolsaInfo.excedente;
-        if((bolsaInfo.cobroTotal || 0) > 0) sums.importeBruto += bolsaInfo.cobroTotal;
-      }
+      sums.volMax += (volMax !== null) ? volMax : 0;
+      if(excedenteReal > 0) sums.excPositivo += excedenteReal;
+      else if(excedenteReal < 0) sums.excNegativo += excedenteReal;
+      if(totalCalc > 0) sums.importeBruto += totalCalc;
+      else if(totalCalc < 0) sums.importeNegativo += totalCalc;
 
       const tr = document.createElement('tr');
       if(i===0) tr.classList.add('sep');
@@ -1349,14 +1342,23 @@ const SAP_HEADERS = [
   'Socio Negocios','Fecha Registro Ventas'
 ];
 
-function montoConsumoEquipo(eq, bolsasCalc){
-  // Si no se pasa bolsasCalc, lo recalculamos sólo para este equipo no
-  // tendría sentido (el cobro depende del agregado de toda la bolsa).
-  // Por eso requerimos el bolsasCalc completo, calculado para todos los
-  // equipos del PDF.
-  if(!bolsasCalc) bolsasCalc = window._bolsasCalc;
-  if(!bolsasCalc) return 0;
-  return calcularCobroEquipo(eq, bolsasCalc);
+function montoConsumoEquipo(eq){
+  // Cálculo POR EQUIPO (como en Ejemplo.html). Para cada formato:
+  //   exc = consumo - volMax_equipo  (puede ser negativo si consume bajo)
+  //   total = exc × precio
+  // La suma total puede ser positiva (cobro) o negativa (crédito).
+  const FMTS = ['A4BN','A3BN','A4CL','A3CL'];
+  const bolsa = eq.bolsaPdf;
+  let total = 0;
+  for(const fmt of FMTS){
+    const d = eq.formatos[fmt] || {};
+    const volMax = (VOL_MAX_BOLSA[bolsa] && VOL_MAX_BOLSA[bolsa][fmt] != null) ? VOL_MAX_BOLSA[bolsa][fmt] : null;
+    const cons = d.consumo || 0;
+    const exc = (volMax != null) ? (cons === 0 ? 0 : cons - volMax) : (d.cantExc||0);
+    const t = (volMax != null) ? exc * (d.precio||0) : (d.total||0);
+    total += t;
+  }
+  return Math.round(total * 10000) / 10000;
 }
 
 function generarAsientoSAP(equipos, meta, numFactura){
@@ -1371,8 +1373,7 @@ function generarAsientoSAP(equipos, meta, numFactura){
 
   const totalRenta = meta.totalRenta || (equipos.length * 51.6819047619048);
   const alquiler = totalRenta / equipos.length;
-  const bolsasCalc = calcularBolsasAgregadas(equipos);
-  const totalExc = equipos.reduce((s,e) => s + montoConsumoEquipo(e, bolsasCalc), 0);
+  const totalExc = equipos.reduce((s,e) => s + montoConsumoEquipo(e), 0);
   const montoTotal = Math.round((totalRenta + totalExc) * 100) / 100;
 
   const ordenados = [...equipos].sort((a,b) => {
@@ -1408,7 +1409,7 @@ function generarAsientoSAP(equipos, meta, numFactura){
     filas.push(rowAlquiler);
     idx++;
 
-    const consumo = montoConsumoEquipo(eq, bolsasCalc);
+    const consumo = montoConsumoEquipo(eq);
     const rowConsumo = {
       Datos: '',
       Monto: '',
