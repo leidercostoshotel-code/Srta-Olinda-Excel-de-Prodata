@@ -995,8 +995,9 @@ function actualizarEstadisticas(equipos, meta){
   
   for(const eq of equipos){
     const m = MAESTRO[eq.sn] || {};
-    const centro = m.centroCosto || 0;
-    const nombreArea = m.observacion || eq.direccion || `Centro ${centro}`;
+    const centroRaw = (m.centroCosto ?? '').toString().trim();
+    const centro = centroRaw === '' ? '0' : centroRaw;
+    const nombreArea = (m.observacion || eq.direccion || `Centro ${centro}`).toString().trim();
     let consumoEquipo = 0;
     let excedenteEquipo = 0;
     let costoExcedenteEquipo = 0;
@@ -1032,8 +1033,11 @@ function actualizarEstadisticas(equipos, meta){
     }
     excesoPorCentro.set(centro, (excesoPorCentro.get(centro)||0) + excedenteEquipo);
     costoExcesoPorCentro.set(centro, (costoExcesoPorCentro.get(centro)||0) + costoExcedenteEquipo);
-    if(m.observacion && m.observacion.length > (consumoPorCentro.get(centro).nombre.length || 0)){
-      consumoPorCentro.get(centro).nombre = m.observacion;
+    if(m.observacion){
+      const nombreObservacion = m.observacion.toString().trim();
+      if(nombreObservacion.length > (consumoPorCentro.get(centro).nombre.length || 0)){
+        consumoPorCentro.get(centro).nombre = nombreObservacion;
+      }
     }
   }
   
