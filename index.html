@@ -95,6 +95,30 @@
     border:1px solid rgba(255,255,255,.15);
   }
 
+  .dog-track{
+    position:absolute;
+    left:-60px;
+    right:-60px;
+    top:4px;
+    height:34px;
+    pointer-events:none;
+    overflow:hidden;
+    z-index:3;
+  }
+  .dog{
+    position:absolute;
+    font-size:24px;
+    animation:dogRun 12s linear infinite;
+    filter:drop-shadow(0 2px 2px rgba(0,0,0,.25));
+  }
+  @keyframes dogRun{
+    0%   {transform:translateX(0) translateY(-26px);opacity:0;}
+    8%   {transform:translateX(12vw) translateY(0);opacity:1;}
+    45%  {transform:translateX(52vw) translateY(0);opacity:1;}
+    60%  {transform:translateX(68vw) translateY(-18px);opacity:0;}
+    100% {transform:translateX(100vw) translateY(-26px);opacity:0;}
+  }
+
   /* Toolbar */
   .toolbar{
     display:flex;gap:8px;align-items:center;flex-wrap:wrap;
@@ -371,6 +395,7 @@
 <div class="app">
 
 <header class="appbar">
+  <div class="dog-track" aria-hidden="true"><span class="dog">🐕</span></div>
   <div>
     <h1><span class="dot"></span>Cuadro de Consumo — Reprodata</h1>
     <div class="subtitulo">Contrato 276580 · HOTELERA COSTA DEL PACIFICO S.A.</div>
