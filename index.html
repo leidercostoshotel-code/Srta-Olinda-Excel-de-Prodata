@@ -1040,12 +1040,21 @@ function actualizarEstadisticas(equipos, meta){
       const d = eq.formatos[fmt] || {};
       consumoPorArea.get(areaKey).formatosDetalle[fmt] += d.consumo || 0;
     }
+
     excesoPorArea.set(areaKey, (excesoPorArea.get(areaKey)||0) + excedenteEquipo);
     costoExcesoPorArea.set(areaKey, (costoExcesoPorArea.get(areaKey)||0) + costoExcedenteEquipo);
     if(m.observacion){
       const nombreObservacion = m.observacion.toString().trim();
       if(nombreObservacion.length > (consumoPorArea.get(areaKey).nombre.length || 0)){
         consumoPorArea.get(areaKey).nombre = nombreObservacion;
+
+    excesoPorCentro.set(centro, (excesoPorCentro.get(centro)||0) + excedenteEquipo);
+    costoExcesoPorCentro.set(centro, (costoExcesoPorCentro.get(centro)||0) + costoExcedenteEquipo);
+    if(m.observacion){
+      const nombreObservacion = m.observacion.toString().trim();
+      if(nombreObservacion.length > (consumoPorCentro.get(centro).nombre.length || 0)){
+        consumoPorCentro.get(centro).nombre = nombreObservacion;
+
       }
     }
   }
