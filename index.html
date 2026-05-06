@@ -17,7 +17,6 @@
     --amarillo:#f5b300;
     --amarillo-claro:#fff4cf;
     --rojo:#c0392b;
-    --rojo-claro:#e74c3c;
     --verde:#0e8a5f;
     --ambar:#b37400;
     --texto:#0f172a;
@@ -68,6 +67,7 @@
   .app{position:relative;z-index:1}
   .app{max-width:1600px;margin:0 auto;padding:24px 28px 48px}
 
+  /* Header */
   .appbar{
     background:linear-gradient(135deg, #1f3864 0%, #2f5496 100%);
     color:#fff;
@@ -95,6 +95,7 @@
     border:1px solid rgba(255,255,255,.15);
   }
 
+  /* Toolbar */
   .toolbar{
     display:flex;gap:8px;align-items:center;flex-wrap:wrap;
     margin-bottom:16px;padding:14px 16px;
@@ -127,6 +128,7 @@
   .status.error{color:var(--rojo);font-weight:600}
   .status.error::before{background:var(--rojo);box-shadow:0 0 0 3px rgba(192,57,43,.18)}
 
+  /* Resumen (KPIs) */
   .resumen{
     margin-bottom:16px;padding:0;background:transparent;border:none;
     display:grid;gap:12px;
@@ -155,215 +157,7 @@
     font-family:'Inter',sans-serif;
   }
 
-  .stats-panel{
-    background:linear-gradient(135deg, #f8fafd 0%, #ffffff 100%);
-    border:1px solid var(--borde);
-    border-radius:var(--radio);
-    margin-bottom:20px;
-    overflow:hidden;
-    box-shadow:var(--sombra-md);
-  }
-  .stats-header{
-    background:linear-gradient(90deg, #1f3864 0%, #2f5496 100%);
-    padding:12px 20px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    cursor:pointer;
-    transition:var(--transicion);
-  }
-  .stats-header:hover{background:linear-gradient(90deg, #17294a 0%, #1f3864 100%);}
-  .stats-header h3{
-    margin:0;
-    font-size:13px;
-    font-weight:600;
-    color:#fff;
-    letter-spacing:.02em;
-    display:flex;
-    align-items:center;
-    gap:10px;
-  }
-  .stats-header h3::before{content:'📊';font-size:16px;}
-  .stats-header .toggle-icon{color:var(--amarillo);font-size:18px;font-weight:600;}
-  .stats-content{
-    padding:20px;
-    display:none;
-  }
-  .stats-content.open{display:block;}
-  .kpi-stats-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));
-    gap:15px;
-    margin-bottom:25px;
-  }
-  .stat-card{
-    background:var(--bg-card);
-    border:1px solid var(--borde);
-    border-radius:var(--radio);
-    padding:14px 18px;
-    transition:var(--transicion);
-    border-left:4px solid var(--azul-medio);
-  }
-  .stat-card.exceso-card{border-left-color:var(--rojo);}
-  .stat-card .stat-label{
-    font-size:10px;
-    text-transform:uppercase;
-    letter-spacing:.08em;
-    color:var(--texto-mas-suave);
-    font-weight:600;
-    margin-bottom:6px;
-  }
-  .stat-card .stat-value{
-    font-size:26px;
-    font-weight:800;
-    color:var(--azul);
-    font-family:'Inter',sans-serif;
-    line-height:1.2;
-  }
-  .stat-card.exceso-card .stat-value{color:var(--rojo);}
-  .stat-card .stat-unit{font-size:12px;font-weight:500;color:var(--texto-suave);margin-left:4px;}
-  .stat-card .stat-trend{
-    font-size:11px;
-    margin-top:6px;
-    color:var(--verde);
-    display:flex;
-    align-items:center;
-    gap:4px;
-  }
-  .stat-card.exceso-card .stat-trend{color:var(--rojo);}
-  .ranking-area{
-    background:var(--bg-sutil);
-    border-radius:var(--radio);
-    padding:18px;
-    margin-top:15px;
-  }
-  .ranking-title{
-    font-size:12px;
-    font-weight:700;
-    color:var(--azul);
-    margin-bottom:12px;
-    display:flex;
-    align-items:center;
-    gap:8px;
-    border-bottom:2px solid var(--amarillo);
-    padding-bottom:6px;
-  }
-  .ranking-title.exceso{border-bottom-color:var(--rojo);color:var(--rojo);}
-  .ranking-list{
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-  }
-  .ranking-item{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    padding:8px 12px;
-    background:#fff;
-    border-radius:var(--radio-sm);
-    border:1px solid var(--borde);
-    transition:var(--transicion);
-  }
-  .ranking-item:hover{transform:translateX(4px);box-shadow:var(--sombra-sm);border-color:var(--azul-claro);}
-  .ranking-item.exceso:hover{border-color:var(--rojo-claro);}
-  .ranking-position{
-    width:28px;
-    height:28px;
-    background:linear-gradient(135deg, var(--azul-medio), var(--azul));
-    color:#fff;
-    border-radius:50%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:700;
-    font-size:13px;
-  }
-  .ranking-position.top1{background:linear-gradient(135deg, #f5b300, #e6a800);}
-  .ranking-position.top2{background:linear-gradient(135deg, #7f8c8d, #6c7a7a);}
-  .ranking-position.top3{background:linear-gradient(135deg, #cd6133, #b5522a);}
-  .ranking-position.exceso{background:linear-gradient(135deg, var(--rojo), #a93226);}
-  .ranking-info{flex:1;}
-  .ranking-name{
-    font-weight:700;
-    color:var(--texto);
-    font-size:13px;
-  }
-  .ranking-detail{
-    font-size:10px;
-    color:var(--texto-mas-suave);
-    margin-top:2px;
-  }
-  .ranking-consumo{
-    font-weight:700;
-    color:var(--azul);
-    font-size:14px;
-    font-family:'JetBrains Mono',monospace;
-  }
-  .ranking-consumo.exceso{color:var(--rojo);}
-  .ranking-percent{
-    width:60px;
-    font-size:11px;
-    color:var(--texto-suave);
-    text-align:right;
-  }
-  .progress-bar-container{
-    margin-top:20px;
-    background:#f0f0f0;
-    border-radius:10px;
-    overflow:hidden;
-    height:8px;
-  }
-  .progress-bar{
-    height:100%;
-    background:linear-gradient(90deg, var(--azul-medio), var(--azul));
-    border-radius:10px;
-    width:0%;
-    transition:width 0.5s ease;
-  }
-  .progress-bar.exceso{background:linear-gradient(90deg, var(--rojo), #a93226);}
-  #progressContainer,
-  #excesoProgressContainer{
-    height:auto;
-    overflow:visible;
-    background:transparent;
-    margin-top:12px;
-    border-radius:0;
-  }
-  .format-breakdown{
-    display:flex;
-    gap:10px;
-    margin-top:20px;
-    flex-wrap:wrap;
-  }
-  .format-badge{
-    flex:1;
-    background:#fff;
-    border:1px solid var(--borde);
-    border-radius:var(--radio-sm);
-    padding:10px;
-    text-align:center;
-  }
-  .format-badge .format-name{
-    font-weight:700;
-    font-size:11px;
-    color:var(--azul);
-  }
-  .format-badge .format-consumo{
-    font-size:16px;
-    font-weight:800;
-    color:var(--texto);
-  }
-  .warning-badge{
-    display:inline-block;
-    background:var(--rojo);
-    color:#fff;
-    font-size:10px;
-    font-weight:700;
-    padding:2px 8px;
-    border-radius:12px;
-    margin-left:8px;
-  }
-
+  /* Panels */
   .panel{
     margin-top:16px;padding:16px 18px;
     background:var(--bg-card);
@@ -380,6 +174,7 @@
     content:'';width:4px;height:14px;background:var(--amarillo);border-radius:2px;
   }
 
+  /* Banners */
   .banner{
     padding:11px 14px;margin-top:10px;border-radius:var(--radio-sm);
     font-size:12.5px;font-weight:500;
@@ -391,6 +186,7 @@
   .banner.err{background:#fde8e6;border-color:var(--rojo);color:#8a1e12}
   .banner.ok{background:#e5f6ec;border-color:var(--verde);color:#0b5a3d}
 
+  /* Histórico — badges */
   .mes-item{
     display:inline-flex;align-items:center;gap:6px;margin:2px 6px 2px 0;
     padding:5px 10px 5px 12px;
@@ -424,11 +220,11 @@
   details summary:hover{color:var(--azul-oscuro)}
   .discrepancias{max-height:240px;overflow:auto;margin-top:8px;font-size:11.5px;border-radius:var(--radio-sm);border:1px solid var(--borde)}
 
+  /* Tablas */
   .wrap{
     overflow:auto;background:var(--bg-card);
     border:1px solid var(--borde);border-radius:var(--radio);
     box-shadow:var(--sombra-sm);
-    max-height:420px;
   }
   table{
     border-collapse:separate;border-spacing:0;
@@ -489,13 +285,6 @@
   tr.fila-total td.num{font-family:'JetBrains Mono','Inter',monospace}
   td.ci-ok{background:#d8f5dc}
   td.ci-err{background:#ffd6d6}
-  #tablaSAP tbody tr.sap-alquiler td{background:#eef5ff}
-  #tablaSAP tbody tr.sap-consumo td{background:#fff7e6}
-  #tablaSAP tbody tr.sap-cuadre td{background:#ffe4e6;color:#9f1239;font-weight:700}
-  #tablaSAP tbody tr.sap-total td{
-    background:linear-gradient(180deg,#fff4cf,#ffe88a);
-    color:#12244a;font-weight:800;border-top:2px solid var(--azul-oscuro);
-  }
   .ci-badge{
     display:inline-block;margin-left:5px;font-weight:700;font-size:11px;
     padding:1px 5px;border-radius:4px;
@@ -503,6 +292,7 @@
   .ci-badge.ok{color:#065f3f;background:#c6f0d0}
   .ci-badge.err{color:#7a1b10;background:#ffc3c3}
 
+  /* Edición in-line */
   td.editable{
     background:#fffdf0;cursor:text;
     position:relative;
@@ -515,6 +305,7 @@
   td.editable:focus{outline:2px solid var(--azul-medio);outline-offset:-2px;background:#fff}
   td.editable:hover{background:#fff4c2}
 
+  /* Input tipo texto */
   input[type=text]{
     padding:7px 10px;border:1px solid var(--borde);border-radius:var(--radio-sm);
     font-size:12px;font-family:inherit;color:var(--texto);
@@ -539,7 +330,9 @@
     font-size:11.5px;color:var(--texto-suave);margin-top:10px;line-height:1.55;
     padding:10px 12px;background:#fffbec;border:1px solid #f5e2a8;border-radius:var(--radio-sm);
   }
+  .hint-edit b{color:var(--ambar)}
 
+  /* Scroll */
   ::-webkit-scrollbar{width:10px;height:10px}
   ::-webkit-scrollbar-track{background:#f0f4f9}
   ::-webkit-scrollbar-thumb{background:#c6d0dd;border-radius:8px;border:2px solid #f0f4f9}
@@ -567,6 +360,9 @@
     font-size:10.5px;text-transform:uppercase;letter-spacing:.14em;
     color:var(--texto-mas-suave);font-weight:500;margin-top:2px;
   }
+  .creditos .marca{
+    font-size:10px;color:var(--texto-mas-suave);margin-top:6px;font-weight:400;
+  }
 </style>
 </head>
 <body>
@@ -578,7 +374,7 @@
     <h1><span class="dot"></span>Cuadro de Consumo — Reprodata</h1>
     <div class="subtitulo">Contrato 276580 · HOTELERA COSTA DEL PACIFICO S.A.</div>
   </div>
-  <div class="chip" id="chipEstado">Importador mensual de facturación (USD)</div>
+  <div class="chip" id="chipEstado">Importador mensual de facturación</div>
 </header>
 
 <div class="toolbar">
@@ -592,38 +388,9 @@
 <div class="resumen" id="resumen" style="display:none">
   <div class="kpi"><div class="lbl">Período</div><div class="val" id="kpiPeriodo">—</div></div>
   <div class="kpi"><div class="lbl">Equipos</div><div class="val" id="kpiEquipos">0</div></div>
-  <div class="kpi"><div class="lbl">Total Renta Mensual</div><div class="val" id="kpiRenta">USD 0.00</div></div>
-  <div class="kpi"><div class="lbl">Total Excedente</div><div class="val" id="kpiExcedente">USD 0.00</div></div>
+  <div class="kpi"><div class="lbl">Total Renta Mensual</div><div class="val" id="kpiRenta">S/ 0.00</div></div>
+  <div class="kpi"><div class="lbl">Total Excedente</div><div class="val" id="kpiExcedente">S/ 0.00</div></div>
   <div class="kpi"><div class="lbl">Validación CI vs Mes Anterior</div><div class="val" id="kpiValidacion">—</div></div>
-</div>
-
-<!-- Panel de Estadísticas con USD -->
-<div class="stats-panel" id="statsPanel" style="display:none">
-  <div class="stats-header" id="statsHeader">
-    <h3>📊 Análisis de Consumo por Área</h3>
-    <span class="toggle-icon">▼</span>
-  </div>
-  <div class="stats-content" id="statsContent">
-    <div class="kpi-stats-grid" id="statsKPIs"></div>
-    
-    <div class="ranking-area">
-      <div class="ranking-title">🏆 TOP ÁREAS con Mayor Consumo de Impresiones</div>
-      <div class="ranking-list" id="rankingList"></div>
-      <div class="progress-bar-container" id="progressContainer"></div>
-    </div>
-
-    <div class="ranking-area" style="margin-top:20px;border-left:3px solid var(--rojo);">
-      <div class="ranking-title exceso">⚠️ ALERTA: Áreas con EXCEDENTES (Costo Adicional en USD)</div>
-      <div id="excesoRanking" class="ranking-list"></div>
-      <div id="excesoProgressContainer" class="progress-bar-container"></div>
-      <div id="excesoTotalInfo" style="margin-top:12px;padding:10px;background:#fde8e6;border-radius:8px;font-size:12px;"></div>
-    </div>
-
-    <div class="format-breakdown" id="formatBreakdown"></div>
-    <div class="banner info" style="margin-top:15px">
-      💡 <strong>Insight:</strong> Las áreas marcadas en <span style="color:var(--rojo);font-weight:bold">ROJO</span> han superado su volumen contratado. El excedente genera un costo adicional en <strong>USD</strong> que se refleja en la facturación mensual.
-    </div>
-  </div>
 </div>
 
 <div id="bannerCompara"></div>
@@ -647,14 +414,27 @@
   <table id="tabla">
     <thead>
       <tr>
-        <th>Fecha</th><th>Marca</th><th>Modelo</th><th>S/N</th><th>IP</th><th>Observación</th>
-        <th>Cantidad<br>Impresoras</th><th>Bolsa</th><th>Formatos</th><th>Contador<br>Inicial</th>
-        <th id="thCfAnt" style="display:none">CF<br><span id="thCfAntMes">mes ant.</span></th>
-        <th id="thDelta" style="display:none">Δ<br>vs CI</th>
-        <th>Contador<br>Final</th><th>Consumo<br>del Mes</th>
-        <th>Volumen Máximo<br>Establecido</th><th>Volumen<br>Excedente</th>
-        <th>Precio (USD)</th><th>Total (USD)</th><th>Alquiler<br>Fijo (USD)</th>
-        <th>Cuenta</th><th>Centro<br>Costo</th>
+        <th>Fecha</th>
+        <th>Marca</th>
+        <th>Modelo</th>
+        <th>S/N</th>
+        <th>IP</th>
+        <th>Observación</th>
+        <th>Cantidad<br>Impresoras</th>
+        <th>Bolsa</th>
+        <th>Formatos</th>
+        <th>Contador<br>Inicial</th>
+        <th id="thCfAnt" style="display:none;background:linear-gradient(180deg,#3a5c97,#27406a)">CF<br><span id="thCfAntMes">mes ant.</span></th>
+        <th id="thDelta" style="display:none;background:linear-gradient(180deg,#3a5c97,#27406a)">Δ<br>vs CI</th>
+        <th>Contador<br>Final</th>
+        <th>Consumo<br>del Mes</th>
+        <th>Volumen Máximo<br>Establecido</th>
+        <th>Volumen<br>Excedente</th>
+        <th>Precio</th>
+        <th>Total</th>
+        <th>alquiler<br>fijo</th>
+        <th>Cuenta</th>
+        <th>Centro<br>Costo</th>
       </tr>
     </thead>
     <tbody id="tbody">
@@ -666,7 +446,9 @@
 <div class="panel" id="panelSAP">
   <h3>Asiento contable SAP</h3>
   <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
-    <label class="inline">N° Factura <input type="text" id="inpFactura" value="01-F020-00027840" style="width:200px"></label>
+    <label class="inline">N° Factura
+      <input type="text" id="inpFactura" value="01-F020-00027840" style="width:200px">
+    </label>
     <button id="btnGenSAP">⚙ Generar asiento SAP</button>
     <button class="secundario" id="btnCopiarSAP">📋 Copiar (TSV)</button>
     <button class="secundario" id="btnDescargarXLSX">⬇ Descargar .xlsx</button>
@@ -674,21 +456,32 @@
   </div>
   <div class="wrap" style="max-height:340px">
     <table id="tablaSAP">
-      <thead><tr><th>Datos</th><th>Monto</th><th>Modelo</th><th>S/N</th><th>IP</th><th>CECO</th><th>Monto USD</th><th>Cuenta</th><th>Débito(ME)</th><th>Crédito(ME)</th><th>Débito</th><th>Crédito</th><th>Comentarios</th><th>Referencia 2</th><th>Centro Costo</th></tr></thead>
-      <tbody id="tbodySAP"><tr><td colspan="15" style="padding:16px;color:#888">— Cargue un PDF y presione <b>Generar asiento SAP</b> —</td></tr></tbody>
+      <thead>
+        <tr>
+          <th>Datos</th><th>Monto</th><th>Modelo</th><th>S/N</th><th>IP</th>
+          <th>CECO</th><th>Monto USD</th><th>Cuenta</th><th>Débito<br>(ME)</th>
+          <th>Crédito<br>(ME)</th><th>Débito</th><th>Crédito</th>
+          <th>Comentarios</th><th>Referencia 2</th><th>Centro<br>Costo</th>
+        </tr>
+      </thead>
+      <tbody id="tbodySAP">
+        <tr><td colspan="15" style="padding:16px;color:#888">— Cargue un PDF y presione <b>Generar asiento SAP</b> —</td></tr>
+      </tbody>
     </table>
+  </div>
+  <div class="hint-edit">
+    💡 Las celdas en <b>amarillo claro</b> (Monto USD, Débito (ME), Crédito (ME), Comentarios) son <b>editables</b>: haga click sobre la celda, corrija el valor y presione <kbd>Enter</kbd> (o <kbd>Esc</kbd> para cancelar). Las filas modificadas quedan marcadas y el total se recalcula automáticamente. Los cambios se reflejan al <b>Copiar</b> y al <b>Descargar .xlsx</b>. El <b>.xlsx</b> exporta las <b>30 columnas</b> exactas del formato SAP (incluye <i>Cuenta de mayor, Cuenta asociada, Referencia 1, Posición, Cuenta destino, Cuenta patrimonial, Socio Negocios</i>, etc.).
   </div>
 </div>
 
 <div class="leyenda">
-  <b>Marca, IP, Observación, Cuenta, Centro Costo y Volumen Máximo</b> se autocompletan desde el maestro interno.<br>
-  <b>Validación mensual:</b> al importar un PDF se compara cada <i>Contador Inicial</i> del PDF contra el <i>Contador Final</i> del mes anterior guardado.<br>
-  <b>Moneda:</b> Todos los montos están expresados en <strong>USD (Dólares Americanos)</strong>.
+  <b>Marca, IP, Observación, Cuenta, Centro Costo y Volumen Máximo</b> se autocompletan desde el maestro interno. Las filas con fondo naranja indican un S/N del PDF que aún no existe en el maestro.<br>
+  <b>Validación mensual:</b> al importar un PDF se compara cada <i>Contador Inicial</i> del PDF contra el <i>Contador Final</i> del mes anterior guardado. <span class="ci-badge ok">✓</span> fondo verde = cuadra. <span class="ci-badge err">✗</span> fondo rojo = discrepancia (posible error de facturación). Use <b>Guardar este mes</b> para ir armando el histórico y <b>Exportar histórico</b> para respaldar (los datos viven en el navegador; si cambia de equipo, impórtelos con <b>Importar histórico</b>).
 </div>
 
 <script>
 if (typeof pdfjsLib === 'undefined') {
-  document.getElementById('status').textContent = 'Error: no se pudo cargar PDF.js';
+  document.getElementById('status').textContent = 'Error: no se pudo cargar PDF.js desde el CDN. Revise su conexión o bloqueadores de scripts.';
   document.getElementById('status').classList.add('error');
 } else {
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -696,7 +489,7 @@ if (typeof pdfjsLib === 'undefined') {
 
 const MAESTRO = {
   "RJQ00596":{marca:"Canon",modelo:"IR-C3330",ip:"10.72.8.203",observacion:"2do Piso - Seguridad",cantidad:1,cuenta:941231308,centroCosto:408,alquilerFijo:51.68},
-  "QFX06245":{marca:"Canon",modelo:"IR-1730",ip:"10.72.8.215",observacion:"2do Piso - Oficina Auditor Ingresos",cantidad:1,cuenta:941231308,centroCosto:403,alquilerFijo:51.68},
+  "QFX06245":{marca:"Canon",modelo:"IR-1730",ip:"10.72.8.215",observacion:"2do Piso - Oficina Auditor de Ingresos",cantidad:1,cuenta:941231308,centroCosto:403,alquilerFijo:51.68},
   "35E33608":{marca:"Canon",modelo:"IR-1643",ip:"10.72.8.211",observacion:"1er Piso - Front Desk - Recepción",cantidad:1,cuenta:931221108,centroCosto:101,alquilerFijo:51.68},
   "35E33607":{marca:"Canon",modelo:"IR-1643",ip:"10.72.8.153",observacion:"1er Piso - Front Desk - Recepción",cantidad:1,cuenta:931221108,centroCosto:101,alquilerFijo:51.68},
   "X3B7002433":{marca:"Epson",modelo:"WF-C5790",ip:"10.72.8.191",observacion:"2do Piso - Oficina Banquetes",cantidad:1,cuenta:932341308,centroCosto:207,alquilerFijo:51.68},
@@ -705,7 +498,7 @@ const MAESTRO = {
   "X3B7003661":{marca:"Epson",modelo:"WF-C5790",ip:"10.72.8.132",observacion:"1er Sótano - Steward - Limpieza",cantidad:1,cuenta:932341308,centroCosto:200,alquilerFijo:51.68},
   "X3B7003671":{marca:"Epson",modelo:"WF-C5790",ip:"10.72.8.208",observacion:"1er Piso - Caja Lobby Bar",cantidad:1,cuenta:932341308,centroCosto:204,alquilerFijo:51.68},
   "X3B7003703":{marca:"Epson",modelo:"WF-C5790",ip:"10.9.10.153",observacion:"1er Piso Gym",cantidad:1,cuenta:933441108,centroCosto:304,alquilerFijo:51.68},
-  "X3B7003711":{marca:"Epson",modelo:"WF-C5790",ip:"10.72.8.205",observacion:"1er Piso - Recepción Back Office",cantidad:1,cuenta:931221108,centroCosto:101,alquilerFijo:51.68},
+  "X3B7003711":{marca:"Epson",modelo:"WF-C5790",ip:"10.72.8.205",observacion:"1er Piso - Recepción - Back Office",cantidad:1,cuenta:931221108,centroCosto:101,alquilerFijo:51.68},
   "X3B7003739":{marca:"Epson",modelo:"WF-C5790",ip:"10.72.10.43",observacion:"1er Piso Compras",cantidad:1,cuenta:941231308,centroCosto:402,alquilerFijo:51.68},
   "X3B7003876":{marca:"Epson",modelo:"WF-C5790",ip:"10.72.8.220",observacion:"1er Piso - Oficina AyB",cantidad:1,cuenta:932341308,centroCosto:200,alquilerFijo:51.68},
   "XBJZ017266":{marca:"Epson",modelo:"WF-C5890",ip:"10.72.8.229",observacion:"1er Sótano - Housekeeping",cantidad:1,cuenta:931221108,centroCosto:102,alquilerFijo:51.68},
@@ -718,6 +511,10 @@ const MAESTRO = {
   "9502370Y":{marca:"Sharp",modelo:"MX-M3070",ip:"10.72.8.207",observacion:"3er Piso - Contabilidad",cantidad:1,cuenta:941231308,centroCosto:403,alquilerFijo:51.68}
 };
 
+// Volumen Máximo TOTAL POR BOLSA (no por equipo) — fallback si el
+// PDF no trae los bloques de bolsa. Para el contrato 276580.
+// Reprodata calcula el excedente sumando el consumo de TODOS los equipos
+// de una bolsa y comparándolo con este volumen total.
 const VOL_MAX_BOLSA_FALLBACK = {
   "Bolsa 1":{A4BN:13000,A3BN:0,A4CL:0,A3CL:0},
   "Bolsa 2":{A4BN:1504,A3BN:0,A4CL:4504,A3CL:0},
@@ -727,19 +524,25 @@ const VOL_MAX_BOLSA_FALLBACK = {
   "SIN BOLSA":{A4BN:0,A3BN:0,A4CL:0,A3CL:0}
 };
 
+// VOL_MAX_BOLSA dinámico: leído del PDF al importar. Cae al fallback
+// si el PDF no tiene los bloques esperados.
 let VOL_MAX_BOLSA = JSON.parse(JSON.stringify(VOL_MAX_BOLSA_FALLBACK));
-let PRECIOS_BOLSA = null;
+let PRECIOS_BOLSA = null; // se llena al importar el PDF
 
+// Lee los bloques "BOLSA N° #X" del PDF y devuelve {[bolsa]: {[fmt]: {volMax, precio}}}.
+// Estos bloques aparecen al final del cuadro con el resumen agregado por bolsa.
 function extraerVolumenesPDF(lines){
   const result = {};
   const FMTS = ['A4BN','A3BN','A4CL','A3CL'];
   const isNum = t => /^-?\d+(\.\d+)?$/.test(String(t).replace(/,/g,''));
   for(let i=0;i<lines.length;i++){
     const txt = lines[i].items.map(it=>it.text).join(' ').replace(/\s+/g,' ').trim();
+    // Estricto: requiere "N°" + "#" para distinguir del header de sección
     const bm = txt.match(/BOLSA\s+N°\s*#\s*(\d+)/i);
     if(!bm) continue;
     const bolsa = `Bolsa ${bm[1]}`;
     if(!result[bolsa]) result[bolsa] = {};
+    // Buscar las 4 líneas siguientes con formato A4BN/A3BN/A4CL/A3CL
     let vistos = 0;
     for(let j=i+1; j<Math.min(lines.length, i+18) && vistos<4; j++){
       const tokens = [];
@@ -752,8 +555,11 @@ function extraerVolumenesPDF(lines){
         if(isNum(tokens[k])) nums.push(parseFloat(tokens[k].replace(/,/g,'')));
         else break;
       }
+      // Bloque BOLSA tiene 5 números: cons, volMax, exc, precio, cobro
       if(nums.length >= 5){
-        if(!result[bolsa][fmt]) result[bolsa][fmt] = { volMax: nums[1], precio: nums[3] };
+        if(!result[bolsa][fmt]){
+          result[bolsa][fmt] = { volMax: nums[1], precio: nums[3] };
+        }
         vistos++;
       }
     }
@@ -761,12 +567,17 @@ function extraerVolumenesPDF(lines){
   return result;
 }
 
+// Calcula excedentes AGREGADOS por bolsa+formato (método del proveedor)
+// y reparte el cobro entre los equipos proporcional a su consumo.
 function calcularBolsasAgregadas(equipos){
   const FMTS = ['A4BN','A3BN','A4CL','A3CL'];
   const bolsas = {};
   for(const eq of equipos){
     const b = eq.bolsaPdf || 'SIN BOLSA';
-    if(!bolsas[b]){ bolsas[b] = {}; for(const f of FMTS) bolsas[b][f] = {consTotal:0, equipos:[], precio:0}; }
+    if(!bolsas[b]){
+      bolsas[b] = {};
+      for(const f of FMTS) bolsas[b][f] = {consTotal:0, equipos:[], precio:0};
+    }
     for(const f of FMTS){
       const d = eq.formatos[f] || {};
       const c = d.consumo || 0;
@@ -775,16 +586,20 @@ function calcularBolsasAgregadas(equipos){
       if((d.precio||0) > 0) bolsas[b][f].precio = d.precio;
     }
   }
+  // Excedente y cobro por bolsa+formato
   for(const b of Object.keys(bolsas)){
     for(const f of FMTS){
       const data = bolsas[b][f];
       const volMax = (VOL_MAX_BOLSA[b] && VOL_MAX_BOLSA[b][f] != null) ? VOL_MAX_BOLSA[b][f] : 0;
+      // Precio: prefiere el del bloque BOLSA del PDF (más confiable que
+      // el de cada equipo individual). Fallback al de los equipos.
       const precioPdf = (PRECIOS_BOLSA && PRECIOS_BOLSA[b] && PRECIOS_BOLSA[b][f]) || data.precio;
       data.precio = precioPdf;
       const exc = Math.max(0, data.consTotal - volMax);
       data.volMax = volMax;
       data.excedente = exc;
       data.cobroTotal = Math.round(exc * precioPdf * 10000) / 10000;
+      // Repartir cobro entre equipos proporcional al consumo
       for(const e of data.equipos){
         e.excAsignado = (data.consTotal > 0) ? (e.consumo / data.consTotal) * exc : 0;
         e.cobroAsignado = (data.consTotal > 0) ? (e.consumo / data.consTotal) * data.cobroTotal : 0;
@@ -792,6 +607,22 @@ function calcularBolsasAgregadas(equipos){
     }
   }
   return bolsas;
+}
+
+// Devuelve el monto que el proveedor cobra al equipo (suma de cobros
+// asignados de los 4 formatos según el agregado por bolsa).
+function calcularCobroEquipo(eq, bolsasCalc){
+  const FMTS = ['A4BN','A3BN','A4CL','A3CL'];
+  const b = eq.bolsaPdf || 'SIN BOLSA';
+  let total = 0;
+  if(!bolsasCalc[b]) return 0;
+  for(const f of FMTS){
+    const data = bolsasCalc[b][f];
+    if(!data) continue;
+    const eqData = data.equipos.find(x => x.sn === eq.sn);
+    if(eqData) total += eqData.cobroAsignado || 0;
+  }
+  return Math.round(total * 10000) / 10000;
 }
 
 const statusEl = document.getElementById('status');
@@ -809,26 +640,39 @@ document.getElementById('fileInput').addEventListener('change', async (ev) => {
     const buf = await f.arrayBuffer();
     await procesarPdf(buf, f.name);
     ev.target.value = '';
-  }catch(e){ setStatus('Error: '+e.message, true); }
+  }catch(e){
+    setStatus('Error: '+e.message, true);
+  }
 });
 
 function detectarMesesPDF(lines){
+  // Devuelve [{periodo:'MARZO 2026', startIdx:0}, ...] con todas las
+  // ocurrencias de "PERIODO YYYY MES DE X" en el PDF, ordenadas por
+  // posición. Sirve para PDFs acumulativos.
   const meses = [];
   for(let i=0;i<lines.length;i++){
     const txt = lines[i].items.map(it=>it.text).join(' ');
     const pm = txt.match(/PERIODO\s+(\d{4})\s+MES\s+DE\s+(\w+)/i);
-    if(pm) meses.push({periodo: `${pm[2]} ${pm[1]}`.toUpperCase(), startIdx: i});
+    if(pm){
+      meses.push({periodo: `${pm[2]} ${pm[1]}`.toUpperCase(), startIdx: i});
+    }
   }
-  for(let i=0;i<meses.length;i++) meses[i].endIdx = (i+1 < meses.length) ? meses[i+1].startIdx : lines.length;
+  // Asignar endIdx: hasta el inicio del siguiente mes o el final del PDF
+  for(let i=0;i<meses.length;i++){
+    meses[i].endIdx = (i+1 < meses.length) ? meses[i+1].startIdx : lines.length;
+  }
   return meses;
 }
 
 async function procesarPdf(buf, nombre){
+  // Reset completo del estado anterior antes de procesar el PDF nuevo
   resetearEstadoPdf({procesando:true});
   setStatus('Procesando PDF…');
   const pdf = await pdfjsLib.getDocument({data:buf}).promise;
   const lines = await extraerLineas(pdf);
+  // Guardar para poder re-procesar si el usuario cambia de mes
   window._lineasPdf = lines;
+  // Detectar todos los meses (PDF acumulativo)
   const mesesEnPdf = detectarMesesPDF(lines);
   const panelSel = document.getElementById('panelSelectorMes');
   const botMes = document.getElementById('botonesMes');
@@ -852,27 +696,47 @@ async function procesarPdf(buf, nombre){
 }
 
 function seleccionarMes(idx){
-  const lines = window._lineasPdf, meses = window._mesesPdf;
+  const lines = window._lineasPdf;
+  const meses = window._mesesPdf;
   if(!lines || !meses || !meses[idx]) return;
+  // Resetear visual pero mantener el PDF en memoria
   resetearEstadoPdf({procesando:true});
-  Array.from(document.getElementById('botonesMes').querySelectorAll('button')).forEach((b,i)=>{b.className = (i===idx)?'':'secundario';});
+  // Actualizar estilos de botones
+  const botMes = document.getElementById('botonesMes');
+  Array.from(botMes.querySelectorAll('button')).forEach((b,i) => {
+    b.className = (i === idx) ? '' : 'secundario';
+  });
   document.getElementById('panelSelectorMes').style.display = '';
   procesarRango(lines.slice(meses[idx].startIdx, meses[idx].endIdx));
 }
 
 async function procesarRango(lines){
   const meta = detectarMeta(lines);
+  // Si el mes ya está en el histórico, avisar y preguntar antes de procesar
   const claveMesActual = claveMes(meta.periodo);
   if(claveMesActual){
     const existeRaw = localStorage.getItem(STORAGE_PREFIX + claveMesActual);
     if(existeRaw){
       let fechaGuardado = '';
-      try{ const data = JSON.parse(existeRaw); fechaGuardado = data.guardadoEn ? new Date(data.guardadoEn).toLocaleString('es-PE') : ''; }catch(e){}
-      if(!confirm(`⚠ El mes ${meta.periodo} ya está guardado en el histórico${fechaGuardado?` (guardado el ${fechaGuardado})`:''}.\n\n¿Deseas REEMPLAZARLO con los datos del PDF actual?\n\n• Aceptar: continuar y, al presionar "Guardar este mes", sobrescribir el anterior.\n• Cancelar: no procesar este mes.`)){
-        resetearEstadoPdf(); setStatus(`✋ Importación cancelada. ${meta.periodo} ya está en el histórico.`, true); return;
+      try{
+        const data = JSON.parse(existeRaw);
+        fechaGuardado = data.guardadoEn ? new Date(data.guardadoEn).toLocaleString('es-PE') : '';
+      } catch(e){}
+      const msg =
+        `⚠ El mes ${meta.periodo} ya está guardado en el histórico` +
+        (fechaGuardado ? ` (guardado el ${fechaGuardado}).` : '.') +
+        `\n\n¿Deseas REEMPLAZARLO con los datos del PDF actual?\n\n` +
+        `• Aceptar: continuar y, al presionar "Guardar este mes", sobrescribir el anterior.\n` +
+        `• Cancelar: no procesar este mes (puedes eliminarlo del histórico antes ✕).`;
+      if(!confirm(msg)){
+        resetearEstadoPdf();
+        setStatus(`✋ Importación cancelada. ${meta.periodo} ya está en el histórico — no se modificó. Use ✕ en el badge para eliminarlo si quiere reimportar.`, true);
+        return;
       }
     }
   }
+
+  // Lectura dinámica de volúmenes y precios DESDE EL PDF
   const volsPdf = extraerVolumenesPDF(lines);
   if(Object.keys(volsPdf).length){
     VOL_MAX_BOLSA = JSON.parse(JSON.stringify(VOL_MAX_BOLSA_FALLBACK));
@@ -885,28 +749,51 @@ async function procesarRango(lines){
         PRECIOS_BOLSA[bolsa][fmt] = volsPdf[bolsa][fmt].precio;
       }
     }
-  } else { VOL_MAX_BOLSA = JSON.parse(JSON.stringify(VOL_MAX_BOLSA_FALLBACK)); PRECIOS_BOLSA = null; }
+  } else {
+    VOL_MAX_BOLSA = JSON.parse(JSON.stringify(VOL_MAX_BOLSA_FALLBACK));
+    PRECIOS_BOLSA = null;
+  }
   const equipos = parsearEquipos(lines);
   renderizar(equipos, meta);
-  actualizarEstadisticas(equipos, meta);
   const dups = window._dupAvisoPdf || 0;
-  setStatus(`Listo. ${equipos.length} equipos detectados.${dups?` (${dups} duplicados omitidos)` : ''}`);
+  const aviso = dups > 0 ? ` (PDF acumulativo: ${dups} S/N duplicados omitidos, se mantuvo la primera ocurrencia)` : '';
+  setStatus(`Listo. ${equipos.length} equipos detectados.${aviso}`);
 }
 
 function resetearEstadoPdf(opts){
   const procesando = !!(opts && opts.procesando);
+  // Tabla principal
   const tbody = document.getElementById('tbody');
-  if(tbody) tbody.innerHTML = `<tr><td colspan="21" style="padding:20px;color:#888">— ${procesando ? 'Procesando…' : 'Sin datos. Importe un PDF'} —</td></tr>`;
-  document.getElementById('resumen').style.display = 'none';
-  document.getElementById('statsPanel').style.display = 'none';
-  ['kpiPeriodo','kpiEquipos','kpiRenta','kpiExcedente','kpiValidacion'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='—';});
-  document.getElementById('bannerCompara').innerHTML = '';
-  document.getElementById('detalleDiscrepancias').style.display = 'none';
-  document.getElementById('tablaDiscrepancias').innerHTML = '';
-  document.getElementById('tbodySAP').innerHTML = '<tr><td colspan="15" style="padding:16px;color:#888">— Cargue un PDF y presione <b>Generar asiento SAP</b> —</td></tr>';
-  document.getElementById('statusSAP').textContent = '';
-  document.getElementById('panelSelectorMes').style.display = 'none';
-  window._ultimosEquipos = null; window._ultimaMeta = null; window._ultimoSAP = null; window._dupAvisoPdf = 0;
+  if(tbody) tbody.innerHTML = `<tr><td colspan="21" style="padding:20px;color:#888">— ${procesando ? 'Procesando…' : 'Sin datos. Importe un PDF para ver la tabla'} —</td></tr>`;
+  // Resumen / KPIs: ocultar el bloque entero hasta tener datos del PDF nuevo
+  const resumen = document.getElementById('resumen');
+  if(resumen) resumen.style.display = 'none';
+  ['kpiPeriodo','kpiEquipos','kpiRenta','kpiExcedente','kpiValidacion'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el){ el.textContent = '—'; el.style.color = ''; }
+  });
+  // Banner / panel de discrepancias
+  const banner = document.getElementById('bannerCompara');
+  if(banner) banner.innerHTML = '';
+  const detalle = document.getElementById('detalleDiscrepancias');
+  if(detalle) detalle.style.display = 'none';
+  const tablaDisc = document.getElementById('tablaDiscrepancias');
+  if(tablaDisc) tablaDisc.innerHTML = '';
+  // Tabla SAP — limpiar y borrar el asiento previo
+  const tbodySAP = document.getElementById('tbodySAP');
+  if(tbodySAP) tbodySAP.innerHTML = '<tr><td colspan="15" style="padding:16px;color:#888">— Cargue un PDF y presione <b>Generar asiento SAP</b> —</td></tr>';
+  const statusSAP = document.getElementById('statusSAP');
+  if(statusSAP){ statusSAP.textContent = ''; statusSAP.style.color = ''; }
+  // Selector de mes (PDF acumulativo)
+  const panelSel = document.getElementById('panelSelectorMes');
+  if(panelSel) panelSel.style.display = 'none';
+  // Estado en memoria
+  window._ultimosEquipos = null;
+  window._ultimaMeta = null;
+  window._ultimasDiscrepancias = null;
+  window._ultimoSAP = null;
+  window._dupAvisoPdf = 0;
+  // Status global
   if(!procesando) setStatus('Listo. Cargue el PDF para procesar.');
 }
 
@@ -915,264 +802,266 @@ async function extraerLineas(pdf){
   for(let i=1;i<=pdf.numPages;i++){
     const page = await pdf.getPage(i);
     const tc = await page.getTextContent();
-    const items = tc.items.map(it=>({page:i,y:it.transform[5],x:it.transform[4],text:(it.str||'').trim()})).filter(it=>it.text.length);
-    items.sort((a,b)=>(b.y-a.y)||(a.x-b.x));
+    const items = tc.items.map(it => ({
+      page: i,
+      y: it.transform[5],
+      x: it.transform[4],
+      text: (it.str || '').trim()
+    })).filter(it => it.text.length);
+
+    items.sort((a,b) => (b.y - a.y) || (a.x - b.x));
+
     for(const it of items){
-      let bucket = buckets.find(b=>b.page===i && Math.abs(b.y-it.y)<=2);
-      if(!bucket){ bucket={page:i,y:it.y,items:[]}; buckets.push(bucket); }
+      let bucket = buckets.find(b => b.page === i && Math.abs(b.y - it.y) <= 2);
+      if(!bucket){
+        bucket = {page:i, y:it.y, items:[]};
+        buckets.push(bucket);
+      }
       bucket.items.push(it);
     }
   }
   for(const b of buckets) b.items.sort((a,b)=>a.x-b.x);
-  buckets.sort((a,b)=>(a.page-b.page)||(b.y-a.y));
+  buckets.sort((a,b) => (a.page - b.page) || (b.y - a.y));
   return buckets;
 }
 
 function detectarMeta(lines){
+  // Toma:
+  //  - periodo: PRIMER "PERIODO YYYY MES DE X" (si el PDF acumula meses,
+  //             nos quedamos con el más reciente, que aparece arriba).
+  //  - totalRenta y totalExcedente: del bloque resumen FINAL del PDF
+  //    ("TOTAL RENTA MENSUAL  $ 1092.96" sin colon), si existe; sino
+  //    del primer match con colon (compatibilidad con PDFs viejos).
+  //  - totalFacturacion: del bloque final.
   const meta = {periodo:'', totalRenta:0, totalExcedente:0, totalFacturacion:0};
+  // Primera pasada: período (primero) + totales con colon (primero)
   for(const l of lines){
     const txt = l.items.map(i=>i.text).join(' ');
-    if(!meta.periodo){ const pm = txt.match(/PERIODO\s+(\d{4})\s+MES\s+DE\s+(\w+)/i); if(pm) meta.periodo = `${pm[2]} ${pm[1]}`.toUpperCase(); }
-    if(!meta.totalRenta){ const rm = txt.match(/TOTAL RENTA MENSUAL:\s*\$?\s*([\d,.]+)/i); if(rm) meta.totalRenta = parseFloat(rm[1].replace(/,/g,'')); }
-    if(!meta.totalExcedente){ const em = txt.match(/TOTAL EXCEDENTE:\s*\$?\s*([\d,.]+)/i); if(em) meta.totalExcedente = parseFloat(em[1].replace(/,/g,'')); }
+    if(!meta.periodo){
+      const pm = txt.match(/PERIODO\s+(\d{4})\s+MES\s+DE\s+(\w+)/i);
+      if(pm) meta.periodo = `${pm[2]} ${pm[1]}`.toUpperCase();
+    }
+    if(!meta.totalRenta){
+      const rm = txt.match(/TOTAL RENTA MENSUAL:\s*\$?\s*([\d,.]+)/i);
+      if(rm) meta.totalRenta = parseFloat(rm[1].replace(/,/g,''));
+    }
+    if(!meta.totalExcedente){
+      const em = txt.match(/TOTAL EXCEDENTE:\s*\$?\s*([\d,.]+)/i);
+      if(em) meta.totalExcedente = parseFloat(em[1].replace(/,/g,''));
+    }
   }
-  let rentaFinal=0,excedenteFinal=0;
+  // Segunda pasada: bloque FINAL del PDF (sin colon, son los totales reales).
+  // Sólo asignar si los valores aún no se detectaron arriba (PDF acumulativo
+  // tiene varios bloques; nos quedamos con el primero -> el mes más reciente).
+  let rentaFinal = 0, excedenteFinal = 0;
   for(const l of lines){
     const txt = l.items.map(i=>i.text).join(' ').replace(/\s+/g,' ');
     let m;
-    if(rentaFinal===0 && (m=txt.match(/TOTAL RENTA MENSUAL\s+\$?\s*([\d,.]+)\s*$/i))) rentaFinal = parseFloat(m[1].replace(/,/g,''));
-    if(excedenteFinal===0 && (m=txt.match(/TOTAL EXCEDENTES\s+\$?\s*([\d,.]+)\s*$/i))) excedenteFinal = parseFloat(m[1].replace(/,/g,''));
-    if(meta.totalFacturacion===0 && (m=txt.match(/TOTAL FACTURACI[ÓO]N\s+\$?\s*([\d,.]+)\s*$/i))) meta.totalFacturacion = parseFloat(m[1].replace(/,/g,''));
+    if(rentaFinal === 0 && (m = txt.match(/TOTAL RENTA MENSUAL\s+\$?\s*([\d,.]+)\s*$/i))){
+      rentaFinal = parseFloat(m[1].replace(/,/g,''));
+    }
+    if(excedenteFinal === 0 && (m = txt.match(/TOTAL EXCEDENTES\s+\$?\s*([\d,.]+)\s*$/i))){
+      excedenteFinal = parseFloat(m[1].replace(/,/g,''));
+    }
+    if(meta.totalFacturacion === 0 && (m = txt.match(/TOTAL FACTURACI[ÓO]N\s+\$?\s*([\d,.]+)\s*$/i))){
+      meta.totalFacturacion = parseFloat(m[1].replace(/,/g,''));
+    }
   }
-  if(rentaFinal>0 && (meta.totalRenta===0 || rentaFinal>=meta.totalRenta)) meta.totalRenta = rentaFinal;
-  if(excedenteFinal>0 && meta.totalExcedente===0) meta.totalExcedente = excedenteFinal;
+  // El bloque final, cuando existe, tiene los totales OFICIALES (incluye
+  // bolsas adicionales como "SIN BOLSA" sumadas). Solo si difiere y no hay
+  // riesgo de venir de otro mes acumulativo, lo preferimos.
+  if(rentaFinal > 0 && (meta.totalRenta === 0 || rentaFinal >= meta.totalRenta)){
+    meta.totalRenta = rentaFinal;
+  }
+  if(excedenteFinal > 0 && meta.totalExcedente === 0){
+    meta.totalExcedente = excedenteFinal;
+  }
   return meta;
 }
 
 function parsearEquipos(lines){
-  const equipos = [], porSn = new Map();
-  let duplicados=0, actual=null;
-  const FMTS = ['A4BN','A3BN','A4CL','A3CL'], reEquip = /^([A-Z0-9]+)\s*[-–]\s*([A-Z0-9][A-Z0-9-]*)(?:\s*[-–]\s*(Bolsa\s*\d+))?/i;
-  const esNum = t=>/^-?[\d]{1,3}(,\d{3})*(\.\d+)?$|^-?\d+(\.\d+)?$/.test(t), aNum=t=>parseFloat(String(t).replace(/,/g,''))||0;
+  const equipos = [];
+  const porSn = new Map();
+  let duplicados = 0;
+  let actual = null;
+  const FMTS = ['A4BN','A3BN','A4CL','A3CL'];
+  const reEquip = /^([A-Z0-9]+)\s*[-–]\s*([A-Z0-9][A-Z0-9-]*)(?:\s*[-–]\s*(Bolsa\s*\d+))?/i;
+  const esNum = (t) => /^-?[\d]{1,3}(,\d{3})*(\.\d+)?$|^-?\d+(\.\d+)?$/.test(t);
+  const aNum = (t) => parseFloat(String(t).replace(/,/g,'')) || 0;
+
   for(const line of lines){
     const tokens = [];
-    for(const it of line.items) for(const t of String(it.text).split(/\s+/)) if(t) tokens.push({t, x: it.x});
+    for(const it of line.items){
+      for(const t of String(it.text).split(/\s+/)){
+        if(t) tokens.push({t, x: it.x});
+      }
+    }
     if(!tokens.length) continue;
-    let fmtIdx=-1, fmt=null;
-    for(let i=0;i<tokens.length;i++) if(FMTS.includes(tokens[i].t)){ fmtIdx=i; fmt=tokens[i].t; break; }
-    if(fmtIdx<0) continue;
+
+    let fmtIdx = -1, fmt = null;
+    for(let i=0;i<tokens.length;i++){
+      if(FMTS.includes(tokens[i].t)){ fmtIdx = i; fmt = tokens[i].t; break; }
+    }
+    if(fmtIdx < 0) continue;
+
     const nums = [];
-    for(let i=fmtIdx+1; i<tokens.length && nums.length<7; i++) if(esNum(tokens[i].t)) nums.push(aNum(tokens[i].t)); else break;
-    if(nums.length<7) continue;
-    const [ci,cf,cons,volEst,cantExc,precio,total] = nums;
-    const leftText = tokens.slice(0,fmtIdx).map(t=>t.t).join(' ').replace(/\s+/g,' ').trim();
+    for(let i=fmtIdx+1; i<tokens.length && nums.length<7; i++){
+      if(esNum(tokens[i].t)) nums.push(aNum(tokens[i].t));
+      else break;
+    }
+    if(nums.length < 7) continue;
+
+    const [ci, cf, cons, volEst, cantExc, precio, total] = nums;
+
+    const leftText = tokens.slice(0, fmtIdx).map(t=>t.t).join(' ').replace(/\s+/g,' ').trim();
+
     if(fmt === 'A4BN'){
       const em = leftText.match(reEquip);
       if(em){
         const sn = em[1];
-        if(porSn.has(sn)){ duplicados++; actual=null; continue; }
-        actual = { sn, modeloPdf: em[2], bolsaPdf: em[3]?em[3].replace(/\s+/,' ').trim():'SIN BOLSA', direccion:'', formatos:{} };
-        porSn.set(sn,actual); equipos.push(actual);
-      }else{ actual=null; continue; }
+        if(porSn.has(sn)){
+          // S/N repetido en el PDF (cuadro acumulativo de varios meses).
+          // Mantenemos sólo la primera ocurrencia de cada equipo.
+          duplicados++;
+          actual = null;
+          continue;
+        }
+        actual = {
+          sn,
+          modeloPdf: em[2],
+          bolsaPdf: em[3] ? em[3].replace(/\s+/,' ').trim() : 'SIN BOLSA',
+          direccion: '',
+          formatos: {}
+        };
+        porSn.set(sn, actual);
+        equipos.push(actual);
+      }else{
+        actual = null;
+        continue;
+      }
     }
     if(!actual) continue;
+
     actual.formatos[fmt] = { ci, cf, consumo:cons, volEst, cantExc, precio, total };
-    if(fmt === 'A3BN' && leftText && !actual.direccion) actual.direccion = leftText;
+
+    if(fmt === 'A3BN' && leftText && !actual.direccion){
+      actual.direccion = leftText;
+    }
   }
-  window._dupAvisoPdf = duplicados;
+
+  if(duplicados > 0){
+    window._dupAvisoPdf = duplicados;
+  } else {
+    window._dupAvisoPdf = 0;
+  }
   return equipos;
 }
 
-function fmtNum(v,dec=2){ if(v===null||v===undefined||isNaN(v)) return ''; return v.toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
-function fmtInt(v){ if(v===null||v===undefined||isNaN(v)) return ''; return Math.round(v).toLocaleString('en-US'); }
-
-// Estadísticas con USD
-function actualizarEstadisticas(equipos, meta){
-  const statsPanel = document.getElementById('statsPanel');
-  if(!equipos || equipos.length === 0){ statsPanel.style.display = 'none'; return; }
-  statsPanel.style.display = 'block';
-  
-  const formatos = ['A4BN','A3BN','A4CL','A3CL'];
-  let consumoTotalGeneral = 0;
-  let excedenteTotalGeneral = 0;
-  let costoExcedenteTotal = 0;
-  
-  const consumoPorArea = new Map();
-  const excesoPorArea = new Map();
-  const costoExcesoPorArea = new Map();
-
-  for(const eq of equipos){
-    const m = MAESTRO[eq.sn] || {};
-    const centroRaw = (m.centroCosto ?? '').toString().trim();
-    const centro = centroRaw === '' ? '0' : centroRaw;
-    const nombreArea = (m.observacion || eq.direccion || `Centro ${centro}`).toString().trim();
-    let consumoEquipo = 0;
-    let excedenteEquipo = 0;
-    let costoExcedenteEquipo = 0;
-
-    for(const fmt of formatos){
-      const d = eq.formatos[fmt] || {};
-      consumoEquipo += d.consumo || 0;
-      const bolsaCalc = window._bolsasCalc && window._bolsasCalc[eq.bolsaPdf || 'SIN BOLSA'];
-      const fmtData = bolsaCalc && bolsaCalc[fmt];
-      const eqInfo = fmtData && fmtData.equipos.find(x => x.sn === eq.sn);
-      excedenteEquipo += eqInfo ? eqInfo.excAsignado : 0;
-      costoExcedenteEquipo += eqInfo ? eqInfo.cobroAsignado : 0;
-    }
-
-    consumoTotalGeneral += consumoEquipo;
-    excedenteTotalGeneral += excedenteEquipo;
-    costoExcedenteTotal += costoExcedenteEquipo;
-
-    const areaKey = `${centro}::${nombreArea.toLowerCase()}`;
-    if(!consumoPorArea.has(areaKey)){
-      consumoPorArea.set(areaKey, { centro, nombre: nombreArea, totalConsumo: 0, equipos: [], formatosDetalle: {A4BN:0,A3BN:0,A4CL:0,A3CL:0} });
-      excesoPorArea.set(areaKey, 0);
-      costoExcesoPorArea.set(areaKey, 0);
-    }
-
-    const areaData = consumoPorArea.get(areaKey);
-    areaData.totalConsumo += consumoEquipo;
-    areaData.equipos.push(eq.sn);
-    for(const fmt of formatos){
-      areaData.formatosDetalle[fmt] += (eq.formatos[fmt] || {}).consumo || 0;
-    }
-
-    excesoPorArea.set(areaKey, (excesoPorArea.get(areaKey) || 0) + excedenteEquipo);
-    costoExcesoPorArea.set(areaKey, (costoExcesoPorArea.get(areaKey) || 0) + costoExcedenteEquipo);
-  }
-
-  const rankingConsumo = Array.from(consumoPorArea.values()).filter(c=>c.totalConsumo>0).sort((a,b)=>b.totalConsumo-a.totalConsumo);
-  const rankingExcesos = [];
-  for(const [areaKey, exceso] of excesoPorArea){
-    if(exceso > 0){
-      const areaInfo = consumoPorArea.get(areaKey);
-      rankingExcesos.push({
-        centro: areaInfo.centro, nombre: areaInfo.nombre, exceso: Math.round(exceso*100)/100, 
-        costo: Math.round((costoExcesoPorArea.get(areaKey)||0)*100)/100,
-        equipos: areaInfo.equipos.length
-      });
-    }
-  }
-  rankingExcesos.sort((a,b)=>b.exceso - a.exceso);
-  
-  const totalEquipos = equipos.length;
-  const areasConConsumo = rankingConsumo.length;
-  const areasConExceso = rankingExcesos.length;
-  const promedioPorArea = consumoTotalGeneral / (areasConConsumo || 1);
-  const mayorConsumoArea = rankingConsumo.length > 0 ? rankingConsumo[0] : null;
-  
-  const statsKPIsDiv = document.getElementById('statsKPIs');
-  statsKPIsDiv.innerHTML = `
-    <div class="stat-card"><div class="stat-label">📄 Consumo Total del Mes</div><div class="stat-value">${fmtInt(consumoTotalGeneral)}<span class="stat-unit">impresiones</span></div><div class="stat-trend">📊 Todos los formatos</div></div>
-    <div class="stat-card"><div class="stat-label">🏢 Áreas con Consumo</div><div class="stat-value">${areasConConsumo}<span class="stat-unit">áreas</span></div><div class="stat-trend">🖨️ ${totalEquipos} equipos activos</div></div>
-    <div class="stat-card exceso-card"><div class="stat-label">⚠️ EXCEDENTE TOTAL</div><div class="stat-value">${fmtInt(excedenteTotalGeneral)}<span class="stat-unit">impresiones</span></div><div class="stat-trend">💰 USD ${fmtNum(costoExcedenteTotal)} en sobrecostos</div></div>
-    <div class="stat-card ${areasConExceso>0?'exceso-card':''}"><div class="stat-label">🚨 Áreas con Excedente</div><div class="stat-value">${areasConExceso}<span class="stat-unit">áreas</span></div><div class="stat-trend">${areasConExceso>0?'⚠️ Generan costo adicional':'✓ Sin sobrecostos'}</div></div>
-  `;
-  
-  const rankingList = document.getElementById('rankingList');
-  const maxConsumo = rankingConsumo[0]?.totalConsumo || 1;
-  if(rankingConsumo.length === 0){
-    rankingList.innerHTML = '<div style="padding:20px;text-align:center;color:#888">No hay datos disponibles</div>';
-  } else {
-    rankingList.innerHTML = rankingConsumo.slice(0,8).map((area, idx) => {
-      const percent = (area.totalConsumo / consumoTotalGeneral * 100).toFixed(1);
-      let posClass = idx===0?'top1':idx===1?'top2':idx===2?'top3':'';
-      return `<div class="ranking-item"><div class="ranking-position ${posClass}">${idx+1}</div><div class="ranking-info"><div class="ranking-name">${area.nombre}</div><div class="ranking-detail">Centro Costo ${area.centro} · ${area.equipos.length} equipo(s)</div></div><div class="ranking-consumo">${fmtInt(area.totalConsumo)}</div><div class="ranking-percent">${percent}%</div></div>`;
-    }).join('');
-    const progressContainer = document.getElementById('progressContainer');
-    progressContainer.innerHTML = rankingConsumo.slice(0,5).map(area => {
-      const widthPercent = (area.totalConsumo / maxConsumo * 100);
-      return `<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px"><span style="color:var(--texto-suave)">${area.nombre.length>25?area.nombre.substring(0,22)+'...':area.nombre}</span><span style="font-weight:600">${fmtInt(area.totalConsumo)}</span></div><div class="progress-bar-container" style="height:6px;background:#e2e8f0"><div class="progress-bar" style="width:${widthPercent}%"></div></div></div>`;
-    }).join('');
-  }
-  
-  const excesoRankingDiv = document.getElementById('excesoRanking');
-  const excesoProgressDiv = document.getElementById('excesoProgressContainer');
-  const excesoTotalInfo = document.getElementById('excesoTotalInfo');
-  
-  if(rankingExcesos.length === 0){
-    excesoRankingDiv.innerHTML = '<div style="padding:20px;text-align:center;color:var(--verde);background:#e5f6ec;border-radius:8px;">✅ ¡EXCELENTE! Ningún área superó su volumen contratado este mes. Sin costo por excedentes en USD.</div>';
-    excesoProgressDiv.innerHTML = '';
-    excesoTotalInfo.innerHTML = '';
-  } else {
-    const maxExceso = rankingExcesos[0].exceso;
-    excesoRankingDiv.innerHTML = rankingExcesos.map((area, idx) => {
-      let posClass = idx===0?'top1 exceso':idx===1?'top2 exceso':idx===2?'top3 exceso':'exceso';
-      const costoStr = `USD ${fmtNum(area.costo)}`;
-      return `<div class="ranking-item exceso"><div class="ranking-position ${posClass}">${idx+1}</div><div class="ranking-info"><div class="ranking-name">${area.nombre} <span class="warning-badge">EXCESO</span></div><div class="ranking-detail">Centro Costo ${area.centro} · ${area.equipos} equipo(s)</div></div><div class="ranking-consumo exceso">+${fmtInt(area.exceso)}</div><div class="ranking-percent">${costoStr}</div></div>`;
-    }).join('');
-    
-    excesoProgressDiv.innerHTML = rankingExcesos.slice(0,5).map(area => {
-      const widthPercent = (area.exceso / maxExceso * 100);
-      return `<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px"><span style="color:var(--texto-suave)">${area.nombre.length>25?area.nombre.substring(0,22)+'...':area.nombre}</span><span style="font-weight:600;color:var(--rojo)">+${fmtInt(area.exceso)} (USD ${fmtNum(area.costo)})</span></div><div class="progress-bar-container" style="height:6px;background:#fde8e6"><div class="progress-bar exceso" style="width:${widthPercent}%;background:linear-gradient(90deg,var(--rojo),#a93226)"></div></div></div>`;
-    }).join('');
-    
-    excesoTotalInfo.innerHTML = `<strong>💰 IMPACTO ECONÓMICO EN USD:</strong> El excedente total de <strong>${fmtInt(excedenteTotalGeneral)} impresiones</strong> genera un costo adicional de <strong style="color:var(--rojo);font-size:14px;">USD ${fmtNum(costoExcedenteTotal)}</strong> en esta factura. Las áreas listadas arriba deben ser notificadas para ajustar sus volúmenes de impresión el próximo mes.`;
-  }
-  
-  const formatConsumo = { A4BN:0, A3BN:0, A4CL:0, A3CL:0 };
-  for(const eq of equipos) for(const fmt of formatos) formatConsumo[fmt] += (eq.formatos[fmt]||{}).consumo || 0;
-  const formatNames = { A4BN:'📄 A4 BN', A3BN:'📃 A3 BN', A4CL:'🎨 A4 Color', A3CL:'🌈 A3 Color' };
-  document.getElementById('formatBreakdown').innerHTML = Object.keys(formatConsumo).map(fmt => {
-    const pct = consumoTotalGeneral>0 ? (formatConsumo[fmt]/consumoTotalGeneral*100).toFixed(1) : 0;
-    return `<div class="format-badge"><div class="format-name">${formatNames[fmt]}</div><div class="format-consumo">${fmtInt(formatConsumo[fmt])}</div><div style="font-size:10px;color:#888">${pct}% del total</div></div>`;
-  }).join('');
+function fmtNum(v, dec=2){
+  if(v===null||v===undefined||isNaN(v)) return '';
+  return v.toLocaleString('es-PE',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+}
+function fmtInt(v){
+  if(v===null||v===undefined||isNaN(v)) return '';
+  return Math.round(v).toLocaleString('es-PE');
 }
 
 function renderizar(equipos, meta){
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = '';
+
   const FORMATOS = ['A4BN','A3BN','A4CL','A3CL'];
   const fechaStr = meta.periodo ? meta.periodo.replace(/\s+/,' ') : '';
+
   const mesAnterior = obtenerMesAnterior(meta.periodo);
   const discrepancias = [];
   let totalCI = 0, okCI = 0;
+
+  // Mostrar/ocultar columnas extra "CF mes anterior" + "Δ"
   const thCfAnt = document.getElementById('thCfAnt');
   const thDelta = document.getElementById('thDelta');
   const thCfAntMes = document.getElementById('thCfAntMes');
   if(thCfAnt && thDelta){
-    if(mesAnterior){ thCfAnt.style.display = ''; thDelta.style.display = ''; if(thCfAntMes) thCfAntMes.textContent = mesAnterior.meta.periodo || 'mes ant.'; }
-    else { thCfAnt.style.display = 'none'; thDelta.style.display = 'none'; }
+    if(mesAnterior){
+      thCfAnt.style.display = '';
+      thDelta.style.display = '';
+      if(thCfAntMes) thCfAntMes.textContent = mesAnterior.meta.periodo || 'mes ant.';
+    } else {
+      thCfAnt.style.display = 'none';
+      thDelta.style.display = 'none';
+    }
   }
-  let totalExcedenteCalc = 0, totalRentaCalc = 0;
+
+  let totalExcedenteCalc = 0;
+  let totalRentaCalc = 0;
+  // Pre-calcular agregado por bolsa (método correcto del proveedor)
   const bolsasCalc = calcularBolsasAgregadas(equipos);
-  const sums = { cantidad:0, consumo:0, volMax:0, excPositivo:0, excNegativo:0, importeBruto:0, importeNegativo:0, alquiler:0 };
+  // Acumuladores para la fila TOTAL al pie de la tabla
+  const sums = {
+    cantidad:0, consumo:0, volMax:0,
+    excPositivo:0, excNegativo:0,
+    importeBruto:0, importeNegativo:0,
+    alquiler:0
+  };
   window._bolsasCalc = bolsasCalc;
+
   for(const eq of equipos){
     const m = MAESTRO[eq.sn] || {};
     const sinMaestro = !MAESTRO[eq.sn];
-    const marca = m.marca || '', modelo = m.modelo || eq.modeloPdf || '', ip = m.ip || '', observacion = m.observacion || eq.direccion || '';
-    const cantidad = m.cantidad || 1, bolsa = eq.bolsaPdf || m.bolsa || '', cuenta = m.cuenta || '', centroCosto = m.centroCosto || '', alquilerFijo = m.alquilerFijo || 51.68;
+    const marca = m.marca || '';
+    const modelo = m.modelo || eq.modeloPdf || '';
+    const ip = m.ip || '';
+    const observacion = m.observacion || eq.direccion || '';
+    const cantidad = m.cantidad || 1;
+    const bolsa = eq.bolsaPdf || m.bolsa || '';
+    const cuenta = m.cuenta || '';
+    const centroCosto = m.centroCosto || '';
+    const alquilerFijo = m.alquilerFijo || 51.68;
     totalRentaCalc += alquilerFijo;
-    sums.cantidad += cantidad; sums.alquiler += alquilerFijo;
+    sums.cantidad += cantidad;
+    sums.alquiler += alquilerFijo;
+
+    // ¿El equipo tiene excedente en algún formato? -> resaltar la fila
     let equipoTieneExcedente = false;
     for(const f of FORMATOS){
       const bi = bolsasCalc[bolsa] && bolsasCalc[bolsa][f];
       const ei = bi && bi.equipos.find(x => x.sn === eq.sn);
       if(ei && (ei.cobroAsignado || 0) > 0.005){ equipoTieneExcedente = true; break; }
     }
+
     for(let i=0;i<FORMATOS.length;i++){
       const fmt = FORMATOS[i];
       const d = eq.formatos[fmt] || {ci:0,cf:0,consumo:0,volEst:0,cantExc:0,precio:0,total:0};
       const volMaxTotal = (VOL_MAX_BOLSA[bolsa] && VOL_MAX_BOLSA[bolsa][fmt] != null) ? VOL_MAX_BOLSA[bolsa][fmt] : null;
       const consumo = d.consumo;
+      // Cálculo correcto: el excedente y cobro se asignan proporcional
+      // al consumo del equipo dentro del agregado de su bolsa.
       const bolsaInfo = bolsasCalc[bolsa] && bolsasCalc[bolsa][fmt];
       const eqInfo = bolsaInfo && bolsaInfo.equipos.find(x => x.sn === eq.sn);
       const excedenteReal = eqInfo ? Math.round(eqInfo.excAsignado * 100) / 100 : 0;
       const totalCalc = eqInfo ? Math.round(eqInfo.cobroAsignado * 10000) / 10000 : 0;
+      // Mostramos el volumen máximo TOTAL de la bolsa (mismo en todas las
+      // filas de la bolsa) — es la cifra que usa el proveedor.
       const volMax = volMaxTotal;
       if(totalCalc > 0) totalExcedenteCalc += totalCalc;
+
       sums.consumo += consumo || 0;
+      // Para no contar el volMax de la bolsa N veces, sólo lo sumamos en
+      // el primer equipo de la bolsa por formato.
       if(bolsaInfo && bolsaInfo.equipos[0] && bolsaInfo.equipos[0].sn === eq.sn){
         sums.volMax += (volMaxTotal !== null) ? volMaxTotal : 0;
+        // Y también acumulamos el excedente y cobro AGREGADO de la bolsa
+        // sólo una vez (no por equipo). Así la fila TOTAL coincide al
+        // centavo con el PDF, sin errores de redondeo del reparto.
         if((bolsaInfo.excedente || 0) > 0) sums.excPositivo += bolsaInfo.excedente;
         if((bolsaInfo.cobroTotal || 0) > 0) sums.importeBruto += bolsaInfo.cobroTotal;
       }
+
       const tr = document.createElement('tr');
       if(i===0) tr.classList.add('sep');
       if(sinMaestro) tr.classList.add('pend');
       if(equipoTieneExcedente) tr.classList.add('tiene-excedente');
+
       let html = '';
       if(i===0){
         html += `<td class="fecha" rowspan="4">${fechaStr||'—'}</td>`;
@@ -1185,36 +1074,53 @@ function renderizar(equipos, meta){
         html += `<td rowspan="4">${bolsa}</td>`;
       }
       html += `<td>${fmt}</td>`;
-      let ciClass = 'num', ciBadge = '', cfAntCellHtml = '', deltaCellHtml = '';
+
+      let ciClass = 'num';
+      let ciBadge = '';
+      let cfAntCellHtml = '';
+      let deltaCellHtml = '';
       if(mesAnterior){
         const equipoAnt = (mesAnterior.equipos || []).find(x => x.sn === eq.sn);
         const cfAnt = equipoAnt && equipoAnt.formatos && equipoAnt.formatos[fmt] ? equipoAnt.formatos[fmt].cf : null;
         if(cfAnt !== null && cfAnt !== undefined){
-          totalCI++; const dif = d.ci - cfAnt;
+          totalCI++;
+          const dif = d.ci - cfAnt;
           if(cfAnt === d.ci){
-            ciClass += ' ci-ok'; ciBadge = `<span class="ci-badge ok">✓</span>`; okCI++;
+            ciClass += ' ci-ok';
+            ciBadge = `<span class="ci-badge ok" title="Coincide con CF de ${mesAnterior.meta.periodo}">✓</span>`;
+            okCI++;
             cfAntCellHtml = `<td class="num ci-ok">${fmtInt(cfAnt)}</td>`;
             deltaCellHtml = `<td class="num ci-ok"><b>0</b></td>`;
           } else {
-            ciClass += ' ci-err'; ciBadge = `<span class="ci-badge err">✗</span>`;
-            discrepancias.push({ sn: eq.sn, modelo: MAESTRO[eq.sn]?.modelo || eq.modeloPdf, obs: MAESTRO[eq.sn]?.observacion || '', formato: fmt, ciPdf: d.ci, cfAnterior: cfAnt, diferencia: dif });
+            ciClass += ' ci-err';
+            ciBadge = `<span class="ci-badge err" title="Esperado ${fmtInt(cfAnt)} (CF de ${mesAnterior.meta.periodo}), diferencia ${dif>0?'+':''}${fmtInt(dif)}">✗</span>`;
+            discrepancias.push({
+              sn: eq.sn, modelo: MAESTRO[eq.sn]?.modelo || eq.modeloPdf, obs: MAESTRO[eq.sn]?.observacion || '',
+              formato: fmt, ciPdf: d.ci, cfAnterior: cfAnt, diferencia: dif
+            });
             cfAntCellHtml = `<td class="num ci-err">${fmtInt(cfAnt)}</td>`;
-            const signo = dif>0?'+':''; deltaCellHtml = `<td class="num ci-err"><b>${signo}${fmtInt(dif)}</b></td>`;
+            const signo = dif > 0 ? '+' : '';
+            deltaCellHtml = `<td class="num ci-err" title="${dif>0?'El proveedor le cobra MÁS de lo esperado':'El proveedor le cobra MENOS / hubo retroceso'}"><b>${signo}${fmtInt(dif)}</b></td>`;
           }
-        } else { cfAntCellHtml = `<td class="num" style="color:#94a3b8">—</td>`; deltaCellHtml = `<td class="num" style="color:#94a3b8">—</td>`; }
+        } else {
+          cfAntCellHtml = `<td class="num" style="color:#94a3b8">—</td>`;
+          deltaCellHtml = `<td class="num" style="color:#94a3b8">—</td>`;
+        }
       }
       html += `<td class="${ciClass}">${fmtInt(d.ci)}${ciBadge}</td>`;
-      html += cfAntCellHtml; html += deltaCellHtml;
+      html += cfAntCellHtml;
+      html += deltaCellHtml;
       html += `<td class="num">${fmtInt(d.cf)}</td>`;
+      // Resaltado: rojo si el formato del equipo aporta excedente al cobro
       const consumoExcede = (volMax !== null) && (consumo > volMax);
-      html += `<td class="num ${consumoExcede?'excedente-hl':''}">${fmtInt(consumo)}</td>`;
+      const consumoClass = consumoExcede ? 'excedente-hl' : '';
+      html += `<td class="num ${consumoClass}">${fmtInt(consumo)}</td>`;
       html += `<td class="num">${volMax!==null?fmtInt(volMax):''}</td>`;
       const excClass = totalCalc > 0.005 ? 'excedente-hl' : (excedenteReal < 0 ? 'neg' : '');
-      html += `<td class="num ${excClass}">${fmtNum(excedenteReal)}</td>`;
+      html += `<td class="num ${excClass}" title="${totalCalc>0.005?'Esta área se pasó del volumen contratado — ver acción correctiva':''}">${fmtNum(excedenteReal)}</td>`;
       html += `<td class="num">${fmtNum(d.precio,4)}</td>`;
       const totalClass = totalCalc > 0.005 ? 'total-rojo' : (totalCalc<0?'neg':'');
-      const totalDisplay = totalCalc > 0.005 ? -Math.abs(totalCalc) : totalCalc;
-      html += `<td class="num ${totalClass}">${fmtNum(totalDisplay)}</td>`;
+      html += `<td class="num ${totalClass}">${fmtNum(totalCalc)}</td>`;
       if(i===0){
         html += `<td rowspan="4" class="num">${fmtNum(alquilerFijo)}</td>`;
         html += `<td rowspan="4">${cuenta}</td>`;
@@ -1224,63 +1130,937 @@ function renderizar(equipos, meta){
       tbody.appendChild(tr);
     }
   }
+
+  // Fila TOTAL al pie de la tabla
   if(equipos.length){
     const trTotal = document.createElement('tr');
     trTotal.classList.add('fila-total');
     const colsExtras = mesAnterior ? '<td></td><td></td>' : '';
+    // Renta: usar el valor OFICIAL del PDF (más exacto que 21 × 51.68
+    // que pierde 4 centavos por redondeo). Si no hay PDF, fallback a la suma.
     const rentaOficial = meta.totalRenta || sums.alquiler;
-    const excedenteOficial = (meta.totalExcedente !== undefined && meta.totalExcedente > 0) ? meta.totalExcedente : sums.importeBruto;
-    const totalFacturado = (meta.totalFacturacion && meta.totalFacturacion > 0) ? meta.totalFacturacion : (rentaOficial + excedenteOficial);
-    trTotal.innerHTML = `<td colspan="5" style="text-align:right">TOTAL DEL MES</td><td style="text-align:left">${equipos.length} equipos</td><td class="num">${fmtInt(sums.cantidad)}</td><td></td><td></td><td></td>${colsExtras}<td></td><td class="num">${fmtInt(sums.consumo)}</td><td class="num">${fmtInt(sums.volMax)}</td><td class="num">${fmtInt(sums.excPositivo)}</td><td></td><td class="num">USD ${fmtNum(excedenteOficial)}</td><td class="num">USD ${fmtNum(rentaOficial)}</td><td colspan="2" style="text-align:right">Total facturado: <b>USD ${fmtNum(totalFacturado)}</b></td>`;
+    const excedenteOficial = (meta.totalExcedente !== undefined && meta.totalExcedente > 0)
+      ? meta.totalExcedente
+      : sums.importeBruto;
+    const totalFacturado = (meta.totalFacturacion && meta.totalFacturacion > 0)
+      ? meta.totalFacturacion
+      : (rentaOficial + excedenteOficial);
+    const tipCred = sums.importeNegativo < 0
+      ? ` title="El proveedor sólo cobra excedentes positivos. Hay ${fmtNum(Math.abs(sums.importeNegativo))} en créditos por consumo bajo que NO se descuentan de esta factura."`
+      : '';
+    trTotal.innerHTML = `
+      <td colspan="5" style="text-align:right;letter-spacing:.04em">TOTAL DEL MES</td>
+      <td style="text-align:left">${equipos.length} equipos</td>
+      <td class="num">${fmtInt(sums.cantidad)}</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      ${colsExtras}
+      <td></td>
+      <td class="num">${fmtInt(sums.consumo)}</td>
+      <td class="num">${fmtInt(sums.volMax)}</td>
+      <td class="num"${tipCred}>${fmtInt(sums.excPositivo)}${sums.excNegativo<0?` <span style="color:#94a3b8;font-weight:500">(${fmtInt(sums.excNegativo)})</span>`:''}</td>
+      <td></td>
+      <td class="num"${tipCred}>S/ ${fmtNum(excedenteOficial)}</td>
+      <td class="num">S/ ${fmtNum(rentaOficial)}</td>
+      <td colspan="2" style="text-align:right">Total facturado: <b>S/ ${fmtNum(totalFacturado)}</b></td>
+    `;
     tbody.appendChild(trTotal);
   }
+
   document.getElementById('resumen').style.display = 'grid';
   document.getElementById('kpiPeriodo').textContent = meta.periodo || '—';
   document.getElementById('kpiEquipos').textContent = equipos.length;
-  document.getElementById('kpiRenta').textContent = 'USD '+fmtNum(meta.totalRenta || totalRentaCalc);
-  document.getElementById('kpiExcedente').textContent = 'USD '+fmtNum(meta.totalExcedente || sums.importeBruto || totalExcedenteCalc);
+  document.getElementById('kpiRenta').textContent = 'S/ '+fmtNum(meta.totalRenta || totalRentaCalc);
+  document.getElementById('kpiExcedente').textContent = 'S/ '+fmtNum(meta.totalExcedente || sums.importeBruto || totalExcedenteCalc);
+
   const kpiVal = document.getElementById('kpiValidacion');
   const banner = document.getElementById('bannerCompara');
+  const detalle = document.getElementById('detalleDiscrepancias');
+  const sumDisc = document.getElementById('sumDiscrepancias');
+  const tablaDisc = document.getElementById('tablaDiscrepancias');
+
   if(!mesAnterior){
-    kpiVal.textContent = 'Sin base previa'; kpiVal.style.color = '#999';
-    banner.innerHTML = '<div class="banner info">💡 No hay un mes anterior guardado. Presione <b>Guardar este mes</b> para validar próximos períodos.</div>';
+    kpiVal.textContent = 'Sin base previa';
+    kpiVal.style.color = '#999';
+    banner.innerHTML = '<div class="banner info">💡 No hay un mes anterior guardado. Presione <b>Guardar este mes</b> para que al importar el próximo PDF se valide automáticamente que los contadores iniciales cuadren con los finales de este período.</div>';
+    detalle.style.display = 'none';
   } else if(totalCI === 0){
-    kpiVal.textContent = 'Sin coincidencias'; kpiVal.style.color = '#999';
-    banner.innerHTML = `<div class="banner warn">⚠ Se detectó un mes anterior (${mesAnterior.meta.periodo}) pero ningún S/N tiene datos comparables.</div>`;
+    kpiVal.textContent = 'Sin coincidencias';
+    kpiVal.style.color = '#999';
+    banner.innerHTML = `<div class="banner warn">⚠ Se detectó un mes anterior (${mesAnterior.meta.periodo}) pero ningún S/N del PDF actual tiene datos comparables.</div>`;
+    detalle.style.display = 'none';
   } else if(discrepancias.length === 0){
-    kpiVal.textContent = `✓ ${okCI}/${totalCI} OK`; kpiVal.style.color = '#1a7a1a';
-    banner.innerHTML = `<div class="banner ok">✅ Todos los contadores iniciales coinciden con los finales del ${mesAnterior.meta.periodo}.</div>`;
+    kpiVal.textContent = `✓ ${okCI}/${totalCI} OK`;
+    kpiVal.style.color = '#1a7a1a';
+    banner.innerHTML = `<div class="banner ok">✅ Todos los contadores iniciales del PDF coinciden con los finales del ${mesAnterior.meta.periodo}. La facturación está consistente.</div>`;
+    detalle.style.display = 'none';
   } else {
-    kpiVal.textContent = `${okCI}/${totalCI} OK — ${discrepancias.length} ✗`; kpiVal.style.color = '#b00000';
-    banner.innerHTML = `<div class="banner err">⚠ <b>${discrepancias.length} discrepancia(s)</b> entre Contador Inicial y CF del mes anterior. Revisar antes de pagar.</div>`;
+    kpiVal.textContent = `${okCI}/${totalCI} OK — ${discrepancias.length} ✗`;
+    kpiVal.style.color = '#b00000';
+    banner.innerHTML = `<div class="banner err">⚠ <b>${discrepancias.length} discrepancia(s)</b> entre el Contador Inicial del PDF actual (${meta.periodo}) y el Contador Final de ${mesAnterior.meta.periodo}. Revisar antes de pagar la factura — la columna <b>Δ vs CI</b> en la tabla muestra la diferencia.</div>`;
+    sumDisc.textContent = `Ver ${discrepancias.length} discrepancia(s) detectada(s)`;
+    let h = `<table>
+      <thead><tr>
+        <th>S/N</th><th>Modelo</th><th>Observación</th><th>Formato</th>
+        <th>CF ${mesAnterior.meta.periodo}<br>(esperado)</th>
+        <th>CI ${meta.periodo}<br>(facturado)</th>
+        <th>Δ</th>
+      </tr></thead><tbody>`;
+    for(const d of discrepancias){
+      const signo = d.diferencia>0 ? '+' : '';
+      h += `<tr><td><b>${d.sn}</b></td><td>${d.modelo||''}</td><td style="text-align:left">${d.obs||''}</td><td>${d.formato}</td><td class="num">${fmtInt(d.cfAnterior)}</td><td class="num">${fmtInt(d.ciPdf)}</td><td class="num neg"><b>${signo}${fmtInt(d.diferencia)}</b></td></tr>`;
+    }
+    h += '</tbody></table>';
+    tablaDisc.innerHTML = h;
+    detalle.style.display = 'block';
+    detalle.open = true;
   }
-  window._ultimosEquipos = equipos; window._ultimaMeta = meta;
+
+  window._ultimosEquipos = equipos;
+  window._ultimaMeta = meta;
+  window._ultimasDiscrepancias = discrepancias;
 }
 
-// Histórico
+// ====== Histórico local ======
 const STORAGE_PREFIX = 'reprodata_mes_';
 const MESES_ES = {ENERO:1,FEBRERO:2,MARZO:3,ABRIL:4,MAYO:5,JUNIO:6,JULIO:7,AGOSTO:8,SEPTIEMBRE:9,SETIEMBRE:9,OCTUBRE:10,NOVIEMBRE:11,DICIEMBRE:12};
-function claveMes(periodo){ if(!periodo) return null; const parts=periodo.trim().split(/\s+/); if(parts.length!==2) return null; const mes=MESES_ES[parts[0].toUpperCase()]; const anio=parseInt(parts[1]); if(!mes||!anio) return null; return `${anio}-${String(mes).padStart(2,'0')}`; }
-function guardarMes(equipos,meta){ const k=claveMes(meta && meta.periodo); if(!k){ setStatus('Período no detectado.',true); return; } if(localStorage.getItem(STORAGE_PREFIX+k) && !confirm(`Ya existe ${meta.periodo}. ¿Sobrescribir?`)) return; localStorage.setItem(STORAGE_PREFIX+k,JSON.stringify({guardadoEn:new Date().toISOString(),meta,equipos:equipos.map(e=>({sn:e.sn,modeloPdf:e.modeloPdf,bolsaPdf:e.bolsaPdf,direccion:e.direccion,formatos:e.formatos})),volMaxBolsa:VOL_MAX_BOLSA,preciosBolsa:PRECIOS_BOLSA})); actualizarListaMeses(); setStatus(`✓ Guardado ${meta.periodo}`); }
-function cargarMesGuardado(clave){ const raw=localStorage.getItem(STORAGE_PREFIX+clave); if(!raw){ setStatus('No encontrado',true); return; } let data; try{ data=JSON.parse(raw); }catch(e){ setStatus('Error al cargar',true); return; } resetearEstadoPdf({procesando:true}); setStatus(`📂 Cargando ${data.meta.periodo}…`); if(data.volMaxBolsa) VOL_MAX_BOLSA = data.volMaxBolsa; else VOL_MAX_BOLSA = JSON.parse(JSON.stringify(VOL_MAX_BOLSA_FALLBACK)); PRECIOS_BOLSA = data.preciosBolsa || null; renderizar(data.equipos, data.meta); actualizarEstadisticas(data.equipos, data.meta); setStatus(`📂 Mostrando ${data.meta.periodo}`); }
-function listarMeses(){ const meses=[]; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(!k.startsWith(STORAGE_PREFIX)) continue; try{ const v=JSON.parse(localStorage.getItem(k)); meses.push({clave:k.slice(STORAGE_PREFIX.length),periodo:v.meta.periodo,equipos:v.equipos.length,guardadoEn:v.guardadoEn}); }catch(e){} } meses.sort((a,b)=>a.clave.localeCompare(b.clave)); return meses; }
-function obtenerMesAnterior(periodoActual){ const claveActual=claveMes(periodoActual); if(!claveActual) return null; const meses=listarMeses(); let anterior=null; for(const m of meses) if(m.clave < claveActual && (!anterior || m.clave > anterior.clave)) anterior=m; if(!anterior) return null; return JSON.parse(localStorage.getItem(STORAGE_PREFIX+anterior.clave)); }
-function eliminarMes(clave){ if(!confirm(`¿Eliminar ${clave}?`)) return; localStorage.removeItem(STORAGE_PREFIX+clave); actualizarListaMeses(); setStatus(`Eliminado ${clave}`); }
-function actualizarListaMeses(){ const cont=document.getElementById('listaMeses'); const meses=listarMeses(); if(!meses.length){ cont.innerHTML='<span style="color:#888">— sin meses guardados —</span>'; return; } cont.innerHTML=meses.map(m=>`<span class="mes-item" data-clave="${m.clave}" title="Guardado el ${new Date(m.guardadoEn).toLocaleString('es-PE')}"><b>${m.periodo}</b> · ${m.equipos} equipos <button onclick="event.stopPropagation(); eliminarMes('${m.clave}')" title="Eliminar">✕</button></span>`).join(''); cont.querySelectorAll('.mes-item').forEach(el=>{el.addEventListener('click',(ev)=>{if(ev.target.tagName!=='BUTTON') cargarMesGuardado(el.dataset.clave);});}); }
-document.getElementById('btnGuardarMes').addEventListener('click',()=>{ if(window._ultimosEquipos?.length) guardarMes(window._ultimosEquipos,window._ultimaMeta); else setStatus('Cargue un PDF primero.',true); });
-actualizarListaMeses();
-document.getElementById('btnLimpiar').addEventListener('click',()=>{ resetearEstadoPdf(); document.getElementById('fileInput').value=''; setStatus('Pantalla limpia.'); });
-document.getElementById('statsHeader').addEventListener('click',()=>{ const c=document.getElementById('statsContent'), i=document.querySelector('#statsHeader .toggle-icon'); c.classList.toggle('open'); i.textContent=c.classList.contains('open')?'▲':'▼'; });
 
-// SAP (simplificado - todo en USD)
-function round4(v){ return Math.round(v*10000)/10000; }
-function calcularCobroEquipo(eq, bolsasCalc){ if(!bolsasCalc) bolsasCalc=window._bolsasCalc; if(!bolsasCalc) return 0; const FMTS=['A4BN','A3BN','A4CL','A3CL']; const b=eq.bolsaPdf||'SIN BOLSA'; let total=0; if(!bolsasCalc[b]) return 0; for(const f of FMTS){ const data=bolsasCalc[b][f]; if(!data) continue; const eqData=data.equipos.find(x=>x.sn===eq.sn); if(eqData) total+=eqData.cobroAsignado||0; } return round4(total); }
-function absorberNegativosAlAlquiler(filas){ for(const f of filas) if(f._tipo==='alquiler'){ f['Débito (ME)']=round4(Number(f._alquilerBase)||Number(f['Monto USD'])||0); f._alquilerBase=f['Débito (ME)']; } for(const f of filas){ if(f._tipo!=='consumo'||!f['S/N']) continue; const monto=Number(f['Monto USD']); if(isNaN(monto)) continue; if(monto<0){ f['Débito (ME)']=0; f['Crédito (ME)']=round4(Math.abs(monto)); }else if(monto>0){ f['Débito (ME)']=round4(monto); f['Crédito (ME)']=0; }else{ f['Débito (ME)']=0; f['Crédito (ME)']=0; } } }
-function generarAsientoSAP(equipos,meta,numFactura){ const clave=claveMes(meta.periodo); if(!clave) throw new Error('Período no determinado'); const [anio,mes]=clave.split('-').map(Number); const ultDia=new Date(anio,mes,0).getDate(); const pad2=n=>String(n).padStart(2,'0'); const rango=`01-${pad2(mes)}-${anio} AL ${pad2(ultDia)}-${pad2(mes)}-${anio}`; const ref=`Factura N° ${numFactura}`; const totalRenta=meta.totalRenta||(equipos.length*51.68); const alquiler=totalRenta/equipos.length; const bolsasCalc=calcularBolsasAgregadas(equipos); const filas=[]; for(const eq of equipos){ const m=MAESTRO[eq.sn]||{}; const modelo=m.modelo||eq.modeloPdf||'', ip=m.ip||'', ceco=m.centroCosto||'', cuenta=m.cuenta||''; filas.push({ Datos:'',Monto:'',Modelo:modelo,'S/N':eq.sn,IP:ip,CECO:ceco,'Monto USD':round4(alquiler),Cuenta:cuenta,'Débito (ME)':round4(alquiler),'Crédito (ME)':0,'Débito':'','Crédito':'','Débito (MS)':'','Crédito (MS)':'',Comentarios:`ALQUILER EQUIPO DEL ${rango}`,'Referencia 2':ref,'Centro de Costo':ceco, _tipo:'alquiler',_alquilerBase:round4(alquiler) }); const consumo=calcularCobroEquipo(eq,bolsasCalc); const montoUsd=consumo>0?-round4(Math.abs(consumo)):round4(consumo); filas.push({ Datos:'',Monto:'',Modelo:modelo,'S/N':eq.sn,IP:ip,CECO:ceco,'Monto USD':montoUsd,Cuenta:cuenta,'Débito (ME)':0,'Crédito (ME)':0,'Débito':'','Crédito':'','Débito (MS)':'','Crédito (MS)':'',Comentarios:`CONSUMO ${eq.sn}`,'Referencia 2':ref,'Centro de Costo':ceco, _tipo:'consumo' }); } absorberNegativosAlAlquiler(filas); const debPre=filas.reduce((s,r)=>s+(Number(r['Débito (ME)'])||0),0); const credPre=filas.reduce((s,r)=>s+(Number(r['Crédito (ME)'])||0),0); const dif=round4(debPre-credPre); if(Math.abs(dif)>0.001) filas.push({ Datos:'',Monto:'','S/N':'',CECO:'','Monto USD':round4(Math.abs(dif)),Cuenta:421111101,'Débito (ME)':dif<0?round4(Math.abs(dif)):0,'Crédito (ME)':dif>0?round4(dif):0,Comentarios:'CUADRE POR TC','Referencia 2':ref,_cuadre:true }); const tDeb=filas.reduce((s,r)=>s+(Number(r['Débito (ME)'])||0),0); const tCred=filas.reduce((s,r)=>s+(Number(r['Crédito (ME)'])||0),0); filas.push({ 'Débito (ME)':round4(tDeb),'Crédito (ME)':round4(tCred),Comentarios:'TOTAL' }); return filas; }
-function renderSAPPreview(filas){ const tbody=document.getElementById('tbodySAP'); tbody.innerHTML=''; const cols=['Datos','Monto','Modelo','S/N','IP','CECO','Monto USD','Cuenta','Débito (ME)','Crédito (ME)','Débito','Crédito','Comentarios','Referencia 2','Centro de Costo']; const fmtCell=(v,col)=>{ if(v===null||v===undefined||v==='') return ''; if(typeof v==='number'){ if(['CECO','Cuenta','Centro de Costo'].includes(col)) return String(Math.round(v)); const n=v.toLocaleString('en-US',{minFractionDigits:2,maxFractionDigits:2}); return ['Débito (ME)','Crédito (ME)'].includes(col)?`USD ${n}`:v.toLocaleString('en-US',{minFractionDigits:2,maxFractionDigits:4}); } return v; }; filas.forEach((r,idx)=>{ const tr=document.createElement('tr'); tr.dataset.row=idx; if(r.Comentarios==='TOTAL'){ tr.dataset.total='1'; tr.classList.add('sap-total'); } if(r._cuadre){ tr.dataset.cuadre='1'; tr.classList.add('sap-cuadre'); } if(r._tipo==='alquiler') tr.classList.add('sap-alquiler'); if(r._tipo==='consumo') tr.classList.add('sap-consumo'); cols.forEach(c=>{ const td=document.createElement('td'); const v=r[c]; if(['Monto','Monto USD','Débito (ME)','Crédito (ME)'].includes(c)) td.classList.add('num'); if(c==='Comentarios') td.classList.add('obs'); td.textContent=fmtCell(v,c); tr.appendChild(td); }); tbody.appendChild(tr); }); }
-document.getElementById('btnGenSAP').addEventListener('click',()=>{ const s=document.getElementById('statusSAP'); if(!window._ultimosEquipos?.length){ s.textContent='Cargue un PDF primero.'; s.style.color='var(--rojo)'; return; } const numFactura=document.getElementById('inpFactura').value.trim()||'SIN-FACTURA'; try{ const filas=generarAsientoSAP(window._ultimosEquipos,window._ultimaMeta,numFactura); window._ultimoSAP=filas; renderSAPPreview(filas); s.textContent=`Generadas ${filas.length-1} líneas + total`; s.style.color='#1a7a1a'; }catch(e){ s.textContent='Error: '+e.message; s.style.color='var(--rojo)'; } });
-document.getElementById('btnCopiarSAP').addEventListener('click',async()=>{ const filas=window._ultimoSAP; const s=document.getElementById('statusSAP'); if(!filas){ s.textContent='Genere el asiento primero.'; s.style.color='var(--rojo)'; return; } const headers=['Datos','Monto','Modelo','S/N','IP','CECO','Monto USD','Cuenta','Débito (ME)','Crédito (ME)','Débito','Crédito','Comentarios','Referencia 2','Centro de Costo']; const lines=[headers.join('\t'),...filas.map(r=>headers.map(h=>{const v=r[h]; return v===undefined||v===null?'':String(v).replace(/\t/g,' ').replace(/\n/g,' ');}).join('\t'))]; try{ await navigator.clipboard.writeText(lines.join('\n')); s.textContent='✓ Copiado al portapapeles'; s.style.color='#1a7a1a'; }catch(e){ const ta=document.createElement('textarea'); ta.value=lines.join('\n'); document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); s.textContent='✓ Copiado'; s.style.color='#1a7a1a'; } });
-document.getElementById('btnDescargarXLSX').addEventListener('click',()=>{ const filas=window._ultimoSAP; const s=document.getElementById('statusSAP'); if(!filas){ s.textContent='Genere el asiento primero.'; s.style.color='var(--rojo)'; return; } if(typeof XLSX==='undefined'){ s.textContent='Error: librería XLSX no cargó.'; s.style.color='var(--rojo)'; return; } const meta=window._ultimaMeta||{}; const wb=XLSX.utils.book_new(); const headers=['Datos','Monto','Modelo','S/N','IP','CECO','Monto USD','Cuenta','Débito (ME)','Crédito (ME)','Débito','Crédito','Comentarios','Referencia 2','Centro de Costo']; const aoa=[[`CUADRO DE CONSUMO - ${meta.periodo||''}`,...Array(headers.length-1).fill('')],[`Contrato 276580 - Factura ${document.getElementById('inpFactura').value.trim()||''} - MONEDA: USD`,...Array(headers.length-1).fill('')],[],headers]; for(const r of filas) aoa.push(headers.map(h=>{ const v=r[h]; if(v!==undefined && v!=='') return v; if(['Débito (ME)','Crédito (ME)'].includes(h)) return 0; return ''; })); const ws=XLSX.utils.aoa_to_sheet(aoa); ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:headers.length-1}},{s:{r:1,c:0},e:{r:1,c:headers.length-1}}]; ws['!freeze']={xSplit:0,ySplit:4}; ws['!cols']=headers.map((h,i)=>({wch:i===12?38:(i===13?24:14)})); const border={top:{style:'thin',color:{rgb:'CBD5E1'}},bottom:{style:'thin',color:{rgb:'CBD5E1'}},left:{style:'thin',color:{rgb:'CBD5E1'}},right:{style:'thin',color:{rgb:'CBD5E1'}}}; const styleCell=(addr,style)=>{ if(!ws[addr]) return; ws[addr].s=Object.assign({},ws[addr].s||{},style); }; for(let c=0;c<headers.length;c++){ const a=XLSX.utils.encode_cell({r:0,c}); styleCell(a,{font:{bold:true,sz:15,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'1F3864'}},alignment:{horizontal:'left',vertical:'center'}}); const b=XLSX.utils.encode_cell({r:1,c}); styleCell(b,{font:{bold:true,sz:11,color:{rgb:'1F3864'}},fill:{fgColor:{rgb:'FFF4CF'}},alignment:{horizontal:'left',vertical:'center'}}); const h=XLSX.utils.encode_cell({r:3,c}); styleCell(h,{font:{bold:true,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'1F3864'}},alignment:{horizontal:'center',vertical:'center',wrapText:true},border}); } for(let i=0;i<filas.length;i++){ const row=i+4; const r=filas[i]; let fill='FFFFFF',fontColor='0F172A',bold=false; if(r._tipo==='alquiler') fill='EEF5FF'; if(r._tipo==='consumo') fill='FFF7E6'; if(r._cuadre){ fill='FFE4E6'; fontColor='9F1239'; bold=true; } if(r.Comentarios==='TOTAL'){ fill='FFE88A'; fontColor='12244A'; bold=true; } for(let c=0;c<headers.length;c++){ const addr=XLSX.utils.encode_cell({r:row,c}); const col=headers[c]; const alignRight=['Monto','Monto USD','Débito (ME)','Crédito (ME)','Débito','Crédito'].includes(col); styleCell(addr,{fill:{fgColor:{rgb:fill}},font:{color:{rgb:fontColor},bold},alignment:{horizontal:alignRight?'right':'center',vertical:'center'},border}); } } XLSX.utils.book_append_sheet(wb,ws,'SAP'); XLSX.writeFile(wb,`Reprodata_${(meta.periodo||'export').replace(/\s+/g,'_')}.xlsx`); s.textContent='✓ Descargado'; s.style.color='#1a7a1a'; });
+function claveMes(periodo){
+  if(!periodo) return null;
+  const parts = periodo.trim().split(/\s+/);
+  if(parts.length !== 2) return null;
+  const mes = MESES_ES[parts[0].toUpperCase()];
+  const anio = parseInt(parts[1]);
+  if(!mes || !anio) return null;
+  return `${anio}-${String(mes).padStart(2,'0')}`;
+}
+
+function guardarMes(equipos, meta){
+  const k = claveMes(meta && meta.periodo);
+  if(!k){ setStatus('No se puede guardar: período del PDF no detectado.', true); return; }
+  const existe = localStorage.getItem(STORAGE_PREFIX + k);
+  if(existe && !confirm(`Ya existe un respaldo de ${meta.periodo}. ¿Sobrescribir?`)) return;
+  const payload = {
+    guardadoEn: new Date().toISOString(),
+    meta,
+    equipos: equipos.map(e => ({sn:e.sn, modeloPdf:e.modeloPdf, bolsaPdf:e.bolsaPdf, direccion:e.direccion, formatos:e.formatos})),
+    // Guardar también los volúmenes y precios contractuales del período
+    // para que al recargar el mes desde el histórico los cálculos sean
+    // exactos aunque cambien las tarifas en el futuro.
+    volMaxBolsa: VOL_MAX_BOLSA,
+    preciosBolsa: PRECIOS_BOLSA
+  };
+  localStorage.setItem(STORAGE_PREFIX + k, JSON.stringify(payload));
+  actualizarListaMeses();
+  setStatus(`✓ Guardado ${meta.periodo} (${equipos.length} equipos) en este navegador.`);
+}
+
+function cargarMesGuardado(clave){
+  const raw = localStorage.getItem(STORAGE_PREFIX + clave);
+  if(!raw){ setStatus('No se encontró el mes guardado: '+clave, true); return; }
+  let data;
+  try{ data = JSON.parse(raw); } catch(e){ setStatus('Error leyendo el mes guardado.', true); return; }
+  // Reset visual sin tocar el histórico
+  resetearEstadoPdf({procesando:true});
+  setStatus(`📂 Cargando ${data.meta.periodo} desde el histórico…`);
+  // Restaurar volúmenes y precios del período guardado
+  if(data.volMaxBolsa) VOL_MAX_BOLSA = data.volMaxBolsa;
+  else VOL_MAX_BOLSA = JSON.parse(JSON.stringify(VOL_MAX_BOLSA_FALLBACK));
+  PRECIOS_BOLSA = data.preciosBolsa || null;
+  // Renderizar (asume que data.equipos viene en formato igual a parsearEquipos)
+  renderizar(data.equipos, data.meta);
+  setStatus(`📂 Mostrando ${data.meta.periodo} (guardado el ${new Date(data.guardadoEn).toLocaleString('es-PE')}). Sin PDF cargado — use "Importar otro PDF" para procesar uno nuevo.`);
+}
+
+function listarMeses(){
+  const meses = [];
+  for(let i=0;i<localStorage.length;i++){
+    const k = localStorage.key(i);
+    if(!k.startsWith(STORAGE_PREFIX)) continue;
+    try{
+      const v = JSON.parse(localStorage.getItem(k));
+      meses.push({clave: k.slice(STORAGE_PREFIX.length), periodo: v.meta.periodo, equipos: v.equipos.length, guardadoEn: v.guardadoEn});
+    }catch(e){}
+  }
+  meses.sort((a,b)=>a.clave.localeCompare(b.clave));
+  return meses;
+}
+
+function obtenerMesAnterior(periodoActual){
+  const claveActual = claveMes(periodoActual);
+  if(!claveActual) return null;
+  const meses = listarMeses();
+  let anterior = null;
+  for(const m of meses){
+    if(m.clave < claveActual && (!anterior || m.clave > anterior.clave)) anterior = m;
+  }
+  if(!anterior) return null;
+  return JSON.parse(localStorage.getItem(STORAGE_PREFIX + anterior.clave));
+}
+
+function eliminarMes(clave){
+  if(!confirm(`¿Eliminar el respaldo de ${clave}?`)) return;
+  localStorage.removeItem(STORAGE_PREFIX + clave);
+  actualizarListaMeses();
+  setStatus(`Eliminado ${clave}`);
+}
+
+function actualizarListaMeses(){
+  const cont = document.getElementById('listaMeses');
+  const meses = listarMeses();
+  if(!meses.length){ cont.innerHTML = '<span style="color:#888">— sin meses guardados —</span>'; return; }
+  cont.innerHTML = meses.map(m =>
+    `<span class="mes-item" data-clave="${m.clave}" title="Click para cargar este mes (guardado el ${new Date(m.guardadoEn).toLocaleString('es-PE')})"><b>${m.periodo}</b> · ${m.equipos} equipos <button onclick="event.stopPropagation(); eliminarMes('${m.clave}')" title="Eliminar">✕</button></span>`
+  ).join('');
+  // Hacer clickable cada badge para cargar el mes
+  cont.querySelectorAll('.mes-item').forEach(el => {
+    el.addEventListener('click', (ev) => {
+      // Si el click vino del botón ✕ (eliminar), no cargamos
+      if(ev.target.tagName === 'BUTTON') return;
+      cargarMesGuardado(el.dataset.clave);
+    });
+  });
+}
+
+document.getElementById('btnGuardarMes').addEventListener('click', () => {
+  if(!window._ultimosEquipos || !window._ultimosEquipos.length){
+    setStatus('Cargue un PDF antes de guardar.', true); return;
+  }
+  guardarMes(window._ultimosEquipos, window._ultimaMeta);
+});
+
+actualizarListaMeses();
+
+document.getElementById('btnLimpiar').addEventListener('click', () => {
+  resetearEstadoPdf();
+  document.getElementById('fileInput').value = '';
+  setStatus('✓ Pantalla limpia. Listo para importar otro PDF.');
+});
+
+// ====== Asiento SAP ======
+const SAP_HEADERS = [
+  'Datos','Monto','Modelo','S/N','IP','CECO','Monto USD','Cuenta',
+  'Cuenta de mayor/Nombre SN','Cuenta asociada','Débito (ME)','Crédito (ME)',
+  'Débito','Crédito','Débito (MS)','Crédito (MS)','Comentarios',
+  'Referencia 1','Referencia 2','Centro de Costo','Posición del formulario principal',
+  'Cuenta destino','Cuenta patrimonial','Comp. destino','Procesado DC',
+  'Info socio de negocios','Info de terceros','Tipo doc. - Serie - Numero',
+  'Socio Negocios','Fecha Registro Ventas'
+];
+
+function montoConsumoEquipo(eq, bolsasCalc){
+  // Si no se pasa bolsasCalc, lo recalculamos sólo para este equipo no
+  // tendría sentido (el cobro depende del agregado de toda la bolsa).
+  // Por eso requerimos el bolsasCalc completo, calculado para todos los
+  // equipos del PDF.
+  if(!bolsasCalc) bolsasCalc = window._bolsasCalc;
+  if(!bolsasCalc) return 0;
+  return calcularCobroEquipo(eq, bolsasCalc);
+}
+
+function generarAsientoSAP(equipos, meta, numFactura){
+  const clave = claveMes(meta.periodo);
+  if(!clave) throw new Error('No se pudo determinar el período');
+  const [anio, mes] = clave.split('-').map(Number);
+  const ultDia = new Date(anio, mes, 0).getDate();
+  const pad2 = (n) => String(n).padStart(2,'0');
+  const fechaFac = `${pad2(ultDia)}/${pad2(mes)}/${anio}`;
+  const rangoFechas = `01-${pad2(mes)}-${anio} AL ${pad2(ultDia)}-${pad2(mes)}-${anio}`;
+  const refFactura = `Factura N° ${numFactura}`;
+
+  const totalRenta = meta.totalRenta || (equipos.length * 51.6819047619048);
+  const alquiler = totalRenta / equipos.length;
+  const bolsasCalc = calcularBolsasAgregadas(equipos);
+  const totalExc = equipos.reduce((s,e) => s + montoConsumoEquipo(e, bolsasCalc), 0);
+  const montoTotal = Math.round((totalRenta + totalExc) * 100) / 100;
+
+  const ordenados = [...equipos].sort((a,b) => {
+    const ca = (MAESTRO[a.sn] && MAESTRO[a.sn].centroCosto) || 9999;
+    const cb = (MAESTRO[b.sn] && MAESTRO[b.sn].centroCosto) || 9999;
+    if(ca !== cb) return ca - cb;
+    return String(a.sn).localeCompare(String(b.sn));
+  });
+
+  const filas = [];
+  let idx = 0;
+  for(const eq of ordenados){
+    const m = MAESTRO[eq.sn] || {};
+    const modelo = m.modelo || eq.modeloPdf || '';
+    const ip = m.ip || '';
+    const ceco = m.centroCosto || '';
+    const cuenta = m.cuenta || '';
+
+    const rowAlquiler = {
+      Datos: '',
+      Monto: '',
+      Modelo: modelo, 'S/N': eq.sn, IP: ip, CECO: ceco,
+      'Monto USD': round4(alquiler),
+      Cuenta: cuenta,
+      'Débito (ME)': round4(alquiler), 'Crédito (ME)': 0,
+      'Débito': '', 'Crédito': '',
+      'Débito (MS)': '', 'Crédito (MS)': '',
+      Comentarios: `FOTOCOPIAS POR ALQUILER EQUIPO MULTIFUNCIONAL DEL ${rangoFechas}`,
+      'Referencia 2': refFactura,
+      'Centro de Costo': ceco,
+      _tipo: 'alquiler'
+    };
+    filas.push(rowAlquiler);
+    idx++;
+
+    const consumo = montoConsumoEquipo(eq, bolsasCalc);
+    const rowConsumo = {
+      Datos: '',
+      Monto: '',
+      Modelo: modelo, 'S/N': eq.sn, IP: ip, CECO: ceco,
+      'Monto USD': round4(consumo),
+      Cuenta: cuenta,
+      // Patrón del Ejemplo.html del usuario:
+      //   Monto USD positivo -> Débito (ME) = monto,  Crédito (ME) = 0
+      //   Monto USD negativo -> Débito (ME) = 0,      Crédito (ME) = |monto|
+      'Débito (ME)':  consumo >= 0 ? round4(consumo) : 0,
+      'Crédito (ME)': consumo <  0 ? round4(Math.abs(consumo)) : 0,
+      'Débito': '', 'Crédito': '',
+      'Débito (MS)': '', 'Crédito (MS)': '',
+      Comentarios: `CONSUMO DE COPIAS ${eq.sn}`,
+      'Referencia 2': refFactura,
+      'Centro de Costo': ceco,
+      _tipo: 'consumo'
+    };
+    filas.push(rowConsumo);
+    idx++;
+  }
+
+  // Cuadre con cuenta 421111101: balancea Σ Débito (ME) = Σ Crédito (ME).
+  // (Como el negativo se absorbe AL alquiler en Débito Y también queda
+  //  en Crédito ME en su propia fila, las dos columnas suman lo mismo
+  //  pero por encima del monto facturado en |negativos|; el cuadre
+  //  iguala el lado más bajo al más alto, NO al monto facturado.)
+  const debPre = filas.reduce((s,r) => s + (Number(r['Débito (ME)']) || 0), 0);
+  const credPre = filas.reduce((s,r) => s + (Number(r['Crédito (ME)']) || 0), 0);
+  const dif = round4(debPre - credPre);
+  if(Math.abs(dif) > 0.001){
+    filas.push({
+      Datos:'', Monto:'', Modelo:'', 'S/N':'', IP:'', CECO:'',
+      'Monto USD': round4(Math.abs(dif)),
+      Cuenta: 421111101,
+      'Débito (ME)':  dif < 0 ? round4(Math.abs(dif)) : 0,
+      'Crédito (ME)': dif > 0 ? round4(dif) : 0,
+      'Débito':'', 'Crédito':'',
+      'Débito (MS)':'', 'Crédito (MS)':'',
+      Comentarios: 'CUADRE - DIFERENCIA POR TIPO DE CAMBIO',
+      'Referencia 2': refFactura,
+      'Centro de Costo':'',
+      _cuadre: true
+    });
+  }
+
+  const totalDebME = filas.reduce((s,r) => s + (Number(r['Débito (ME)']) || 0), 0);
+  const totalCredME = filas.reduce((s,r) => s + (Number(r['Crédito (ME)']) || 0), 0);
+  filas.push({
+    'Débito (ME)': round4(totalDebME),
+    'Crédito (ME)': round4(totalCredME),
+    'Débito': '', 'Crédito': '',
+    'Débito (MS)': '', 'Crédito (MS)': '',
+    Comentarios: 'TOTAL'
+  });
+
+  return filas;
+}
+
+function round4(v){ return Math.round(v * 10000) / 10000; }
+
+// Absorbe los consumos con Monto USD negativo al Débito (ME) del
+// alquiler del mismo equipo, Y también deja el valor absoluto en la
+// columna Crédito (ME) de la propia fila de consumo. La columna
+// Débito (ME) de esa fila queda vacía (no 0).
+function absorberNegativosAlAlquiler(filas){
+  // Reset previo: limpiar absorciones anteriores para que el cálculo
+  // sea idempotente al regenerar/recalcular.
+  for(const f of filas){
+    if(f._tipo === 'alquiler'){
+      f['Débito (ME)'] = round4(Number(f._alquilerBase) || Number(f['Monto USD']) || 0);
+      f._alquilerBase = f['Débito (ME)'];
+    }
+  }
+  const alquilerPorSn = new Map();
+  for(const f of filas){
+    if(f._tipo === 'alquiler' && f['S/N']) alquilerPorSn.set(f['S/N'], f);
+  }
+  for(const f of filas){
+    if(f._tipo !== 'consumo' || !f['S/N']) continue;
+    const monto = Number(f['Monto USD']);
+    if(isNaN(monto)) continue;
+    if(monto < 0){
+      // Sumar el valor absoluto al alquiler del mismo equipo
+      const filaAlq = alquilerPorSn.get(f['S/N']);
+      if(filaAlq){
+        filaAlq['Débito (ME)'] = round4((Number(filaAlq['Débito (ME)']) || 0) + Math.abs(monto));
+      }
+      // En la fila de consumo negativo: Débito (ME) = 0, Crédito (ME) = |monto|
+      f['Débito (ME)']  = 0;
+      f['Crédito (ME)'] = round4(Math.abs(monto));
+    } else if(monto > 0){
+      // Consumo positivo: Débito (ME) = monto, Crédito (ME) = 0
+      f['Débito (ME)']  = round4(monto);
+      f['Crédito (ME)'] = 0;
+    } else {
+      // Cero: ambos en 0 (mostrar USD 0.00, no vacío)
+      f['Débito (ME)']  = 0;
+      f['Crédito (ME)'] = 0;
+    }
+  }
+}
+
+function renderSAPPreview(filas){
+  const tbody = document.getElementById('tbodySAP');
+  tbody.innerHTML = '';
+  const cols = ['Datos','Monto','Modelo','S/N','IP','CECO','Monto USD','Cuenta','Débito (ME)','Crédito (ME)','Débito','Crédito','Comentarios','Referencia 2','Centro de Costo'];
+  const COLS_INT = new Set(['CECO','Cuenta','Centro de Costo','Posición del formulario principal','Cuenta destino','Cuenta patrimonial']);
+  const fmtCell = (v, col) => {
+    if(v===null||v===undefined||v==='') return '';
+    if(typeof v === 'number'){
+      if(COLS_INT.has(col)) return String(Math.round(v));
+      const n = v.toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2});
+      return COLS_USD.has(col) ? `USD ${n}` : v.toLocaleString('es-PE',{minimumFractionDigits:2, maximumFractionDigits:4});
+    }
+    return v;
+  };
+  const EDITABLES_NUM = new Set(['Monto USD','Débito (ME)','Crédito (ME)']);
+  const COLS_USD = new Set(['Débito (ME)','Crédito (ME)']);
+  const EDITABLES_TXT = new Set(['Comentarios']);
+  filas.forEach((r, idx) => {
+    const esTotal = r.Comentarios === 'TOTAL';
+    const esCuadre = !!r._cuadre;
+    const tr = document.createElement('tr');
+    tr.dataset.row = idx;
+    if(esTotal) tr.dataset.total = '1';
+    if(esCuadre) tr.dataset.cuadre = '1';
+    if(r._editado) tr.classList.add('editado');
+    cols.forEach(c => {
+      const td = document.createElement('td');
+      const v = r[c];
+      if(['Monto','Monto USD','Débito (ME)','Crédito (ME)','Débito','Crédito'].includes(c)) td.classList.add('num');
+      if(c === 'Comentarios') td.classList.add('obs');
+      td.textContent = fmtCell(v, c);
+      if(!esTotal && (EDITABLES_NUM.has(c) || EDITABLES_TXT.has(c))){
+        td.classList.add('editable');
+        td.contentEditable = 'true';
+        td.dataset.col = c;
+        td.title = 'Click para editar';
+      }
+      tr.appendChild(td);
+    });
+    if(esTotal){
+      tr.style.fontWeight = 'bold';
+      tr.style.background = '#ffeb00';
+      tr.style.borderTop = '2px solid #000';
+    } else if(esCuadre){
+      tr.style.fontWeight = 'bold';
+      tr.style.background = '#ffeb00';
+    }
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('td.editable').forEach(td => {
+    td.addEventListener('focus', () => { td._prev = td.textContent; });
+    td.addEventListener('keydown', (ev) => {
+      if(ev.key === 'Enter'){ ev.preventDefault(); td.blur(); }
+      if(ev.key === 'Escape'){ td.textContent = td._prev ?? ''; td.blur(); }
+    });
+    td.addEventListener('blur', () => {
+      const tr = td.closest('tr');
+      const rowIdx = parseInt(tr.dataset.row, 10);
+      const col = td.dataset.col;
+      const fila = window._ultimoSAP[rowIdx];
+      const esNumerico = EDITABLES_NUM.has(col);
+      let nuevoVal;
+      if(esNumerico){
+        const txt = td.textContent.trim().replace(/USD/gi,'').replace(/,/g,'').replace(/\s+/g,'');
+        nuevoVal = txt === '' ? 0 : (isNaN(parseFloat(txt)) ? fila[col] : parseFloat(txt));
+      } else {
+        nuevoVal = td.textContent.trim();
+      }
+      if(nuevoVal === fila[col]) return;
+      fila[col] = nuevoVal;
+      fila._editado = true;
+      tr.classList.add('editado');
+      td.textContent = fmtCell(nuevoVal, col);
+
+      // Sincronización entre Monto USD <-> Débito (ME) / Crédito (ME)
+      // Reglas contables:
+      //   Monto USD positivo  ->  Débito (ME) = monto,  Crédito (ME) = 0
+      //   Monto USD negativo  ->  Débito (ME) = 0,      Crédito (ME) = |monto|
+      // Si el usuario edita Débito (ME) o Crédito (ME) directamente, se
+      // ajusta el Monto USD (con signo) y la celda contraria se pone en 0.
+      const sincronizar = (sourceCol) => {
+        if(sourceCol === 'Monto USD'){
+          const v = Number(fila['Monto USD']) || 0;
+          fila['Débito (ME)']  = v >= 0 ? Math.round(v * 10000) / 10000 : 0;
+          fila['Crédito (ME)'] = v <  0 ? Math.round(Math.abs(v) * 10000) / 10000 : 0;
+        } else if(sourceCol === 'Débito (ME)'){
+          const v = Number(fila['Débito (ME)']) || 0;
+          fila['Monto USD']    = Math.round(v * 10000) / 10000;
+          fila['Crédito (ME)'] = 0;
+        } else if(sourceCol === 'Crédito (ME)'){
+          const v = Number(fila['Crédito (ME)']) || 0;
+          fila['Monto USD']    = -Math.round(v * 10000) / 10000;
+          fila['Débito (ME)']  = 0;
+        }
+        // Refrescar visualmente las celdas hermanas
+        const cols = ['Monto USD','Débito (ME)','Crédito (ME)'];
+        for(const c of cols){
+          if(c === sourceCol) continue;
+          const otraTd = tr.querySelector(`td[data-col="${c.replace(/"/g,'\\"')}"]`);
+          if(otraTd) otraTd.textContent = fmtCell(fila[c], c);
+        }
+      };
+      if(['Monto USD','Débito (ME)','Crédito (ME)'].includes(col)){
+        sincronizar(col);
+      }
+
+      // Si la edición es de Monto USD (puede afectar al alquiler del
+      // mismo equipo por absorción de negativos) o de Débito/Crédito (ME),
+      // re-renderizamos toda la preview con el cuadre re-calculado.
+      recalcularTotalSAP();
+      if(['Monto USD','Débito (ME)','Crédito (ME)'].includes(col)){
+        renderSAPPreview(window._ultimoSAP);
+      }
+      const s = document.getElementById('statusSAP');
+      s.textContent = `✎ Editado: ${fila['S/N']||''} ${col}. ${(window._ultimoSAP.filter(x=>x._editado).length)} fila(s) modificada(s).`;
+      s.style.color = '#b57700';
+    });
+  });
+}
+
+function recalcularTotalSAP(){
+  const filas = window._ultimoSAP;
+  if(!filas || !filas.length) return;
+  const totalFila = filas[filas.length - 1];
+  if(totalFila.Comentarios !== 'TOTAL') return;
+
+  // Recalcular cuadre (antes del TOTAL) si existe
+  const cuadreFila = filas[filas.length - 2];
+  const tieneCuadre = cuadreFila && cuadreFila._cuadre;
+  if(tieneCuadre){
+    let debSinCuadre = 0, credSinCuadre = 0;
+    for(let i=0;i<filas.length-2;i++){
+      debSinCuadre += (Number(filas[i]['Débito (ME)']) || 0);
+      credSinCuadre += (Number(filas[i]['Crédito (ME)']) || 0);
+    }
+    // Cuadre balancea Σ Débito (ME) = Σ Crédito (ME) (no apunta al monto
+    // facturado: si hay negativos absorbidos al alquiler, ambas sumas
+    // quedan por encima del monto facturado en |negativos|, lo cual es
+    // contablemente correcto).
+    if(!cuadreFila._editado){
+      const dif = Math.round((debSinCuadre - credSinCuadre) * 10000) / 10000;
+      cuadreFila['Débito (ME)']  = dif < 0 ? Math.abs(dif) : 0;
+      cuadreFila['Crédito (ME)'] = dif > 0 ? dif : 0;
+      cuadreFila['Monto USD']    = Math.round(Math.abs(dif) * 10000) / 10000;
+    }
+  }
+
+  let tCred = 0, tDeb = 0;
+  for(let i=0;i<filas.length-1;i++){
+    const f = filas[i];
+    tDeb  += (Number(f['Débito (ME)']) || 0);
+    tCred += (Number(f['Crédito (ME)']) || 0);
+  }
+  totalFila['Débito (ME)'] = Math.round(tDeb * 10000) / 10000;
+  totalFila['Crédito (ME)'] = Math.round(tCred * 10000) / 10000;
+
+  // Actualizar celdas visuales de la fila cuadre si no fue editada manualmente
+  if(tieneCuadre && !cuadreFila._editado){
+    const tbody = document.getElementById('tbodySAP');
+    const trCuadre = tbody.querySelector('tr[data-cuadre="1"]');
+    if(trCuadre){
+      const colsHdr = ['Datos','Monto','Modelo','S/N','IP','CECO','Monto USD','Cuenta','Débito (ME)','Crédito (ME)','Débito','Crédito','Comentarios','Referencia 2','Centro de Costo'];
+      const COLS_USD_CUA = new Set(['Débito (ME)','Crédito (ME)']);
+      const COLS_INT_CUA = new Set(['CECO','Cuenta','Centro de Costo']);
+      const tds = trCuadre.querySelectorAll('td');
+      const fmtC = (v, c) => {
+        if(v===null||v===undefined||v==='') return '';
+        if(typeof v === 'number'){
+          if(COLS_INT_CUA.has(c)) return String(Math.round(v));
+          const n = v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+          return COLS_USD_CUA.has(c) ? `USD ${n}` : v.toLocaleString('es-PE',{minimumFractionDigits:2,maximumFractionDigits:4});
+        }
+        return v;
+      };
+      colsHdr.forEach((c, i) => { tds[i].textContent = fmtC(cuadreFila[c], c); });
+    }
+  }
+  const tbody = document.getElementById('tbodySAP');
+  const trTotal = tbody.querySelector('tr[data-total="1"]');
+  if(!trTotal) return;
+  const tds = trTotal.querySelectorAll('td');
+  const colsHdr = ['Datos','Monto','Modelo','S/N','IP','CECO','Monto USD','Cuenta','Débito (ME)','Crédito (ME)','Débito','Crédito','Comentarios','Referencia 2','Centro de Costo'];
+  const COLS_USD_TOT = new Set(['Débito (ME)','Crédito (ME)']);
+  const COLS_INT_TOT = new Set(['CECO','Cuenta','Centro de Costo']);
+  const fmt = (v, c) => {
+    if(v===null||v===undefined||v==='') return '';
+    if(typeof v === 'number'){
+      if(COLS_INT_TOT.has(c)) return String(Math.round(v));
+      const n = v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+      return COLS_USD_TOT.has(c) ? `USD ${n}` : v.toLocaleString('es-PE',{minimumFractionDigits:2,maximumFractionDigits:4});
+    }
+    return v;
+  };
+  colsHdr.forEach((c, i) => { tds[i].textContent = fmt(totalFila[c], c); });
+}
+
+document.getElementById('btnGenSAP').addEventListener('click', () => {
+  const s = document.getElementById('statusSAP');
+  if(!window._ultimosEquipos || !window._ultimosEquipos.length){
+    s.textContent = 'Cargue un PDF primero.'; s.style.color = 'var(--rojo)'; return;
+  }
+  const numFactura = document.getElementById('inpFactura').value.trim() || 'SIN-FACTURA';
+  try{
+    const filas = generarAsientoSAP(window._ultimosEquipos, window._ultimaMeta, numFactura);
+    window._ultimoSAP = filas;
+    renderSAPPreview(filas);
+    s.textContent = `Generadas ${filas.length - 1} líneas + total.`;
+    s.style.color = '#1a7a1a';
+  }catch(e){
+    s.textContent = 'Error: '+e.message; s.style.color = 'var(--rojo)';
+  }
+});
+
+document.getElementById('btnCopiarSAP').addEventListener('click', async () => {
+  const filas = window._ultimoSAP;
+  const s = document.getElementById('statusSAP');
+  if(!filas){ s.textContent = 'Genere el asiento primero.'; s.style.color = 'var(--rojo)'; return; }
+  const lines = [SAP_HEADERS.join('\t')];
+  for(const r of filas){
+    lines.push(SAP_HEADERS.map(h => {
+      const v = r[h];
+      if(v===undefined||v===null) return '';
+      return String(v).replace(/\t/g,' ').replace(/\n/g,' ');
+    }).join('\t'));
+  }
+  try{
+    await navigator.clipboard.writeText(lines.join('\n'));
+    s.textContent = '✓ Copiado al portapapeles. Pegue en Excel/SAP.';
+    s.style.color = '#1a7a1a';
+  }catch(e){
+    const ta = document.createElement('textarea');
+    ta.value = lines.join('\n');
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    s.textContent = '✓ Copiado (método legacy).';
+    s.style.color = '#1a7a1a';
+  }
+});
+
+document.getElementById('btnDescargarXLSX').addEventListener('click', () => {
+  const filas = window._ultimoSAP;
+  const s = document.getElementById('statusSAP');
+  if(!filas){ s.textContent = 'Genere el asiento primero.'; s.style.color = 'var(--rojo)'; return; }
+  if(typeof XLSX === 'undefined'){ s.textContent = 'Error: la librería XLSX no cargó.'; s.style.color = 'var(--rojo)'; return; }
+
+  const meta = window._ultimaMeta || {};
+  const wb = XLSX.utils.book_new();
+
+  const NCOLS = SAP_HEADERS.length;
+  const vacia = () => Array(NCOLS).fill('');
+  const periodo = meta.periodo || '';
+  const numFac = (document.getElementById('inpFactura').value.trim() || '');
+
+  const titulo = `CUADRO DE CONSUMO - REPRODATA  ·  ${periodo}`;
+  const subtitulo = `Contrato 276580 — HOTELERA COSTA DEL PACIFICO S.A. (C20297885538)` + (numFac ? `   |   Factura N° ${numFac}` : '');
+
+  // Fila 0: título; Fila 1: subtítulo; Fila 2: espacio; Fila 3: encabezados; 4+: datos.
+  const aoaSAP = [
+    [titulo, ...vacia().slice(1)],
+    [subtitulo, ...vacia().slice(1)],
+    vacia(),
+    [...SAP_HEADERS]
+  ];
+  for(const r of filas){
+    aoaSAP.push(SAP_HEADERS.map(h => {
+      const v = r[h];
+      if(v !== undefined && v !== '') return v;
+      // Débito (ME) y Crédito (ME) siempre llevan número (0 -> "USD 0.00")
+      // para que las celdas no queden en blanco. Las otras columnas
+      // (Débito, Crédito, Débito MS, Crédito MS) sí quedan vacías.
+      if(h === 'Débito (ME)' || h === 'Crédito (ME)') return 0;
+      return '';
+    }));
+  }
+  const wsSAP = XLSX.utils.aoa_to_sheet(aoaSAP);
+
+  // Merges: título y subtítulo ocupan toda la fila.
+  wsSAP['!merges'] = [
+    {s:{r:0, c:0}, e:{r:0, c:NCOLS-1}},
+    {s:{r:1, c:0}, e:{r:1, c:NCOLS-1}}
+  ];
+
+  // Altos de filas (título grande, subtítulo mediano, encabezado grande).
+  wsSAP['!rows'] = [
+    {hpt: 30}, {hpt: 22}, {hpt: 8}, {hpt: 38}
+  ];
+
+  // Formatos numéricos
+  const fmtUSD = '"USD" #,##0.00';
+  const fmtInt = '0';
+
+  // Estilos
+  const borderAll = {
+    top:{style:'thin',color:{rgb:'8AA4C8'}},
+    bottom:{style:'thin',color:{rgb:'8AA4C8'}},
+    left:{style:'thin',color:{rgb:'8AA4C8'}},
+    right:{style:'thin',color:{rgb:'8AA4C8'}}
+  };
+  const borderMed = {
+    top:{style:'medium',color:{rgb:'000000'}},
+    bottom:{style:'medium',color:{rgb:'000000'}},
+    left:{style:'thin',color:{rgb:'000000'}},
+    right:{style:'thin',color:{rgb:'000000'}}
+  };
+  const styleTitle = {
+    font:{name:'Segoe UI', sz:16, bold:true, color:{rgb:'FFFFFF'}},
+    fill:{patternType:'solid', fgColor:{rgb:'1F3864'}},
+    alignment:{horizontal:'center', vertical:'center'},
+    border: borderMed
+  };
+  const styleSubtitle = {
+    font:{name:'Segoe UI', sz:11, bold:true, color:{rgb:'FFFFFF'}},
+    fill:{patternType:'solid', fgColor:{rgb:'2F5496'}},
+    alignment:{horizontal:'center', vertical:'center'}
+  };
+  const styleHeader = {
+    font:{name:'Segoe UI', sz:11, bold:true, color:{rgb:'000000'}},
+    fill:{patternType:'solid', fgColor:{rgb:'FFC000'}},
+    alignment:{horizontal:'center', vertical:'center', wrapText:true},
+    border: borderMed
+  };
+  const styleCell = {
+    font:{name:'Segoe UI', sz:10, color:{rgb:'1F3864'}},
+    alignment:{vertical:'center', horizontal:'center'},
+    border: borderAll
+  };
+  const styleCellLeft = { ...styleCell, alignment:{vertical:'center', horizontal:'left', wrapText:true} };
+  const styleCellNum  = { ...styleCell, alignment:{vertical:'center', horizontal:'right'} };
+  const styleZebra = { ...styleCell, fill:{patternType:'solid', fgColor:{rgb:'F7FAFF'}} };
+  const styleZebraLeft = { ...styleCellLeft, fill:{patternType:'solid', fgColor:{rgb:'F7FAFF'}} };
+  const styleZebraNum  = { ...styleCellNum,  fill:{patternType:'solid', fgColor:{rgb:'F7FAFF'}} };
+  const styleCuadre = {
+    font:{name:'Segoe UI', sz:10, bold:true, color:{rgb:'000000'}},
+    fill:{patternType:'solid', fgColor:{rgb:'FFEB00'}},
+    alignment:{vertical:'center', horizontal:'center'},
+    border: borderAll
+  };
+  const styleCuadreNum = { ...styleCuadre, alignment:{vertical:'center', horizontal:'right'} };
+  const styleCuadreLeft = { ...styleCuadre, alignment:{vertical:'center', horizontal:'left', wrapText:true} };
+  const styleTotal = {
+    font:{name:'Segoe UI', sz:11, bold:true, color:{rgb:'000000'}},
+    fill:{patternType:'solid', fgColor:{rgb:'FFEB00'}},
+    alignment:{vertical:'center', horizontal:'center'},
+    border: borderMed
+  };
+  const styleTotalNum = { ...styleTotal, alignment:{vertical:'center', horizontal:'right'} };
+  const styleTotalLeft = { ...styleTotal, alignment:{vertical:'center', horizontal:'left', wrapText:true} };
+
+  // Columnas por tipo
+  const COL_INT = new Set([5, 7, 19, 20, 21, 22]);         // F,H,T,U,V,W -> sin separador
+  const COL_USD = new Set([10, 11]);                        // K, L
+  const COL_LEFT_ALIGN = new Set([16, 17, 18]);             // Q, R, S (comentarios, refs)
+
+  // Aplicar estilos y formatos
+  const totalIdxInAoa = aoaSAP.length - 1;
+  const cuadreIdxInAoa = (filas[filas.length - 2] && filas[filas.length - 2]._cuadre) ? aoaSAP.length - 2 : -1;
+
+  // Título
+  wsSAP[XLSX.utils.encode_cell({r:0,c:0})].s = styleTitle;
+  // Rellenar el merge con estilo (algunos motores requieren celdas reales)
+  for(let c=1;c<NCOLS;c++){
+    const a = XLSX.utils.encode_cell({r:0,c});
+    if(!wsSAP[a]) wsSAP[a] = {t:'s', v:''};
+    wsSAP[a].s = styleTitle;
+  }
+  wsSAP[XLSX.utils.encode_cell({r:1,c:0})].s = styleSubtitle;
+  for(let c=1;c<NCOLS;c++){
+    const a = XLSX.utils.encode_cell({r:1,c});
+    if(!wsSAP[a]) wsSAP[a] = {t:'s', v:''};
+    wsSAP[a].s = styleSubtitle;
+  }
+  // Encabezados (fila 3 en aoa, r=3)
+  for(let c=0;c<NCOLS;c++){
+    const a = XLSX.utils.encode_cell({r:3,c});
+    if(!wsSAP[a]) wsSAP[a] = {t:'s', v: SAP_HEADERS[c]};
+    wsSAP[a].s = styleHeader;
+  }
+  // Datos: r de 4 a totalIdxInAoa
+  for(let R = 4; R <= totalIdxInAoa; R++){
+    const esCuadre = (R === cuadreIdxInAoa);
+    const esTotal = (R === totalIdxInAoa);
+    const zebra = ((R - 4) % 2 === 0);
+    for(let C = 0; C < NCOLS; C++){
+      const a = XLSX.utils.encode_cell({r:R,c:C});
+      if(!wsSAP[a]) wsSAP[a] = {t:'s', v:''};
+      // Formato numérico
+      if(COL_USD.has(C)){
+        wsSAP[a].z = fmtUSD;
+        if(typeof wsSAP[a].v === 'number') wsSAP[a].t = 'n';
+      } else if(COL_INT.has(C) && typeof wsSAP[a].v === 'number'){
+        wsSAP[a].z = fmtInt;
+        wsSAP[a].t = 'n';
+      }
+      // Estilo
+      let sty;
+      if(esTotal){
+        sty = COL_LEFT_ALIGN.has(C) ? styleTotalLeft : (COL_USD.has(C) ? styleTotalNum : styleTotal);
+      } else if(esCuadre){
+        sty = COL_LEFT_ALIGN.has(C) ? styleCuadreLeft : (COL_USD.has(C) ? styleCuadreNum : styleCuadre);
+      } else if(zebra){
+        sty = COL_LEFT_ALIGN.has(C) ? styleZebraLeft : (COL_USD.has(C) ? styleZebraNum : styleZebra);
+      } else {
+        sty = COL_LEFT_ALIGN.has(C) ? styleCellLeft : (COL_USD.has(C) ? styleCellNum : styleCell);
+      }
+      wsSAP[a].s = sty;
+    }
+  }
+
+  // Anchos
+  wsSAP['!cols'] = SAP_HEADERS.map((h) => {
+    if(h === 'Comentarios') return {wch: 68};
+    if(h === 'Referencia 2') return {wch: 28};
+    if(h === 'Cuenta de mayor/Nombre SN') return {wch: 20};
+    if(['Débito (ME)','Crédito (ME)','Débito','Crédito','Débito (MS)','Crédito (MS)'].includes(h)) return {wch: 13};
+    if(h === 'Cuenta' || h === 'CECO' || h === 'Centro de Costo') return {wch: 11};
+    if(h === 'Modelo' || h === 'S/N' || h === 'IP') return {wch: 14};
+    if(h === 'Datos' || h === 'Monto') return {wch: 18};
+    if(h === 'Monto USD') return {wch: 11};
+    return {wch: 14};
+  });
+  XLSX.utils.book_append_sheet(wb, wsSAP, 'SAP');
+
+  const FORMATOS = ['A4BN','A3BN','A4CL','A3CL'];
+  const cabMes = [
+    meta.periodo||'','Marca','Modelo','S/N','IP','Observación','Cantidad Impresoras',
+    'Bolsa','Formatos','Contador Inicial','Contador Final','Consumo del Mes',
+    'Volumen Maximo Establecido','Volumen Excedente','Precio','Total','alquiler fijo',
+    'Cuenta','Centro Costo'
+  ];
+  const aoaMes = [cabMes];
+  for(const eq of (window._ultimosEquipos||[])){
+    const m = MAESTRO[eq.sn] || {};
+    for(let i=0;i<FORMATOS.length;i++){
+      const fmt = FORMATOS[i];
+      const d = eq.formatos[fmt] || {};
+      const volMax = (VOL_MAX_BOLSA[eq.bolsaPdf] && VOL_MAX_BOLSA[eq.bolsaPdf][fmt] != null) ? VOL_MAX_BOLSA[eq.bolsaPdf][fmt] : null;
+      const consFmt = d.consumo || 0;
+      const exc = volMax!=null ? (consFmt===0 ? 0 : consFmt - volMax) : (d.cantExc||0);
+      const tot = volMax!=null ? exc*(d.precio||0) : (d.total||0);
+      aoaMes.push([
+        i===0 ? (meta.periodo||'') : '',
+        i===0 ? (m.marca||'') : '',
+        i===0 ? (m.modelo||eq.modeloPdf||'') : '',
+        i===0 ? eq.sn : '',
+        i===0 ? (m.ip||'') : '',
+        i===0 ? (m.observacion||eq.direccion||'') : '',
+        i===0 ? (m.cantidad||1) : '',
+        i===0 ? (eq.bolsaPdf||'') : '',
+        fmt,
+        d.ci||0, d.cf||0, d.consumo||0,
+        volMax!=null ? volMax : '', exc, d.precio||0, Math.round(tot*100)/100,
+        i===0 ? (m.alquilerFijo||51.68) : '',
+        i===0 ? (m.cuenta||'') : '',
+        i===0 ? (m.centroCosto||'') : ''
+      ]);
+    }
+  }
+  const wsMes = aplicarEstiloHojaMes(aoaMes, meta);
+  XLSX.utils.book_append_sheet(wb, wsMes, meta.periodo ? meta.periodo.replace(/\s+/,'-') : 'Mes');
+
+  const nombre = `Reprodata_${(meta.periodo||'export').replace(/\s+/g,'_')}.xlsx`;
+  XLSX.writeFile(wb, nombre);
+  s.textContent = `✓ Descargado con formato: ${nombre}`;
+  s.style.color = '#1a7a1a';
+});
+
+function aplicarEstiloHojaMes(aoaBase, meta){
+  const NCOLS = aoaBase[0].length;
+  const vacia = () => Array(NCOLS).fill('');
+  const titulo = `REPORTE DE CONSUMO MENSUAL — REPRODATA  ·  ${meta.periodo||''}`;
+  const aoa = [
+    [titulo, ...vacia().slice(1)],
+    vacia(),
+    aoaBase[0],
+    ...aoaBase.slice(1)
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!merges'] = [{s:{r:0,c:0}, e:{r:0,c:NCOLS-1}}];
+  ws['!rows'] = [{hpt:28}, {hpt:8}, {hpt:34}];
+
+  const brd = {top:{style:'thin',color:{rgb:'8AA4C8'}}, bottom:{style:'thin',color:{rgb:'8AA4C8'}}, left:{style:'thin',color:{rgb:'8AA4C8'}}, right:{style:'thin',color:{rgb:'8AA4C8'}}};
+  const stTitle = {font:{name:'Segoe UI',sz:14,bold:true,color:{rgb:'FFFFFF'}}, fill:{patternType:'solid', fgColor:{rgb:'1F3864'}}, alignment:{horizontal:'center',vertical:'center'}};
+  const stHdr = {font:{name:'Segoe UI',sz:11,bold:true,color:{rgb:'000000'}}, fill:{patternType:'solid', fgColor:{rgb:'FFC000'}}, alignment:{horizontal:'center',vertical:'center',wrapText:true}, border:{top:{style:'medium',color:{rgb:'000000'}},bottom:{style:'medium',color:{rgb:'000000'}},left:{style:'thin',color:{rgb:'000000'}},right:{style:'thin',color:{rgb:'000000'}}}};
+  const stCell = {font:{name:'Segoe UI',sz:10,color:{rgb:'1F3864'}}, alignment:{horizontal:'center',vertical:'center'}, border:brd};
+  const stLeft = {...stCell, alignment:{horizontal:'left',vertical:'center',wrapText:true}};
+  const stNum  = {...stCell, alignment:{horizontal:'right',vertical:'center'}};
+  const stZebraC = {...stCell, fill:{patternType:'solid', fgColor:{rgb:'F7FAFF'}}};
+  const stZebraL = {...stLeft, fill:{patternType:'solid', fgColor:{rgb:'F7FAFF'}}};
+  const stZebraN = {...stNum,  fill:{patternType:'solid', fgColor:{rgb:'F7FAFF'}}};
+  const stGroup  = {...stCell, fill:{patternType:'solid', fgColor:{rgb:'E7EEF7'}}, font:{name:'Segoe UI',sz:10,bold:true,color:{rgb:'1F3864'}}};
+  const stGroupL = {...stGroup, alignment:{horizontal:'left',vertical:'center',wrapText:true}};
+  const stGroupN = {...stGroup, alignment:{horizontal:'right',vertical:'center'}};
+
+  // Título
+  for(let c=0;c<NCOLS;c++){
+    const a = XLSX.utils.encode_cell({r:0,c});
+    if(!ws[a]) ws[a] = {t:'s',v: c===0? titulo : ''};
+    ws[a].s = stTitle;
+  }
+  // Encabezados (r=2)
+  for(let c=0;c<NCOLS;c++){
+    const a = XLSX.utils.encode_cell({r:2,c});
+    if(!ws[a]) ws[a] = {t:'s',v: aoaBase[0][c]};
+    ws[a].s = stHdr;
+  }
+  // Datos
+  const COL_LEFT = new Set([5]);     // Observación
+  const COL_CENTER_FIRST = new Set([0,1,2,3,4,6,7]); // Fecha, Marca, Modelo, S/N, IP, Cantidad, Bolsa
+  const COL_NUM = new Set([9,10,11,12,13,14,15,16,17,18]); // Contadores, precios, totales, cuentas
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  const fmtUSD = '#,##0.00';
+  const fmtInt = '0';
+  for(let R = 3; R <= range.e.r; R++){
+    const grupo = Math.floor((R-3)/4);
+    const zebra = grupo % 2 === 1;
+    const primeraDeGrupo = ((R-3) % 4) === 0;
+    for(let C = 0; C < NCOLS; C++){
+      const a = XLSX.utils.encode_cell({r:R,c:C});
+      if(!ws[a]) ws[a] = {t:'s',v:''};
+      // formato número
+      if([9,10,11,12,13].includes(C) && typeof ws[a].v === 'number'){ ws[a].z = fmtInt; ws[a].t = 'n'; }
+      if([14,15,16].includes(C) && typeof ws[a].v === 'number'){ ws[a].z = fmtUSD; ws[a].t = 'n'; }
+      if([17,18].includes(C) && typeof ws[a].v === 'number'){ ws[a].z = fmtInt; ws[a].t = 'n'; }
+      let sty;
+      if(primeraDeGrupo && [0,1,2,3,4,5,6,7,17,18].includes(C)){
+        // Primera fila del equipo con info: resaltar ligeramente
+        sty = COL_LEFT.has(C) ? stGroupL : (COL_NUM.has(C) ? stGroupN : stGroup);
+      } else if(zebra){
+        sty = COL_LEFT.has(C) ? stZebraL : (COL_NUM.has(C) ? stZebraN : stZebraC);
+      } else {
+        sty = COL_LEFT.has(C) ? stLeft : (COL_NUM.has(C) ? stNum : stCell);
+      }
+      ws[a].s = sty;
+    }
+  }
+
+  ws['!cols'] = aoaBase[0].map((h) => {
+    if(h === 'Observación') return {wch: 40};
+    if(h === 'S/N' || h === 'IP') return {wch: 14};
+    if(h === 'Modelo' || h === 'Marca') return {wch: 12};
+    if(h === 'Contador Inicial' || h === 'Contador Final' || h === 'Volumen Maximo Establecido') return {wch: 14};
+    if(h === 'Consumo del Mes' || h === 'Volumen Excedente') return {wch: 12};
+    if(h === 'Cuenta' || h === 'Centro Costo' || h === 'Cantidad Impresoras') return {wch: 12};
+    return {wch: 11};
+  });
+  return ws;
+}
 </script>
 
 <footer class="creditos">
@@ -1289,6 +2069,6 @@ document.getElementById('btnDescargarXLSX').addEventListener('click',()=>{ const
   <div class="rol">Accountant</div>
 </footer>
 
-</div>
+</div><!-- /.app -->
 </body>
 </html>
