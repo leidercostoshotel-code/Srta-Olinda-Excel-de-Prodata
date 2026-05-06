@@ -1000,7 +1000,7 @@ function actualizarEstadisticas(equipos, meta){
   const consumoPorArea = new Map();
   const excesoPorArea = new Map();
   const costoExcesoPorArea = new Map();
-  
+
   for(const eq of equipos){
     const m = MAESTRO[eq.sn] || {};
     const centroRaw = (m.centroCosto ?? '').toString().trim();
@@ -1009,56 +1009,39 @@ function actualizarEstadisticas(equipos, meta){
     let consumoEquipo = 0;
     let excedenteEquipo = 0;
     let costoExcedenteEquipo = 0;
-    
+
     for(const fmt of formatos){
       const d = eq.formatos[fmt] || {};
-      const consumo = d.consumo || 0;
-      consumoEquipo += consumo;
-      
+      consumoEquipo += d.consumo || 0;
       const bolsaCalc = window._bolsasCalc && window._bolsasCalc[eq.bolsaPdf || 'SIN BOLSA'];
       const fmtData = bolsaCalc && bolsaCalc[fmt];
       const eqInfo = fmtData && fmtData.equipos.find(x => x.sn === eq.sn);
-      const excedente = eqInfo ? eqInfo.excAsignado : 0;
-      const costoExcedente = eqInfo ? eqInfo.cobroAsignado : 0;
-      excedenteEquipo += excedente;
-      costoExcedenteEquipo += costoExcedente;
+      excedenteEquipo += eqInfo ? eqInfo.excAsignado : 0;
+      costoExcedenteEquipo += eqInfo ? eqInfo.cobroAsignado : 0;
     }
-    
+
     consumoTotalGeneral += consumoEquipo;
     excedenteTotalGeneral += excedenteEquipo;
     costoExcedenteTotal += costoExcedenteEquipo;
-    
+
     const areaKey = `${centro}::${nombreArea.toLowerCase()}`;
     if(!consumoPorArea.has(areaKey)){
       consumoPorArea.set(areaKey, { centro, nombre: nombreArea, totalConsumo: 0, equipos: [], formatosDetalle: {A4BN:0,A3BN:0,A4CL:0,A3CL:0} });
       excesoPorArea.set(areaKey, 0);
       costoExcesoPorArea.set(areaKey, 0);
     }
-    consumoPorArea.get(areaKey).totalConsumo += consumoEquipo;
-    consumoPorArea.get(areaKey).equipos.push(eq.sn);
+
+    const areaData = consumoPorArea.get(areaKey);
+    areaData.totalConsumo += consumoEquipo;
+    areaData.equipos.push(eq.sn);
     for(const fmt of formatos){
-      const d = eq.formatos[fmt] || {};
-      consumoPorArea.get(areaKey).formatosDetalle[fmt] += d.consumo || 0;
+      areaData.formatosDetalle[fmt] += (eq.formatos[fmt] || {}).consumo || 0;
     }
 
-    excesoPorArea.set(areaKey, (excesoPorArea.get(areaKey)||0) + excedenteEquipo);
-    costoExcesoPorArea.set(areaKey, (costoExcesoPorArea.get(areaKey)||0) + costoExcedenteEquipo);
-    if(m.observacion){
-      const nombreObservacion = m.observacion.toString().trim();
-      if(nombreObservacion.length > (consumoPorArea.get(areaKey).nombre.length || 0)){
-        consumoPorArea.get(areaKey).nombre = nombreObservacion;
-
-    excesoPorCentro.set(centro, (excesoPorCentro.get(centro)||0) + excedenteEquipo);
-    costoExcesoPorCentro.set(centro, (costoExcesoPorCentro.get(centro)||0) + costoExcedenteEquipo);
-    if(m.observacion){
-      const nombreObservacion = m.observacion.toString().trim();
-      if(nombreObservacion.length > (consumoPorCentro.get(centro).nombre.length || 0)){
-        consumoPorCentro.get(centro).nombre = nombreObservacion;
-
-      }
-    }
+    excesoPorArea.set(areaKey, (excesoPorArea.get(areaKey) || 0) + excedenteEquipo);
+    costoExcesoPorArea.set(areaKey, (costoExcesoPorArea.get(areaKey) || 0) + costoExcedenteEquipo);
   }
-  
+
   const rankingConsumo = Array.from(consumoPorArea.values()).filter(c=>c.totalConsumo>0).sort((a,b)=>b.totalConsumo-a.totalConsumo);
   const rankingExcesos = [];
   for(const [areaKey, exceso] of excesoPorArea){
@@ -1201,7 +1184,7 @@ function renderizar(equipos, meta){
         html += `<td rowspan="4">${cantidad}</td>`;
         html += `<td rowspan="4">${bolsa}</td>`;
       }
-      html += `<tr>${fmt}</td>`;
+      html += `<td>${fmt}</td>`;
       let ciClass = 'num', ciBadge = '', cfAntCellHtml = '', deltaCellHtml = '';
       if(mesAnterior){
         const equipoAnt = (mesAnterior.equipos || []).find(x => x.sn === eq.sn);
@@ -1244,7 +1227,7 @@ function renderizar(equipos, meta){
   if(equipos.length){
     const trTotal = document.createElement('tr');
     trTotal.classList.add('fila-total');
-    const colsExtras = mesAnterior ? '<tr><td></td>' : '';
+    const colsExtras = mesAnterior ? '<td></td><td></td>' : '';
     const rentaOficial = meta.totalRenta || sums.alquiler;
     const excedenteOficial = (meta.totalExcedente !== undefined && meta.totalExcedente > 0) ? meta.totalExcedente : sums.importeBruto;
     const totalFacturado = (meta.totalFacturacion && meta.totalFacturacion > 0) ? meta.totalFacturacion : (rentaOficial + excedenteOficial);
