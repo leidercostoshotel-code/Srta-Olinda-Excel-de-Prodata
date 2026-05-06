@@ -41,30 +41,13 @@
   body{
     font-family:'Inter','Segoe UI',system-ui,-apple-system,Arial,sans-serif;
     margin:0;padding:0;
+    background:var(--bg);
     color:var(--texto);
     font-size:13px;
     line-height:1.45;
     -webkit-font-smoothing:antialiased;
     -moz-osx-font-smoothing:grayscale;
-    background-color:#eef3fa;
-    background-image:
-      radial-gradient(at 12% 8%,  rgba(47,84,150,.18) 0%, transparent 42%),
-      radial-gradient(at 88% 6%,  rgba(245,179,0,.10) 0%, transparent 40%),
-      radial-gradient(at 92% 92%, rgba(75,111,168,.16) 0%, transparent 45%),
-      radial-gradient(at 8% 96%,  rgba(31,56,100,.10) 0%, transparent 42%),
-      linear-gradient(180deg, #f3f7fc 0%, #e7eef8 100%);
-    background-attachment:fixed;
-    background-repeat:no-repeat;
-    position:relative;
   }
-  body::before{
-    content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-    background-image: radial-gradient(circle at 1px 1px, rgba(31,56,100,.045) 1px, transparent 0);
-    background-size: 22px 22px;
-    mask-image: radial-gradient(ellipse at center, #000 30%, transparent 80%);
-    -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 80%);
-  }
-  .app{position:relative;z-index:1}
   .app{max-width:1600px;margin:0 auto;padding:24px 28px 48px}
 
   /* Header */
@@ -195,15 +178,8 @@
     box-shadow:0 1px 2px rgba(15,23,42,.04);
     color:var(--azul);font-weight:500;
     transition:var(--transicion);
-    cursor:pointer;
   }
-  .mes-item:hover{
-    border-color:var(--azul-medio);
-    box-shadow:var(--sombra-md);
-    background:linear-gradient(180deg,#eaf2fb,#dfe9f7);
-    transform:translateY(-1px);
-  }
-  .mes-item:active{transform:translateY(0)}
+  .mes-item:hover{border-color:var(--azul-claro);box-shadow:var(--sombra-sm)}
   .mes-item b{color:var(--azul-oscuro);font-weight:600}
   .mes-item button{
     background:transparent;border:none;color:var(--texto-mas-suave);cursor:pointer;
@@ -254,35 +230,12 @@
   td.fecha{background:linear-gradient(180deg,#f5b300,#e8a400);color:#3a2400;font-weight:700;letter-spacing:.02em}
   td.obs{text-align:left;max-width:340px;white-space:normal;line-height:1.35;color:var(--texto-suave)}
   td.neg{color:var(--rojo);font-weight:600}
-  td.excedente-hl{
-    background:linear-gradient(180deg,#ffe0e0,#ffd0d0)!important;
-    color:#8a1e12;font-weight:700;
-    box-shadow:inset 0 0 0 1px rgba(192,57,43,.18);
-  }
-  td.total-rojo{
-    background:linear-gradient(180deg,#ffe0e0,#ffd0d0)!important;
-    color:#8a1e12;font-weight:700;
-    box-shadow:inset 0 0 0 1px rgba(192,57,43,.18);
-  }
-  tr.tiene-excedente td.obs{
-    border-left:3px solid var(--rojo);
-    color:var(--rojo);font-weight:600;
-  }
+  td.excedente-hl{background:#fff3c2;font-weight:600}
   td.num{text-align:right;font-variant-numeric:tabular-nums;font-family:'JetBrains Mono','Inter',monospace;font-size:11px}
   tr.sep td{border-top:2px solid var(--borde-tabla)}
   tr.sep:first-child td{border-top:none}
   tr.pend td{background:#fff4dd}
   tr.editado td{background:#fff7cf !important}
-  tr.fila-total td{
-    background:linear-gradient(180deg,#fff4cf,#ffe88a) !important;
-    border-top:2.5px solid var(--azul-oscuro) !important;
-    border-bottom:2.5px solid var(--azul-oscuro) !important;
-    font-weight:700;color:var(--azul-oscuro);
-    font-size:12px;letter-spacing:.01em;
-    padding:9px 9px;
-  }
-  tr.fila-total:hover td{background:linear-gradient(180deg,#fff4cf,#ffe88a) !important}
-  tr.fila-total td.num{font-family:'JetBrains Mono','Inter',monospace}
   td.ci-ok{background:#d8f5dc}
   td.ci-err{background:#ffd6d6}
   .ci-badge{
@@ -343,26 +296,6 @@
     .appbar{flex-direction:column;align-items:flex-start}
     .appbar h1{font-size:16px}
   }
-
-  .creditos{
-    margin:32px auto 12px;text-align:center;font-size:11px;color:var(--texto-suave);
-    padding:14px 16px;
-    border-top:1px solid var(--borde);
-  }
-  .creditos .nombre{
-    font-size:13px;font-weight:600;color:var(--azul);letter-spacing:.01em;
-    display:inline-flex;align-items:center;gap:8px;
-  }
-  .creditos .nombre::before, .creditos .nombre::after{
-    content:'';display:inline-block;width:24px;height:1px;background:var(--borde);
-  }
-  .creditos .rol{
-    font-size:10.5px;text-transform:uppercase;letter-spacing:.14em;
-    color:var(--texto-mas-suave);font-weight:500;margin-top:2px;
-  }
-  .creditos .marca{
-    font-size:10px;color:var(--texto-mas-suave);margin-top:6px;font-weight:400;
-  }
 </style>
 </head>
 <body>
@@ -378,10 +311,14 @@
 </header>
 
 <div class="toolbar">
-  <label for="fileInput" class="btn">📁 Importar PDF</label>
+  <button id="btnCargarRepo">📥 Cargar PDF del repositorio</button>
+  <label for="fileInput" class="btn secundario">📁 Importar otro PDF…</label>
   <input type="file" id="fileInput" accept="application/pdf">
+  <button class="secundario" id="btnExportCsv">📄 Exportar CSV</button>
   <button id="btnGuardarMes">💾 Guardar este mes</button>
-  <button class="secundario" id="btnLimpiar" title="Vacía la pantalla. El histórico local se mantiene.">🔄 Limpiar</button>
+  <button class="secundario" id="btnExportHist">⬇ Exportar histórico</button>
+  <label for="histInput" class="btn secundario">⬆ Importar histórico…</label>
+  <input type="file" id="histInput" accept="application/json" style="display:none">
   <span class="status" id="status">Listo. Cargue el PDF para procesar.</span>
 </div>
 
@@ -394,12 +331,6 @@
 </div>
 
 <div id="bannerCompara"></div>
-
-<div class="panel" id="panelSelectorMes" style="display:none">
-  <h3>El PDF contiene varios meses</h3>
-  <div style="font-size:12px;color:var(--texto-suave);margin-bottom:8px">Seleccione qué mes procesar (cada mes se calcula con sus propios datos):</div>
-  <div id="botonesMes" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-</div>
 
 <div class="panel" id="panelHistorico">
   <h3>Histórico local (navegador)</h3>
@@ -424,8 +355,6 @@
         <th>Bolsa</th>
         <th>Formatos</th>
         <th>Contador<br>Inicial</th>
-        <th id="thCfAnt" style="display:none;background:linear-gradient(180deg,#3a5c97,#27406a)">CF<br><span id="thCfAntMes">mes ant.</span></th>
-        <th id="thDelta" style="display:none;background:linear-gradient(180deg,#3a5c97,#27406a)">Δ<br>vs CI</th>
         <th>Contador<br>Final</th>
         <th>Consumo<br>del Mes</th>
         <th>Volumen Máximo<br>Establecido</th>
@@ -438,7 +367,7 @@
       </tr>
     </thead>
     <tbody id="tbody">
-      <tr><td colspan="21" style="padding:20px;color:#888">— Sin datos. Importe un PDF para ver la tabla —</td></tr>
+      <tr><td colspan="19" style="padding:20px;color:#888">— Sin datos. Importe un PDF para ver la tabla —</td></tr>
     </tbody>
   </table>
 </div>
@@ -511,119 +440,17 @@ const MAESTRO = {
   "9502370Y":{marca:"Sharp",modelo:"MX-M3070",ip:"10.72.8.207",observacion:"3er Piso - Contabilidad",cantidad:1,cuenta:941231308,centroCosto:403,alquilerFijo:51.68}
 };
 
-// Volumen Máximo TOTAL POR BOLSA (no por equipo) — fallback si el
-// PDF no trae los bloques de bolsa. Para el contrato 276580.
-// Reprodata calcula el excedente sumando el consumo de TODOS los equipos
-// de una bolsa y comparándolo con este volumen total.
-const VOL_MAX_BOLSA_FALLBACK = {
-  "Bolsa 1":{A4BN:13000,A3BN:0,A4CL:0,A3CL:0},
-  "Bolsa 2":{A4BN:1504,A3BN:0,A4CL:4504,A3CL:0},
-  "Bolsa 3":{A4BN:1128,A3BN:0,A4CL:3378,A3CL:0},
+// Volumen Máximo POR EQUIPO (no el total de la bolsa).
+// Bolsa 1 son sólo B/N (Canon IR-*, MX-M3070): 3250 A4BN, 0 color.
+// Bolsas 2..5 (multifuncionales color): 188 A4BN + 563 A4CL por equipo.
+const VOL_MAX_BOLSA = {
+  "Bolsa 1":{A4BN:3250,A3BN:0,A4CL:0,A3CL:0},
+  "Bolsa 2":{A4BN:188,A3BN:0,A4CL:563,A3CL:0},
+  "Bolsa 3":{A4BN:188,A3BN:0,A4CL:563,A3CL:0},
   "Bolsa 4":{A4BN:188,A3BN:0,A4CL:563,A3CL:0},
   "Bolsa 5":{A4BN:188,A3BN:0,A4CL:563,A3CL:0},
   "SIN BOLSA":{A4BN:0,A3BN:0,A4CL:0,A3CL:0}
 };
-
-// VOL_MAX_BOLSA dinámico: leído del PDF al importar. Cae al fallback
-// si el PDF no tiene los bloques esperados.
-let VOL_MAX_BOLSA = JSON.parse(JSON.stringify(VOL_MAX_BOLSA_FALLBACK));
-let PRECIOS_BOLSA = null; // se llena al importar el PDF
-
-// Lee los bloques "BOLSA N° #X" del PDF y devuelve {[bolsa]: {[fmt]: {volMax, precio}}}.
-// Estos bloques aparecen al final del cuadro con el resumen agregado por bolsa.
-function extraerVolumenesPDF(lines){
-  const result = {};
-  const FMTS = ['A4BN','A3BN','A4CL','A3CL'];
-  const isNum = t => /^-?\d+(\.\d+)?$/.test(String(t).replace(/,/g,''));
-  for(let i=0;i<lines.length;i++){
-    const txt = lines[i].items.map(it=>it.text).join(' ').replace(/\s+/g,' ').trim();
-    // Estricto: requiere "N°" + "#" para distinguir del header de sección
-    const bm = txt.match(/BOLSA\s+N°\s*#\s*(\d+)/i);
-    if(!bm) continue;
-    const bolsa = `Bolsa ${bm[1]}`;
-    if(!result[bolsa]) result[bolsa] = {};
-    // Buscar las 4 líneas siguientes con formato A4BN/A3BN/A4CL/A3CL
-    let vistos = 0;
-    for(let j=i+1; j<Math.min(lines.length, i+18) && vistos<4; j++){
-      const tokens = [];
-      for(const it of lines[j].items) for(const t of String(it.text).split(/\s+/)) if(t) tokens.push(t);
-      const fmtIdx = tokens.findIndex(t => FMTS.includes(t));
-      if(fmtIdx < 0) continue;
-      const fmt = tokens[fmtIdx];
-      const nums = [];
-      for(let k=fmtIdx+1; k<tokens.length && nums.length<5; k++){
-        if(isNum(tokens[k])) nums.push(parseFloat(tokens[k].replace(/,/g,'')));
-        else break;
-      }
-      // Bloque BOLSA tiene 5 números: cons, volMax, exc, precio, cobro
-      if(nums.length >= 5){
-        if(!result[bolsa][fmt]){
-          result[bolsa][fmt] = { volMax: nums[1], precio: nums[3] };
-        }
-        vistos++;
-      }
-    }
-  }
-  return result;
-}
-
-// Calcula excedentes AGREGADOS por bolsa+formato (método del proveedor)
-// y reparte el cobro entre los equipos proporcional a su consumo.
-function calcularBolsasAgregadas(equipos){
-  const FMTS = ['A4BN','A3BN','A4CL','A3CL'];
-  const bolsas = {};
-  for(const eq of equipos){
-    const b = eq.bolsaPdf || 'SIN BOLSA';
-    if(!bolsas[b]){
-      bolsas[b] = {};
-      for(const f of FMTS) bolsas[b][f] = {consTotal:0, equipos:[], precio:0};
-    }
-    for(const f of FMTS){
-      const d = eq.formatos[f] || {};
-      const c = d.consumo || 0;
-      bolsas[b][f].consTotal += c;
-      bolsas[b][f].equipos.push({sn: eq.sn, consumo: c});
-      if((d.precio||0) > 0) bolsas[b][f].precio = d.precio;
-    }
-  }
-  // Excedente y cobro por bolsa+formato
-  for(const b of Object.keys(bolsas)){
-    for(const f of FMTS){
-      const data = bolsas[b][f];
-      const volMax = (VOL_MAX_BOLSA[b] && VOL_MAX_BOLSA[b][f] != null) ? VOL_MAX_BOLSA[b][f] : 0;
-      // Precio: prefiere el del bloque BOLSA del PDF (más confiable que
-      // el de cada equipo individual). Fallback al de los equipos.
-      const precioPdf = (PRECIOS_BOLSA && PRECIOS_BOLSA[b] && PRECIOS_BOLSA[b][f]) || data.precio;
-      data.precio = precioPdf;
-      const exc = Math.max(0, data.consTotal - volMax);
-      data.volMax = volMax;
-      data.excedente = exc;
-      data.cobroTotal = Math.round(exc * precioPdf * 10000) / 10000;
-      // Repartir cobro entre equipos proporcional al consumo
-      for(const e of data.equipos){
-        e.excAsignado = (data.consTotal > 0) ? (e.consumo / data.consTotal) * exc : 0;
-        e.cobroAsignado = (data.consTotal > 0) ? (e.consumo / data.consTotal) * data.cobroTotal : 0;
-      }
-    }
-  }
-  return bolsas;
-}
-
-// Devuelve el monto que el proveedor cobra al equipo (suma de cobros
-// asignados de los 4 formatos según el agregado por bolsa).
-function calcularCobroEquipo(eq, bolsasCalc){
-  const FMTS = ['A4BN','A3BN','A4CL','A3CL'];
-  const b = eq.bolsaPdf || 'SIN BOLSA';
-  let total = 0;
-  if(!bolsasCalc[b]) return 0;
-  for(const f of FMTS){
-    const data = bolsasCalc[b][f];
-    if(!data) continue;
-    const eqData = data.equipos.find(x => x.sn === eq.sn);
-    if(eqData) total += eqData.cobroAsignado || 0;
-  }
-  return Math.round(total * 10000) / 10000;
-}
 
 const statusEl = document.getElementById('status');
 function setStatus(msg, error=false){
@@ -631,170 +458,39 @@ function setStatus(msg, error=false){
   statusEl.classList.toggle('error', !!error);
 }
 
-document.getElementById('fileInput').addEventListener('change', async (ev) => {
-  const f = ev.target.files[0];
-  if(!f) return;
+document.getElementById('btnCargarRepo').addEventListener('click', async () => {
   try{
-    resetearEstadoPdf({procesando:true});
-    setStatus('Leyendo '+f.name+'…');
-    const buf = await f.arrayBuffer();
-    await procesarPdf(buf, f.name);
-    ev.target.value = '';
+    setStatus('Descargando PDF del repositorio…');
+    const url = 'CUADRO DE CONSUMO DEL CONTRATO 276580 PERIODO 2026 MES DE MARZO.pdf';
+    const resp = await fetch(url);
+    if(!resp.ok) throw new Error('No se encontró el PDF en el repositorio ('+resp.status+')');
+    const buf = await resp.arrayBuffer();
+    await procesarPdf(buf);
   }catch(e){
     setStatus('Error: '+e.message, true);
   }
 });
 
-function detectarMesesPDF(lines){
-  // Devuelve [{periodo:'MARZO 2026', startIdx:0}, ...] con todas las
-  // ocurrencias de "PERIODO YYYY MES DE X" en el PDF, ordenadas por
-  // posición. Sirve para PDFs acumulativos.
-  const meses = [];
-  for(let i=0;i<lines.length;i++){
-    const txt = lines[i].items.map(it=>it.text).join(' ');
-    const pm = txt.match(/PERIODO\s+(\d{4})\s+MES\s+DE\s+(\w+)/i);
-    if(pm){
-      meses.push({periodo: `${pm[2]} ${pm[1]}`.toUpperCase(), startIdx: i});
-    }
+document.getElementById('fileInput').addEventListener('change', async (ev) => {
+  const f = ev.target.files[0];
+  if(!f) return;
+  try{
+    setStatus('Leyendo '+f.name+'…');
+    const buf = await f.arrayBuffer();
+    await procesarPdf(buf, f.name);
+  }catch(e){
+    setStatus('Error: '+e.message, true);
   }
-  // Asignar endIdx: hasta el inicio del siguiente mes o el final del PDF
-  for(let i=0;i<meses.length;i++){
-    meses[i].endIdx = (i+1 < meses.length) ? meses[i+1].startIdx : lines.length;
-  }
-  return meses;
-}
+});
 
 async function procesarPdf(buf, nombre){
-  // Reset completo del estado anterior antes de procesar el PDF nuevo
-  resetearEstadoPdf({procesando:true});
   setStatus('Procesando PDF…');
   const pdf = await pdfjsLib.getDocument({data:buf}).promise;
   const lines = await extraerLineas(pdf);
-  // Guardar para poder re-procesar si el usuario cambia de mes
-  window._lineasPdf = lines;
-  // Detectar todos los meses (PDF acumulativo)
-  const mesesEnPdf = detectarMesesPDF(lines);
-  const panelSel = document.getElementById('panelSelectorMes');
-  const botMes = document.getElementById('botonesMes');
-  if(mesesEnPdf.length > 1){
-    panelSel.style.display = '';
-    botMes.innerHTML = '';
-    mesesEnPdf.forEach((m, idx) => {
-      const btn = document.createElement('button');
-      btn.textContent = m.periodo;
-      btn.dataset.idx = idx;
-      btn.className = idx === 0 ? '' : 'secundario';
-      btn.addEventListener('click', () => seleccionarMes(idx));
-      botMes.appendChild(btn);
-    });
-    window._mesesPdf = mesesEnPdf;
-    return procesarRango(lines.slice(mesesEnPdf[0].startIdx, mesesEnPdf[0].endIdx));
-  } else {
-    panelSel.style.display = 'none';
-    return procesarRango(lines);
-  }
-}
-
-function seleccionarMes(idx){
-  const lines = window._lineasPdf;
-  const meses = window._mesesPdf;
-  if(!lines || !meses || !meses[idx]) return;
-  // Resetear visual pero mantener el PDF en memoria
-  resetearEstadoPdf({procesando:true});
-  // Actualizar estilos de botones
-  const botMes = document.getElementById('botonesMes');
-  Array.from(botMes.querySelectorAll('button')).forEach((b,i) => {
-    b.className = (i === idx) ? '' : 'secundario';
-  });
-  document.getElementById('panelSelectorMes').style.display = '';
-  procesarRango(lines.slice(meses[idx].startIdx, meses[idx].endIdx));
-}
-
-async function procesarRango(lines){
   const meta = detectarMeta(lines);
-  // Si el mes ya está en el histórico, avisar y preguntar antes de procesar
-  const claveMesActual = claveMes(meta.periodo);
-  if(claveMesActual){
-    const existeRaw = localStorage.getItem(STORAGE_PREFIX + claveMesActual);
-    if(existeRaw){
-      let fechaGuardado = '';
-      try{
-        const data = JSON.parse(existeRaw);
-        fechaGuardado = data.guardadoEn ? new Date(data.guardadoEn).toLocaleString('es-PE') : '';
-      } catch(e){}
-      const msg =
-        `⚠ El mes ${meta.periodo} ya está guardado en el histórico` +
-        (fechaGuardado ? ` (guardado el ${fechaGuardado}).` : '.') +
-        `\n\n¿Deseas REEMPLAZARLO con los datos del PDF actual?\n\n` +
-        `• Aceptar: continuar y, al presionar "Guardar este mes", sobrescribir el anterior.\n` +
-        `• Cancelar: no procesar este mes (puedes eliminarlo del histórico antes ✕).`;
-      if(!confirm(msg)){
-        resetearEstadoPdf();
-        setStatus(`✋ Importación cancelada. ${meta.periodo} ya está en el histórico — no se modificó. Use ✕ en el badge para eliminarlo si quiere reimportar.`, true);
-        return;
-      }
-    }
-  }
-
-  // Lectura dinámica de volúmenes y precios DESDE EL PDF
-  const volsPdf = extraerVolumenesPDF(lines);
-  if(Object.keys(volsPdf).length){
-    VOL_MAX_BOLSA = JSON.parse(JSON.stringify(VOL_MAX_BOLSA_FALLBACK));
-    PRECIOS_BOLSA = {};
-    for(const bolsa of Object.keys(volsPdf)){
-      VOL_MAX_BOLSA[bolsa] = VOL_MAX_BOLSA[bolsa] || {A4BN:0,A3BN:0,A4CL:0,A3CL:0};
-      PRECIOS_BOLSA[bolsa] = {};
-      for(const fmt of Object.keys(volsPdf[bolsa])){
-        VOL_MAX_BOLSA[bolsa][fmt] = volsPdf[bolsa][fmt].volMax;
-        PRECIOS_BOLSA[bolsa][fmt] = volsPdf[bolsa][fmt].precio;
-      }
-    }
-  } else {
-    VOL_MAX_BOLSA = JSON.parse(JSON.stringify(VOL_MAX_BOLSA_FALLBACK));
-    PRECIOS_BOLSA = null;
-  }
   const equipos = parsearEquipos(lines);
   renderizar(equipos, meta);
-  const dups = window._dupAvisoPdf || 0;
-  const aviso = dups > 0 ? ` (PDF acumulativo: ${dups} S/N duplicados omitidos, se mantuvo la primera ocurrencia)` : '';
-  setStatus(`Listo. ${equipos.length} equipos detectados.${aviso}`);
-}
-
-function resetearEstadoPdf(opts){
-  const procesando = !!(opts && opts.procesando);
-  // Tabla principal
-  const tbody = document.getElementById('tbody');
-  if(tbody) tbody.innerHTML = `<tr><td colspan="21" style="padding:20px;color:#888">— ${procesando ? 'Procesando…' : 'Sin datos. Importe un PDF para ver la tabla'} —</td></tr>`;
-  // Resumen / KPIs: ocultar el bloque entero hasta tener datos del PDF nuevo
-  const resumen = document.getElementById('resumen');
-  if(resumen) resumen.style.display = 'none';
-  ['kpiPeriodo','kpiEquipos','kpiRenta','kpiExcedente','kpiValidacion'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el){ el.textContent = '—'; el.style.color = ''; }
-  });
-  // Banner / panel de discrepancias
-  const banner = document.getElementById('bannerCompara');
-  if(banner) banner.innerHTML = '';
-  const detalle = document.getElementById('detalleDiscrepancias');
-  if(detalle) detalle.style.display = 'none';
-  const tablaDisc = document.getElementById('tablaDiscrepancias');
-  if(tablaDisc) tablaDisc.innerHTML = '';
-  // Tabla SAP — limpiar y borrar el asiento previo
-  const tbodySAP = document.getElementById('tbodySAP');
-  if(tbodySAP) tbodySAP.innerHTML = '<tr><td colspan="15" style="padding:16px;color:#888">— Cargue un PDF y presione <b>Generar asiento SAP</b> —</td></tr>';
-  const statusSAP = document.getElementById('statusSAP');
-  if(statusSAP){ statusSAP.textContent = ''; statusSAP.style.color = ''; }
-  // Selector de mes (PDF acumulativo)
-  const panelSel = document.getElementById('panelSelectorMes');
-  if(panelSel) panelSel.style.display = 'none';
-  // Estado en memoria
-  window._ultimosEquipos = null;
-  window._ultimaMeta = null;
-  window._ultimasDiscrepancias = null;
-  window._ultimoSAP = null;
-  window._dupAvisoPdf = 0;
-  // Status global
-  if(!procesando) setStatus('Listo. Cargue el PDF para procesar.');
+  setStatus(`Listo. ${equipos.length} equipos detectados.`);
 }
 
 async function extraerLineas(pdf){
@@ -826,63 +522,21 @@ async function extraerLineas(pdf){
 }
 
 function detectarMeta(lines){
-  // Toma:
-  //  - periodo: PRIMER "PERIODO YYYY MES DE X" (si el PDF acumula meses,
-  //             nos quedamos con el más reciente, que aparece arriba).
-  //  - totalRenta y totalExcedente: del bloque resumen FINAL del PDF
-  //    ("TOTAL RENTA MENSUAL  $ 1092.96" sin colon), si existe; sino
-  //    del primer match con colon (compatibilidad con PDFs viejos).
-  //  - totalFacturacion: del bloque final.
-  const meta = {periodo:'', totalRenta:0, totalExcedente:0, totalFacturacion:0};
-  // Primera pasada: período (primero) + totales con colon (primero)
+  const meta = {periodo:'', totalRenta:0, totalExcedente:0};
   for(const l of lines){
     const txt = l.items.map(i=>i.text).join(' ');
-    if(!meta.periodo){
-      const pm = txt.match(/PERIODO\s+(\d{4})\s+MES\s+DE\s+(\w+)/i);
-      if(pm) meta.periodo = `${pm[2]} ${pm[1]}`.toUpperCase();
-    }
-    if(!meta.totalRenta){
-      const rm = txt.match(/TOTAL RENTA MENSUAL:\s*\$?\s*([\d,.]+)/i);
-      if(rm) meta.totalRenta = parseFloat(rm[1].replace(/,/g,''));
-    }
-    if(!meta.totalExcedente){
-      const em = txt.match(/TOTAL EXCEDENTE:\s*\$?\s*([\d,.]+)/i);
-      if(em) meta.totalExcedente = parseFloat(em[1].replace(/,/g,''));
-    }
-  }
-  // Segunda pasada: bloque FINAL del PDF (sin colon, son los totales reales).
-  // Sólo asignar si los valores aún no se detectaron arriba (PDF acumulativo
-  // tiene varios bloques; nos quedamos con el primero -> el mes más reciente).
-  let rentaFinal = 0, excedenteFinal = 0;
-  for(const l of lines){
-    const txt = l.items.map(i=>i.text).join(' ').replace(/\s+/g,' ');
-    let m;
-    if(rentaFinal === 0 && (m = txt.match(/TOTAL RENTA MENSUAL\s+\$?\s*([\d,.]+)\s*$/i))){
-      rentaFinal = parseFloat(m[1].replace(/,/g,''));
-    }
-    if(excedenteFinal === 0 && (m = txt.match(/TOTAL EXCEDENTES\s+\$?\s*([\d,.]+)\s*$/i))){
-      excedenteFinal = parseFloat(m[1].replace(/,/g,''));
-    }
-    if(meta.totalFacturacion === 0 && (m = txt.match(/TOTAL FACTURACI[ÓO]N\s+\$?\s*([\d,.]+)\s*$/i))){
-      meta.totalFacturacion = parseFloat(m[1].replace(/,/g,''));
-    }
-  }
-  // El bloque final, cuando existe, tiene los totales OFICIALES (incluye
-  // bolsas adicionales como "SIN BOLSA" sumadas). Solo si difiere y no hay
-  // riesgo de venir de otro mes acumulativo, lo preferimos.
-  if(rentaFinal > 0 && (meta.totalRenta === 0 || rentaFinal >= meta.totalRenta)){
-    meta.totalRenta = rentaFinal;
-  }
-  if(excedenteFinal > 0 && meta.totalExcedente === 0){
-    meta.totalExcedente = excedenteFinal;
+    const pm = txt.match(/PERIODO\s+(\d{4})\s+MES\s+DE\s+(\w+)/i);
+    if(pm){ meta.periodo = `${pm[2]} ${pm[1]}`.toUpperCase(); }
+    const rm = txt.match(/TOTAL RENTA MENSUAL:\s*\$?\s*([\d,.]+)/i);
+    if(rm){ meta.totalRenta = parseFloat(rm[1].replace(/,/g,'')); }
+    const em = txt.match(/TOTAL EXCEDENTE:\s*\$?\s*([\d,.]+)/i);
+    if(em){ meta.totalExcedente = parseFloat(em[1].replace(/,/g,'')); }
   }
   return meta;
 }
 
 function parsearEquipos(lines){
   const equipos = [];
-  const porSn = new Map();
-  let duplicados = 0;
   let actual = null;
   const FMTS = ['A4BN','A3BN','A4CL','A3CL'];
   const reEquip = /^([A-Z0-9]+)\s*[-–]\s*([A-Z0-9][A-Z0-9-]*)(?:\s*[-–]\s*(Bolsa\s*\d+))?/i;
@@ -918,22 +572,13 @@ function parsearEquipos(lines){
     if(fmt === 'A4BN'){
       const em = leftText.match(reEquip);
       if(em){
-        const sn = em[1];
-        if(porSn.has(sn)){
-          // S/N repetido en el PDF (cuadro acumulativo de varios meses).
-          // Mantenemos sólo la primera ocurrencia de cada equipo.
-          duplicados++;
-          actual = null;
-          continue;
-        }
         actual = {
-          sn,
+          sn: em[1],
           modeloPdf: em[2],
           bolsaPdf: em[3] ? em[3].replace(/\s+/,' ').trim() : 'SIN BOLSA',
           direccion: '',
           formatos: {}
         };
-        porSn.set(sn, actual);
         equipos.push(actual);
       }else{
         actual = null;
@@ -949,11 +594,6 @@ function parsearEquipos(lines){
     }
   }
 
-  if(duplicados > 0){
-    window._dupAvisoPdf = duplicados;
-  } else {
-    window._dupAvisoPdf = 0;
-  }
   return equipos;
 }
 
@@ -977,33 +617,8 @@ function renderizar(equipos, meta){
   const discrepancias = [];
   let totalCI = 0, okCI = 0;
 
-  // Mostrar/ocultar columnas extra "CF mes anterior" + "Δ"
-  const thCfAnt = document.getElementById('thCfAnt');
-  const thDelta = document.getElementById('thDelta');
-  const thCfAntMes = document.getElementById('thCfAntMes');
-  if(thCfAnt && thDelta){
-    if(mesAnterior){
-      thCfAnt.style.display = '';
-      thDelta.style.display = '';
-      if(thCfAntMes) thCfAntMes.textContent = mesAnterior.meta.periodo || 'mes ant.';
-    } else {
-      thCfAnt.style.display = 'none';
-      thDelta.style.display = 'none';
-    }
-  }
-
   let totalExcedenteCalc = 0;
   let totalRentaCalc = 0;
-  // Pre-calcular agregado por bolsa (método correcto del proveedor)
-  const bolsasCalc = calcularBolsasAgregadas(equipos);
-  // Acumuladores para la fila TOTAL al pie de la tabla
-  const sums = {
-    cantidad:0, consumo:0, volMax:0,
-    excPositivo:0, excNegativo:0,
-    importeBruto:0, importeNegativo:0,
-    alquiler:0
-  };
-  window._bolsasCalc = bolsasCalc;
 
   for(const eq of equipos){
     const m = MAESTRO[eq.sn] || {};
@@ -1018,49 +633,21 @@ function renderizar(equipos, meta){
     const centroCosto = m.centroCosto || '';
     const alquilerFijo = m.alquilerFijo || 51.68;
     totalRentaCalc += alquilerFijo;
-    sums.cantidad += cantidad;
-    sums.alquiler += alquilerFijo;
-
-    // ¿El equipo tiene excedente en algún formato? -> resaltar la fila
-    let equipoTieneExcedente = false;
-    for(const f of FORMATOS){
-      const bi = bolsasCalc[bolsa] && bolsasCalc[bolsa][f];
-      const ei = bi && bi.equipos.find(x => x.sn === eq.sn);
-      if(ei && (ei.cobroAsignado || 0) > 0.005){ equipoTieneExcedente = true; break; }
-    }
 
     for(let i=0;i<FORMATOS.length;i++){
       const fmt = FORMATOS[i];
       const d = eq.formatos[fmt] || {ci:0,cf:0,consumo:0,volEst:0,cantExc:0,precio:0,total:0};
-      const volMaxTotal = (VOL_MAX_BOLSA[bolsa] && VOL_MAX_BOLSA[bolsa][fmt] != null) ? VOL_MAX_BOLSA[bolsa][fmt] : null;
+      const volMax = (VOL_MAX_BOLSA[bolsa] && VOL_MAX_BOLSA[bolsa][fmt] != null) ? VOL_MAX_BOLSA[bolsa][fmt] : null;
       const consumo = d.consumo;
-      // Cálculo correcto: el excedente y cobro se asignan proporcional
-      // al consumo del equipo dentro del agregado de su bolsa.
-      const bolsaInfo = bolsasCalc[bolsa] && bolsasCalc[bolsa][fmt];
-      const eqInfo = bolsaInfo && bolsaInfo.equipos.find(x => x.sn === eq.sn);
-      const excedenteReal = eqInfo ? Math.round(eqInfo.excAsignado * 100) / 100 : 0;
-      const totalCalc = eqInfo ? Math.round(eqInfo.cobroAsignado * 10000) / 10000 : 0;
-      // Mostramos el volumen máximo TOTAL de la bolsa (mismo en todas las
-      // filas de la bolsa) — es la cifra que usa el proveedor.
-      const volMax = volMaxTotal;
+      const excedenteReal = (volMax !== null)
+        ? (consumo === 0 ? 0 : consumo - volMax)
+        : d.cantExc;
+      const totalCalc = volMax !== null ? excedenteReal * d.precio : d.total;
       if(totalCalc > 0) totalExcedenteCalc += totalCalc;
-
-      sums.consumo += consumo || 0;
-      // Para no contar el volMax de la bolsa N veces, sólo lo sumamos en
-      // el primer equipo de la bolsa por formato.
-      if(bolsaInfo && bolsaInfo.equipos[0] && bolsaInfo.equipos[0].sn === eq.sn){
-        sums.volMax += (volMaxTotal !== null) ? volMaxTotal : 0;
-        // Y también acumulamos el excedente y cobro AGREGADO de la bolsa
-        // sólo una vez (no por equipo). Así la fila TOTAL coincide al
-        // centavo con el PDF, sin errores de redondeo del reparto.
-        if((bolsaInfo.excedente || 0) > 0) sums.excPositivo += bolsaInfo.excedente;
-        if((bolsaInfo.cobroTotal || 0) > 0) sums.importeBruto += bolsaInfo.cobroTotal;
-      }
 
       const tr = document.createElement('tr');
       if(i===0) tr.classList.add('sep');
       if(sinMaestro) tr.classList.add('pend');
-      if(equipoTieneExcedente) tr.classList.add('tiene-excedente');
 
       let html = '';
       if(i===0){
@@ -1077,50 +664,34 @@ function renderizar(equipos, meta){
 
       let ciClass = 'num';
       let ciBadge = '';
-      let cfAntCellHtml = '';
-      let deltaCellHtml = '';
       if(mesAnterior){
         const equipoAnt = (mesAnterior.equipos || []).find(x => x.sn === eq.sn);
         const cfAnt = equipoAnt && equipoAnt.formatos && equipoAnt.formatos[fmt] ? equipoAnt.formatos[fmt].cf : null;
         if(cfAnt !== null && cfAnt !== undefined){
           totalCI++;
-          const dif = d.ci - cfAnt;
           if(cfAnt === d.ci){
             ciClass += ' ci-ok';
             ciBadge = `<span class="ci-badge ok" title="Coincide con CF de ${mesAnterior.meta.periodo}">✓</span>`;
             okCI++;
-            cfAntCellHtml = `<td class="num ci-ok">${fmtInt(cfAnt)}</td>`;
-            deltaCellHtml = `<td class="num ci-ok"><b>0</b></td>`;
           } else {
             ciClass += ' ci-err';
+            const dif = d.ci - cfAnt;
             ciBadge = `<span class="ci-badge err" title="Esperado ${fmtInt(cfAnt)} (CF de ${mesAnterior.meta.periodo}), diferencia ${dif>0?'+':''}${fmtInt(dif)}">✗</span>`;
             discrepancias.push({
               sn: eq.sn, modelo: MAESTRO[eq.sn]?.modelo || eq.modeloPdf, obs: MAESTRO[eq.sn]?.observacion || '',
               formato: fmt, ciPdf: d.ci, cfAnterior: cfAnt, diferencia: dif
             });
-            cfAntCellHtml = `<td class="num ci-err">${fmtInt(cfAnt)}</td>`;
-            const signo = dif > 0 ? '+' : '';
-            deltaCellHtml = `<td class="num ci-err" title="${dif>0?'El proveedor le cobra MÁS de lo esperado':'El proveedor le cobra MENOS / hubo retroceso'}"><b>${signo}${fmtInt(dif)}</b></td>`;
           }
-        } else {
-          cfAntCellHtml = `<td class="num" style="color:#94a3b8">—</td>`;
-          deltaCellHtml = `<td class="num" style="color:#94a3b8">—</td>`;
         }
       }
       html += `<td class="${ciClass}">${fmtInt(d.ci)}${ciBadge}</td>`;
-      html += cfAntCellHtml;
-      html += deltaCellHtml;
       html += `<td class="num">${fmtInt(d.cf)}</td>`;
-      // Resaltado: rojo si el formato del equipo aporta excedente al cobro
-      const consumoExcede = (volMax !== null) && (consumo > volMax);
-      const consumoClass = consumoExcede ? 'excedente-hl' : '';
-      html += `<td class="num ${consumoClass}">${fmtInt(consumo)}</td>`;
+      html += `<td class="num">${fmtInt(consumo)}</td>`;
       html += `<td class="num">${volMax!==null?fmtInt(volMax):''}</td>`;
-      const excClass = totalCalc > 0.005 ? 'excedente-hl' : (excedenteReal < 0 ? 'neg' : '');
-      html += `<td class="num ${excClass}" title="${totalCalc>0.005?'Esta área se pasó del volumen contratado — ver acción correctiva':''}">${fmtNum(excedenteReal)}</td>`;
+      const excClass = excedenteReal < 0 ? 'neg' : (excedenteReal>0?'excedente-hl':'');
+      html += `<td class="num ${excClass}">${fmtNum(excedenteReal)}</td>`;
       html += `<td class="num">${fmtNum(d.precio,4)}</td>`;
-      const totalClass = totalCalc > 0.005 ? 'total-rojo' : (totalCalc<0?'neg':'');
-      html += `<td class="num ${totalClass}">${fmtNum(totalCalc)}</td>`;
+      html += `<td class="num ${totalCalc<0?'neg':''}">${fmtNum(totalCalc)}</td>`;
       if(i===0){
         html += `<td rowspan="4" class="num">${fmtNum(alquilerFijo)}</td>`;
         html += `<td rowspan="4">${cuenta}</td>`;
@@ -1131,48 +702,11 @@ function renderizar(equipos, meta){
     }
   }
 
-  // Fila TOTAL al pie de la tabla
-  if(equipos.length){
-    const trTotal = document.createElement('tr');
-    trTotal.classList.add('fila-total');
-    const colsExtras = mesAnterior ? '<td></td><td></td>' : '';
-    // Renta: usar el valor OFICIAL del PDF (más exacto que 21 × 51.68
-    // que pierde 4 centavos por redondeo). Si no hay PDF, fallback a la suma.
-    const rentaOficial = meta.totalRenta || sums.alquiler;
-    const excedenteOficial = (meta.totalExcedente !== undefined && meta.totalExcedente > 0)
-      ? meta.totalExcedente
-      : sums.importeBruto;
-    const totalFacturado = (meta.totalFacturacion && meta.totalFacturacion > 0)
-      ? meta.totalFacturacion
-      : (rentaOficial + excedenteOficial);
-    const tipCred = sums.importeNegativo < 0
-      ? ` title="El proveedor sólo cobra excedentes positivos. Hay ${fmtNum(Math.abs(sums.importeNegativo))} en créditos por consumo bajo que NO se descuentan de esta factura."`
-      : '';
-    trTotal.innerHTML = `
-      <td colspan="5" style="text-align:right;letter-spacing:.04em">TOTAL DEL MES</td>
-      <td style="text-align:left">${equipos.length} equipos</td>
-      <td class="num">${fmtInt(sums.cantidad)}</td>
-      <td></td>
-      <td></td>
-      <td></td>
-      ${colsExtras}
-      <td></td>
-      <td class="num">${fmtInt(sums.consumo)}</td>
-      <td class="num">${fmtInt(sums.volMax)}</td>
-      <td class="num"${tipCred}>${fmtInt(sums.excPositivo)}${sums.excNegativo<0?` <span style="color:#94a3b8;font-weight:500">(${fmtInt(sums.excNegativo)})</span>`:''}</td>
-      <td></td>
-      <td class="num"${tipCred}>S/ ${fmtNum(excedenteOficial)}</td>
-      <td class="num">S/ ${fmtNum(rentaOficial)}</td>
-      <td colspan="2" style="text-align:right">Total facturado: <b>S/ ${fmtNum(totalFacturado)}</b></td>
-    `;
-    tbody.appendChild(trTotal);
-  }
-
   document.getElementById('resumen').style.display = 'grid';
   document.getElementById('kpiPeriodo').textContent = meta.periodo || '—';
   document.getElementById('kpiEquipos').textContent = equipos.length;
   document.getElementById('kpiRenta').textContent = 'S/ '+fmtNum(meta.totalRenta || totalRentaCalc);
-  document.getElementById('kpiExcedente').textContent = 'S/ '+fmtNum(meta.totalExcedente || sums.importeBruto || totalExcedenteCalc);
+  document.getElementById('kpiExcedente').textContent = 'S/ '+fmtNum(meta.totalExcedente || totalExcedenteCalc);
 
   const kpiVal = document.getElementById('kpiValidacion');
   const banner = document.getElementById('bannerCompara');
@@ -1198,18 +732,11 @@ function renderizar(equipos, meta){
   } else {
     kpiVal.textContent = `${okCI}/${totalCI} OK — ${discrepancias.length} ✗`;
     kpiVal.style.color = '#b00000';
-    banner.innerHTML = `<div class="banner err">⚠ <b>${discrepancias.length} discrepancia(s)</b> entre el Contador Inicial del PDF actual (${meta.periodo}) y el Contador Final de ${mesAnterior.meta.periodo}. Revisar antes de pagar la factura — la columna <b>Δ vs CI</b> en la tabla muestra la diferencia.</div>`;
+    banner.innerHTML = `<div class="banner err">⚠ <b>${discrepancias.length} discrepancia(s)</b> entre el Contador Inicial del PDF actual y el Contador Final del ${mesAnterior.meta.periodo}. Revisar antes de pagar la factura.</div>`;
     sumDisc.textContent = `Ver ${discrepancias.length} discrepancia(s) detectada(s)`;
-    let h = `<table>
-      <thead><tr>
-        <th>S/N</th><th>Modelo</th><th>Observación</th><th>Formato</th>
-        <th>CF ${mesAnterior.meta.periodo}<br>(esperado)</th>
-        <th>CI ${meta.periodo}<br>(facturado)</th>
-        <th>Δ</th>
-      </tr></thead><tbody>`;
+    let h = '<table><thead><tr><th>S/N</th><th>Modelo</th><th>Observación</th><th>Formato</th><th>CI del PDF</th><th>CF '+mesAnterior.meta.periodo+'</th><th>Diferencia</th></tr></thead><tbody>';
     for(const d of discrepancias){
-      const signo = d.diferencia>0 ? '+' : '';
-      h += `<tr><td><b>${d.sn}</b></td><td>${d.modelo||''}</td><td style="text-align:left">${d.obs||''}</td><td>${d.formato}</td><td class="num">${fmtInt(d.cfAnterior)}</td><td class="num">${fmtInt(d.ciPdf)}</td><td class="num neg"><b>${signo}${fmtInt(d.diferencia)}</b></td></tr>`;
+      h += `<tr><td>${d.sn}</td><td>${d.modelo||''}</td><td style="text-align:left">${d.obs||''}</td><td>${d.formato}</td><td class="num">${fmtInt(d.ciPdf)}</td><td class="num">${fmtInt(d.cfAnterior)}</td><td class="num neg"><b>${d.diferencia>0?'+':''}${fmtInt(d.diferencia)}</b></td></tr>`;
     }
     h += '</tbody></table>';
     tablaDisc.innerHTML = h;
@@ -1244,33 +771,11 @@ function guardarMes(equipos, meta){
   const payload = {
     guardadoEn: new Date().toISOString(),
     meta,
-    equipos: equipos.map(e => ({sn:e.sn, modeloPdf:e.modeloPdf, bolsaPdf:e.bolsaPdf, direccion:e.direccion, formatos:e.formatos})),
-    // Guardar también los volúmenes y precios contractuales del período
-    // para que al recargar el mes desde el histórico los cálculos sean
-    // exactos aunque cambien las tarifas en el futuro.
-    volMaxBolsa: VOL_MAX_BOLSA,
-    preciosBolsa: PRECIOS_BOLSA
+    equipos: equipos.map(e => ({sn:e.sn, modeloPdf:e.modeloPdf, bolsaPdf:e.bolsaPdf, direccion:e.direccion, formatos:e.formatos}))
   };
   localStorage.setItem(STORAGE_PREFIX + k, JSON.stringify(payload));
   actualizarListaMeses();
   setStatus(`✓ Guardado ${meta.periodo} (${equipos.length} equipos) en este navegador.`);
-}
-
-function cargarMesGuardado(clave){
-  const raw = localStorage.getItem(STORAGE_PREFIX + clave);
-  if(!raw){ setStatus('No se encontró el mes guardado: '+clave, true); return; }
-  let data;
-  try{ data = JSON.parse(raw); } catch(e){ setStatus('Error leyendo el mes guardado.', true); return; }
-  // Reset visual sin tocar el histórico
-  resetearEstadoPdf({procesando:true});
-  setStatus(`📂 Cargando ${data.meta.periodo} desde el histórico…`);
-  // Restaurar volúmenes y precios del período guardado
-  if(data.volMaxBolsa) VOL_MAX_BOLSA = data.volMaxBolsa;
-  else VOL_MAX_BOLSA = JSON.parse(JSON.stringify(VOL_MAX_BOLSA_FALLBACK));
-  PRECIOS_BOLSA = data.preciosBolsa || null;
-  // Renderizar (asume que data.equipos viene en formato igual a parsearEquipos)
-  renderizar(data.equipos, data.meta);
-  setStatus(`📂 Mostrando ${data.meta.periodo} (guardado el ${new Date(data.guardadoEn).toLocaleString('es-PE')}). Sin PDF cargado — use "Importar otro PDF" para procesar uno nuevo.`);
 }
 
 function listarMeses(){
@@ -1311,17 +816,40 @@ function actualizarListaMeses(){
   const meses = listarMeses();
   if(!meses.length){ cont.innerHTML = '<span style="color:#888">— sin meses guardados —</span>'; return; }
   cont.innerHTML = meses.map(m =>
-    `<span class="mes-item" data-clave="${m.clave}" title="Click para cargar este mes (guardado el ${new Date(m.guardadoEn).toLocaleString('es-PE')})"><b>${m.periodo}</b> · ${m.equipos} equipos <button onclick="event.stopPropagation(); eliminarMes('${m.clave}')" title="Eliminar">✕</button></span>`
+    `<span class="mes-item" title="Guardado el ${new Date(m.guardadoEn).toLocaleString('es-PE')}"><b>${m.periodo}</b> · ${m.equipos} equipos <button onclick="eliminarMes('${m.clave}')" title="Eliminar">✕</button></span>`
   ).join('');
-  // Hacer clickable cada badge para cargar el mes
-  cont.querySelectorAll('.mes-item').forEach(el => {
-    el.addEventListener('click', (ev) => {
-      // Si el click vino del botón ✕ (eliminar), no cargamos
-      if(ev.target.tagName === 'BUTTON') return;
-      cargarMesGuardado(el.dataset.clave);
-    });
-  });
 }
+
+document.getElementById('btnExportCsv').addEventListener('click', () => {
+  const equipos = window._ultimosEquipos;
+  if(!equipos || !equipos.length){ setStatus('Nada que exportar. Cargue un PDF primero.', true); return; }
+  const meta = window._ultimaMeta || {};
+  const FORMATOS = ['A4BN','A3BN','A4CL','A3CL'];
+  const header = ['Fecha','Marca','Modelo','S/N','IP','Observacion','CantImp','Bolsa','Formato','ContadorInicial','ContadorFinal','Consumo','VolMax','VolExc','Precio','Total','AlquilerFijo','Cuenta','CentroCosto'];
+  const rows = [header];
+  for(const eq of equipos){
+    const m = MAESTRO[eq.sn] || {};
+    for(const fmt of FORMATOS){
+      const d = eq.formatos[fmt] || {};
+      const volMax = (VOL_MAX_BOLSA[eq.bolsaPdf] && VOL_MAX_BOLSA[eq.bolsaPdf][fmt] != null) ? VOL_MAX_BOLSA[eq.bolsaPdf][fmt] : null;
+      const cons = d.consumo||0;
+      const exc = volMax!=null ? (cons===0 ? 0 : cons - volMax) : (d.cantExc||0);
+      const total = volMax!=null ? exc*(d.precio||0) : (d.total||0);
+      rows.push([
+        meta.periodo||'', m.marca||'', m.modelo||eq.modeloPdf||'', eq.sn, m.ip||'',
+        (m.observacion||eq.direccion||'').replace(/,/g,' '), m.cantidad||1, eq.bolsaPdf||'',
+        fmt, d.ci||0, d.cf||0, d.consumo||0, volMax||'', exc, d.precio||0, total.toFixed(2),
+        (m.alquilerFijo||51.68).toFixed(2), m.cuenta||'', m.centroCosto||''
+      ]);
+    }
+  }
+  const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `cuadro_consumo_${(meta.periodo||'export').replace(/\s+/g,'_')}.csv`;
+  a.click();
+});
 
 document.getElementById('btnGuardarMes').addEventListener('click', () => {
   if(!window._ultimosEquipos || !window._ultimosEquipos.length){
@@ -1330,13 +858,41 @@ document.getElementById('btnGuardarMes').addEventListener('click', () => {
   guardarMes(window._ultimosEquipos, window._ultimaMeta);
 });
 
-actualizarListaMeses();
-
-document.getElementById('btnLimpiar').addEventListener('click', () => {
-  resetearEstadoPdf();
-  document.getElementById('fileInput').value = '';
-  setStatus('✓ Pantalla limpia. Listo para importar otro PDF.');
+document.getElementById('btnExportHist').addEventListener('click', () => {
+  const meses = listarMeses();
+  if(!meses.length){ setStatus('Nada que exportar: no hay meses guardados.', true); return; }
+  const data = {};
+  for(const m of meses){
+    data[m.clave] = JSON.parse(localStorage.getItem(STORAGE_PREFIX + m.clave));
+  }
+  const blob = new Blob([JSON.stringify({exportadoEn:new Date().toISOString(), meses:data}, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `reprodata_historico_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
 });
+
+document.getElementById('histInput').addEventListener('change', async (ev) => {
+  const f = ev.target.files[0];
+  if(!f) return;
+  try{
+    const txt = await f.text();
+    const j = JSON.parse(txt);
+    const meses = j.meses || j;
+    let n = 0;
+    for(const k of Object.keys(meses)){
+      localStorage.setItem(STORAGE_PREFIX + k, JSON.stringify(meses[k]));
+      n++;
+    }
+    actualizarListaMeses();
+    setStatus(`✓ Importados ${n} mes(es) al histórico local.`);
+  }catch(e){
+    setStatus('Error al importar: '+e.message, true);
+  }
+  ev.target.value = '';
+});
+
+actualizarListaMeses();
 
 // ====== Asiento SAP ======
 const SAP_HEADERS = [
@@ -1349,14 +905,19 @@ const SAP_HEADERS = [
   'Socio Negocios','Fecha Registro Ventas'
 ];
 
-function montoConsumoEquipo(eq, bolsasCalc){
-  // Si no se pasa bolsasCalc, lo recalculamos sólo para este equipo no
-  // tendría sentido (el cobro depende del agregado de toda la bolsa).
-  // Por eso requerimos el bolsasCalc completo, calculado para todos los
-  // equipos del PDF.
-  if(!bolsasCalc) bolsasCalc = window._bolsasCalc;
-  if(!bolsasCalc) return 0;
-  return calcularCobroEquipo(eq, bolsasCalc);
+function montoConsumoEquipo(eq){
+  const FMTS = ['A4BN','A3BN','A4CL','A3CL'];
+  const bolsa = eq.bolsaPdf;
+  let total = 0;
+  for(const fmt of FMTS){
+    const d = eq.formatos[fmt] || {};
+    const volMax = (VOL_MAX_BOLSA[bolsa] && VOL_MAX_BOLSA[bolsa][fmt] != null) ? VOL_MAX_BOLSA[bolsa][fmt] : null;
+    const cons = d.consumo || 0;
+    const exc = (volMax != null) ? (cons === 0 ? 0 : cons - volMax) : (d.cantExc||0);
+    const t = (volMax != null) ? exc * (d.precio||0) : (d.total||0);
+    total += t;
+  }
+  return Math.round(total * 10000) / 10000;
 }
 
 function generarAsientoSAP(equipos, meta, numFactura){
@@ -1371,8 +932,7 @@ function generarAsientoSAP(equipos, meta, numFactura){
 
   const totalRenta = meta.totalRenta || (equipos.length * 51.6819047619048);
   const alquiler = totalRenta / equipos.length;
-  const bolsasCalc = calcularBolsasAgregadas(equipos);
-  const totalExc = equipos.reduce((s,e) => s + montoConsumoEquipo(e, bolsasCalc), 0);
+  const totalExc = equipos.reduce((s,e) => s + montoConsumoEquipo(e), 0);
   const montoTotal = Math.round((totalRenta + totalExc) * 100) / 100;
 
   const ordenados = [...equipos].sort((a,b) => {
@@ -1402,40 +962,31 @@ function generarAsientoSAP(equipos, meta, numFactura){
       'Débito (MS)': '', 'Crédito (MS)': '',
       Comentarios: `FOTOCOPIAS POR ALQUILER EQUIPO MULTIFUNCIONAL DEL ${rangoFechas}`,
       'Referencia 2': refFactura,
-      'Centro de Costo': ceco,
-      _tipo: 'alquiler'
+      'Centro de Costo': ceco
     };
     filas.push(rowAlquiler);
     idx++;
 
-    const consumo = montoConsumoEquipo(eq, bolsasCalc);
+    const consumo = montoConsumoEquipo(eq);
     const rowConsumo = {
       Datos: '',
       Monto: '',
       Modelo: modelo, 'S/N': eq.sn, IP: ip, CECO: ceco,
       'Monto USD': round4(consumo),
       Cuenta: cuenta,
-      // Patrón del Ejemplo.html del usuario:
-      //   Monto USD positivo -> Débito (ME) = monto,  Crédito (ME) = 0
-      //   Monto USD negativo -> Débito (ME) = 0,      Crédito (ME) = |monto|
-      'Débito (ME)':  consumo >= 0 ? round4(consumo) : 0,
-      'Crédito (ME)': consumo <  0 ? round4(Math.abs(consumo)) : 0,
+      'Débito (ME)': consumo >= 0 ? round4(consumo) : 0,
+      'Crédito (ME)': consumo < 0 ? round4(Math.abs(consumo)) : 0,
       'Débito': '', 'Crédito': '',
       'Débito (MS)': '', 'Crédito (MS)': '',
       Comentarios: `CONSUMO DE COPIAS ${eq.sn}`,
       'Referencia 2': refFactura,
-      'Centro de Costo': ceco,
-      _tipo: 'consumo'
+      'Centro de Costo': ceco
     };
     filas.push(rowConsumo);
     idx++;
   }
 
-  // Cuadre con cuenta 421111101: balancea Σ Débito (ME) = Σ Crédito (ME).
-  // (Como el negativo se absorbe AL alquiler en Débito Y también queda
-  //  en Crédito ME en su propia fila, las dos columnas suman lo mismo
-  //  pero por encima del monto facturado en |negativos|; el cuadre
-  //  iguala el lado más bajo al más alto, NO al monto facturado.)
+  // Cuadre con cuenta 421111101: iguala Débito (ME) y Crédito (ME).
   const debPre = filas.reduce((s,r) => s + (Number(r['Débito (ME)']) || 0), 0);
   const credPre = filas.reduce((s,r) => s + (Number(r['Crédito (ME)']) || 0), 0);
   const dif = round4(debPre - credPre);
@@ -1444,7 +995,7 @@ function generarAsientoSAP(equipos, meta, numFactura){
       Datos:'', Monto:'', Modelo:'', 'S/N':'', IP:'', CECO:'',
       'Monto USD': round4(Math.abs(dif)),
       Cuenta: 421111101,
-      'Débito (ME)':  dif < 0 ? round4(Math.abs(dif)) : 0,
+      'Débito (ME)': dif < 0 ? round4(Math.abs(dif)) : 0,
       'Crédito (ME)': dif > 0 ? round4(dif) : 0,
       'Débito':'', 'Crédito':'',
       'Débito (MS)':'', 'Crédito (MS)':'',
@@ -1469,48 +1020,6 @@ function generarAsientoSAP(equipos, meta, numFactura){
 }
 
 function round4(v){ return Math.round(v * 10000) / 10000; }
-
-// Absorbe los consumos con Monto USD negativo al Débito (ME) del
-// alquiler del mismo equipo, Y también deja el valor absoluto en la
-// columna Crédito (ME) de la propia fila de consumo. La columna
-// Débito (ME) de esa fila queda vacía (no 0).
-function absorberNegativosAlAlquiler(filas){
-  // Reset previo: limpiar absorciones anteriores para que el cálculo
-  // sea idempotente al regenerar/recalcular.
-  for(const f of filas){
-    if(f._tipo === 'alquiler'){
-      f['Débito (ME)'] = round4(Number(f._alquilerBase) || Number(f['Monto USD']) || 0);
-      f._alquilerBase = f['Débito (ME)'];
-    }
-  }
-  const alquilerPorSn = new Map();
-  for(const f of filas){
-    if(f._tipo === 'alquiler' && f['S/N']) alquilerPorSn.set(f['S/N'], f);
-  }
-  for(const f of filas){
-    if(f._tipo !== 'consumo' || !f['S/N']) continue;
-    const monto = Number(f['Monto USD']);
-    if(isNaN(monto)) continue;
-    if(monto < 0){
-      // Sumar el valor absoluto al alquiler del mismo equipo
-      const filaAlq = alquilerPorSn.get(f['S/N']);
-      if(filaAlq){
-        filaAlq['Débito (ME)'] = round4((Number(filaAlq['Débito (ME)']) || 0) + Math.abs(monto));
-      }
-      // En la fila de consumo negativo: Débito (ME) = 0, Crédito (ME) = |monto|
-      f['Débito (ME)']  = 0;
-      f['Crédito (ME)'] = round4(Math.abs(monto));
-    } else if(monto > 0){
-      // Consumo positivo: Débito (ME) = monto, Crédito (ME) = 0
-      f['Débito (ME)']  = round4(monto);
-      f['Crédito (ME)'] = 0;
-    } else {
-      // Cero: ambos en 0 (mostrar USD 0.00, no vacío)
-      f['Débito (ME)']  = 0;
-      f['Crédito (ME)'] = 0;
-    }
-  }
-}
 
 function renderSAPPreview(filas){
   const tbody = document.getElementById('tbodySAP');
@@ -1586,46 +1095,7 @@ function renderSAPPreview(filas){
       fila._editado = true;
       tr.classList.add('editado');
       td.textContent = fmtCell(nuevoVal, col);
-
-      // Sincronización entre Monto USD <-> Débito (ME) / Crédito (ME)
-      // Reglas contables:
-      //   Monto USD positivo  ->  Débito (ME) = monto,  Crédito (ME) = 0
-      //   Monto USD negativo  ->  Débito (ME) = 0,      Crédito (ME) = |monto|
-      // Si el usuario edita Débito (ME) o Crédito (ME) directamente, se
-      // ajusta el Monto USD (con signo) y la celda contraria se pone en 0.
-      const sincronizar = (sourceCol) => {
-        if(sourceCol === 'Monto USD'){
-          const v = Number(fila['Monto USD']) || 0;
-          fila['Débito (ME)']  = v >= 0 ? Math.round(v * 10000) / 10000 : 0;
-          fila['Crédito (ME)'] = v <  0 ? Math.round(Math.abs(v) * 10000) / 10000 : 0;
-        } else if(sourceCol === 'Débito (ME)'){
-          const v = Number(fila['Débito (ME)']) || 0;
-          fila['Monto USD']    = Math.round(v * 10000) / 10000;
-          fila['Crédito (ME)'] = 0;
-        } else if(sourceCol === 'Crédito (ME)'){
-          const v = Number(fila['Crédito (ME)']) || 0;
-          fila['Monto USD']    = -Math.round(v * 10000) / 10000;
-          fila['Débito (ME)']  = 0;
-        }
-        // Refrescar visualmente las celdas hermanas
-        const cols = ['Monto USD','Débito (ME)','Crédito (ME)'];
-        for(const c of cols){
-          if(c === sourceCol) continue;
-          const otraTd = tr.querySelector(`td[data-col="${c.replace(/"/g,'\\"')}"]`);
-          if(otraTd) otraTd.textContent = fmtCell(fila[c], c);
-        }
-      };
-      if(['Monto USD','Débito (ME)','Crédito (ME)'].includes(col)){
-        sincronizar(col);
-      }
-
-      // Si la edición es de Monto USD (puede afectar al alquiler del
-      // mismo equipo por absorción de negativos) o de Débito/Crédito (ME),
-      // re-renderizamos toda la preview con el cuadre re-calculado.
       recalcularTotalSAP();
-      if(['Monto USD','Débito (ME)','Crédito (ME)'].includes(col)){
-        renderSAPPreview(window._ultimoSAP);
-      }
       const s = document.getElementById('statusSAP');
       s.textContent = `✎ Editado: ${fila['S/N']||''} ${col}. ${(window._ultimoSAP.filter(x=>x._editado).length)} fila(s) modificada(s).`;
       s.style.color = '#b57700';
@@ -1648,15 +1118,11 @@ function recalcularTotalSAP(){
       debSinCuadre += (Number(filas[i]['Débito (ME)']) || 0);
       credSinCuadre += (Number(filas[i]['Crédito (ME)']) || 0);
     }
-    // Cuadre balancea Σ Débito (ME) = Σ Crédito (ME) (no apunta al monto
-    // facturado: si hay negativos absorbidos al alquiler, ambas sumas
-    // quedan por encima del monto facturado en |negativos|, lo cual es
-    // contablemente correcto).
+    const dif = Math.round((debSinCuadre - credSinCuadre) * 10000) / 10000;
     if(!cuadreFila._editado){
-      const dif = Math.round((debSinCuadre - credSinCuadre) * 10000) / 10000;
-      cuadreFila['Débito (ME)']  = dif < 0 ? Math.abs(dif) : 0;
+      cuadreFila['Débito (ME)'] = dif < 0 ? Math.abs(dif) : 0;
       cuadreFila['Crédito (ME)'] = dif > 0 ? dif : 0;
-      cuadreFila['Monto USD']    = Math.round(Math.abs(dif) * 10000) / 10000;
+      cuadreFila['Monto USD'] = Math.abs(dif);
     }
   }
 
@@ -1781,9 +1247,6 @@ document.getElementById('btnDescargarXLSX').addEventListener('click', () => {
     aoaSAP.push(SAP_HEADERS.map(h => {
       const v = r[h];
       if(v !== undefined && v !== '') return v;
-      // Débito (ME) y Crédito (ME) siempre llevan número (0 -> "USD 0.00")
-      // para que las celdas no queden en blanco. Las otras columnas
-      // (Débito, Crédito, Débito MS, Crédito MS) sí quedan vacías.
       if(h === 'Débito (ME)' || h === 'Crédito (ME)') return 0;
       return '';
     }));
@@ -2062,12 +1525,6 @@ function aplicarEstiloHojaMes(aoaBase, meta){
   return ws;
 }
 </script>
-
-<footer class="creditos">
-  <div>Creado por</div>
-  <div class="nombre">Olinda Orellana</div>
-  <div class="rol">Accountant</div>
-</footer>
 
 </div><!-- /.app -->
 </body>
