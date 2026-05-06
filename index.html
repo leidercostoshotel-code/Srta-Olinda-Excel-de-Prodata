@@ -739,16 +739,32 @@ async function procesarRango(lines){
     }
   }
 
-  // Lectura dinámica de volúmenes y precios DESDE EL PDF
+  // Parsear equipos primero para poder contar cuántos hay por bolsa
+  const equipos = parsearEquipos(lines);
+
+  // Lectura dinámica de volúmenes y precios DESDE EL PDF.
+  // El PDF da los volúmenes TOTALES por bolsa (ej. Bolsa 2 A4BN = 1504),
+  // pero como el cálculo es POR EQUIPO, dividimos cada total entre la
+  // cantidad de equipos asignados a esa bolsa.
+  //   Bolsa 2 con 8 equipos -> volMax_individual = 1504 / 8 = 188
+  //   Bolsa 1 con 4 equipos -> volMax_individual = 13000 / 4 = 3250
   const volsPdf = extraerVolumenesPDF(lines);
   if(Object.keys(volsPdf).length){
+    // Contar equipos por bolsa
+    const contadorBolsa = {};
+    for(const eq of equipos){
+      const b = eq.bolsaPdf || 'SIN BOLSA';
+      contadorBolsa[b] = (contadorBolsa[b] || 0) + 1;
+    }
     VOL_MAX_BOLSA = JSON.parse(JSON.stringify(VOL_MAX_BOLSA_FALLBACK));
     PRECIOS_BOLSA = {};
     for(const bolsa of Object.keys(volsPdf)){
+      const numEq = contadorBolsa[bolsa] || 1;
       VOL_MAX_BOLSA[bolsa] = VOL_MAX_BOLSA[bolsa] || {A4BN:0,A3BN:0,A4CL:0,A3CL:0};
       PRECIOS_BOLSA[bolsa] = {};
       for(const fmt of Object.keys(volsPdf[bolsa])){
-        VOL_MAX_BOLSA[bolsa][fmt] = volsPdf[bolsa][fmt].volMax;
+        // Dividir el volumen total entre la cantidad de equipos
+        VOL_MAX_BOLSA[bolsa][fmt] = volsPdf[bolsa][fmt].volMax / numEq;
         PRECIOS_BOLSA[bolsa][fmt] = volsPdf[bolsa][fmt].precio;
       }
     }
@@ -756,7 +772,6 @@ async function procesarRango(lines){
     VOL_MAX_BOLSA = JSON.parse(JSON.stringify(VOL_MAX_BOLSA_FALLBACK));
     PRECIOS_BOLSA = null;
   }
-  const equipos = parsearEquipos(lines);
   renderizar(equipos, meta);
   const dups = window._dupAvisoPdf || 0;
   const aviso = dups > 0 ? ` (PDF acumulativo: ${dups} S/N duplicados omitidos, se mantuvo la primera ocurrencia)` : '';
