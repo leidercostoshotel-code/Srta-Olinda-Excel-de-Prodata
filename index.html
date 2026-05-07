@@ -743,33 +743,49 @@ async function procesarRango(lines){
   const equipos = parsearEquipos(lines);
 
   // Lectura dinámica de volúmenes y precios DESDE EL PDF.
-  // El PDF da los volúmenes TOTALES por bolsa (ej. Bolsa 2 A4BN = 1504),
-  // pero como el cálculo es POR EQUIPO, dividimos cada total entre la
-  // cantidad de equipos asignados a esa bolsa.
-  //   Bolsa 2 con 8 equipos -> volMax_individual = 1504 / 8 = 188
-  //   Bolsa 1 con 4 equipos -> volMax_individual = 13000 / 4 = 3250
+  // El PDF da los volúmenes TOTALES por bolsa (Bolsa 2 A4BN = 1504,
+  // Bolsa 1 A4BN = 13000). Los guardamos así (sin dividir): el cálculo
+  // del cobro es AGREGADO por bolsa (suma de consumos de todos los
+  // equipos vs vol total) y luego se reparte el cobro entre los
+  // equipos proporcional a su consumo. Si la bolsa total NO excede,
+  // ningún equipo paga aunque alguno individualmente haya pasado de
+  // su porción 188/equipo.
   const volsPdf = extraerVolumenesPDF(lines);
   if(Object.keys(volsPdf).length){
-    // Contar equipos por bolsa
+    VOL_MAX_BOLSA = JSON.parse(JSON.stringify(VOL_MAX_BOLSA_FALLBACK));
+    PRECIOS_BOLSA = {};
+    // Convertir el FALLBACK por equipo a totales por bolsa (multiplicar por cant. equipos)
     const contadorBolsa = {};
     for(const eq of equipos){
       const b = eq.bolsaPdf || 'SIN BOLSA';
       contadorBolsa[b] = (contadorBolsa[b] || 0) + 1;
     }
-    VOL_MAX_BOLSA = JSON.parse(JSON.stringify(VOL_MAX_BOLSA_FALLBACK));
-    PRECIOS_BOLSA = {};
     for(const bolsa of Object.keys(volsPdf)){
-      const numEq = contadorBolsa[bolsa] || 1;
       VOL_MAX_BOLSA[bolsa] = VOL_MAX_BOLSA[bolsa] || {A4BN:0,A3BN:0,A4CL:0,A3CL:0};
       PRECIOS_BOLSA[bolsa] = {};
       for(const fmt of Object.keys(volsPdf[bolsa])){
-        // Dividir el volumen total entre la cantidad de equipos
-        VOL_MAX_BOLSA[bolsa][fmt] = volsPdf[bolsa][fmt].volMax / numEq;
+        // VOLUMEN TOTAL (no dividido) — para cálculo agregado
+        VOL_MAX_BOLSA[bolsa][fmt] = volsPdf[bolsa][fmt].volMax;
         PRECIOS_BOLSA[bolsa][fmt] = volsPdf[bolsa][fmt].precio;
       }
     }
+    // El FALLBACK por equipo ahora se usa solo para mostrar "vol max por
+    // equipo" en la tabla (referencia visual). El cálculo del cobro real
+    // usa los totales por bolsa de VOL_MAX_BOLSA.
   } else {
     VOL_MAX_BOLSA = JSON.parse(JSON.stringify(VOL_MAX_BOLSA_FALLBACK));
+    // Convertir fallback por equipo a totales por bolsa
+    const contadorBolsa = {};
+    for(const eq of equipos){
+      const b = eq.bolsaPdf || 'SIN BOLSA';
+      contadorBolsa[b] = (contadorBolsa[b] || 0) + 1;
+    }
+    for(const b of Object.keys(VOL_MAX_BOLSA)){
+      const n = contadorBolsa[b] || 1;
+      for(const f of Object.keys(VOL_MAX_BOLSA[b])){
+        VOL_MAX_BOLSA[b][f] = VOL_MAX_BOLSA[b][f] * n;
+      }
+    }
     PRECIOS_BOLSA = null;
   }
   renderizar(equipos, meta);
@@ -1012,6 +1028,15 @@ function renderizar(equipos, meta){
 
   let totalExcedenteCalc = 0;
   let totalRentaCalc = 0;
+  // Pre-calcular agregado por bolsa para el cobro real (proveedor)
+  const bolsasCalc = calcularBolsasAgregadas(equipos);
+  window._bolsasCalc = bolsasCalc;
+  // Cantidad de equipos por bolsa (para mostrar volMax individual = total/n)
+  const contadorBolsaR = {};
+  for(const eqq of equipos){
+    const b = eqq.bolsaPdf || 'SIN BOLSA';
+    contadorBolsaR[b] = (contadorBolsaR[b] || 0) + 1;
+  }
   // Acumuladores para la fila TOTAL al pie de la tabla
   const sums = {
     cantidad:0, consumo:0, volMax:0,
@@ -1036,34 +1061,46 @@ function renderizar(equipos, meta){
     sums.cantidad += cantidad;
     sums.alquiler += alquilerFijo;
 
-    // ¿El equipo tiene excedente en algún formato? -> resaltar la fila
+    // ¿El equipo aporta cobro en algún formato? -> resaltar la fila
+    // (Usa el cobro REAL agregado, que es el que cobra el proveedor)
     let equipoTieneExcedente = false;
     for(const f of FORMATOS){
-      const dd = eq.formatos[f] || {};
-      const vm = (VOL_MAX_BOLSA[bolsa] && VOL_MAX_BOLSA[bolsa][f] != null) ? VOL_MAX_BOLSA[bolsa][f] : null;
-      const cc = dd.consumo || 0;
-      const ee = (vm != null) ? (cc === 0 ? 0 : cc - vm) : (dd.cantExc||0);
-      if(ee > 0){ equipoTieneExcedente = true; break; }
+      const bi = bolsasCalc[bolsa] && bolsasCalc[bolsa][f];
+      const ei = bi && bi.equipos.find(x => x.sn === eq.sn);
+      if(ei && (ei.cobroAsignado || 0) > 0.005){ equipoTieneExcedente = true; break; }
     }
 
+    const numEqBolsa = contadorBolsaR[bolsa] || 1;
     for(let i=0;i<FORMATOS.length;i++){
       const fmt = FORMATOS[i];
       const d = eq.formatos[fmt] || {ci:0,cf:0,consumo:0,volEst:0,cantExc:0,precio:0,total:0};
-      const volMax = (VOL_MAX_BOLSA[bolsa] && VOL_MAX_BOLSA[bolsa][fmt] != null) ? VOL_MAX_BOLSA[bolsa][fmt] : null;
+      const volMaxTotal = (VOL_MAX_BOLSA[bolsa] && VOL_MAX_BOLSA[bolsa][fmt] != null) ? VOL_MAX_BOLSA[bolsa][fmt] : null;
+      // Volumen máximo POR EQUIPO (referencia visual): total / cantidad de equipos
+      const volMax = (volMaxTotal != null) ? volMaxTotal / numEqBolsa : null;
       const consumo = d.consumo;
-      // Cálculo POR EQUIPO (estilo Ejemplo.html):
-      //   exc = consumo - volMax_equipo (puede ser negativo)
-      //   total = exc * precio
-      const excedenteReal = (volMax !== null) ? (consumo === 0 ? 0 : consumo - volMax) : (d.cantExc || 0);
-      const totalCalc = (volMax !== null) ? excedenteReal * d.precio : (d.total || 0);
+      // Excedente individual (info): consumo - volMax_individual.
+      // Puede ser negativo (consumió bajo su porción), pero si la bolsa
+      // total no excede, ese "negativo" no representa un crédito real.
+      const excedenteInd = (volMax !== null) ? (consumo === 0 ? 0 : consumo - volMax) : (d.cantExc || 0);
+      // Total REAL del equipo: parte proporcional del cobro AGREGADO
+      // de la bolsa para ese formato (siempre >= 0).
+      const bolsaInfo = bolsasCalc[bolsa] && bolsasCalc[bolsa][fmt];
+      const eqInfo = bolsaInfo && bolsaInfo.equipos.find(x => x.sn === eq.sn);
+      const totalCalc = eqInfo ? Math.round(eqInfo.cobroAsignado * 10000) / 10000 : 0;
+      // Para visualizar el Excedente, mostramos el individual (info) si la
+      // bolsa NO excede (negativo gris); o la parte proporcional del
+      // excedente agregado si SÍ excede.
+      const excedenteReal = eqInfo ? Math.round(eqInfo.excAsignado * 100) / 100 : excedenteInd;
       if(totalCalc > 0) totalExcedenteCalc += totalCalc;
 
       sums.consumo += consumo || 0;
-      sums.volMax += (volMax !== null) ? volMax : 0;
-      if(excedenteReal > 0) sums.excPositivo += excedenteReal;
-      else if(excedenteReal < 0) sums.excNegativo += excedenteReal;
-      if(totalCalc > 0) sums.importeBruto += totalCalc;
-      else if(totalCalc < 0) sums.importeNegativo += totalCalc;
+      sums.volMax  += (volMax !== null) ? volMax : 0;
+      // Para no sumar el excedente y cobro agregado N veces, los acumulamos
+      // sólo en el primer equipo de la bolsa por formato.
+      if(bolsaInfo && bolsaInfo.equipos[0] && bolsaInfo.equipos[0].sn === eq.sn){
+        if((bolsaInfo.excedente || 0) > 0) sums.excPositivo += bolsaInfo.excedente;
+        if((bolsaInfo.cobroTotal || 0) > 0) sums.importeBruto += bolsaInfo.cobroTotal;
+      }
 
       const tr = document.createElement('tr');
       if(i===0) tr.classList.add('sep');
@@ -1357,23 +1394,14 @@ const SAP_HEADERS = [
   'Socio Negocios','Fecha Registro Ventas'
 ];
 
-function montoConsumoEquipo(eq){
-  // Cálculo POR EQUIPO (como en Ejemplo.html). Para cada formato:
-  //   exc = consumo - volMax_equipo  (puede ser negativo si consume bajo)
-  //   total = exc × precio
-  // La suma total puede ser positiva (cobro) o negativa (crédito).
-  const FMTS = ['A4BN','A3BN','A4CL','A3CL'];
-  const bolsa = eq.bolsaPdf;
-  let total = 0;
-  for(const fmt of FMTS){
-    const d = eq.formatos[fmt] || {};
-    const volMax = (VOL_MAX_BOLSA[bolsa] && VOL_MAX_BOLSA[bolsa][fmt] != null) ? VOL_MAX_BOLSA[bolsa][fmt] : null;
-    const cons = d.consumo || 0;
-    const exc = (volMax != null) ? (cons === 0 ? 0 : cons - volMax) : (d.cantExc||0);
-    const t = (volMax != null) ? exc * (d.precio||0) : (d.total||0);
-    total += t;
-  }
-  return Math.round(total * 10000) / 10000;
+function montoConsumoEquipo(eq, bolsasCalc){
+  // Cálculo INTELIGENTE: primero se verifica si la bolsa total excede;
+  // si excede, el cobro de la bolsa se reparte entre los equipos
+  // proporcional al consumo. Si la bolsa NO excede, ningún equipo paga
+  // (aunque individualmente haya consumido más que su porción).
+  if(!bolsasCalc) bolsasCalc = window._bolsasCalc;
+  if(!bolsasCalc) return 0;
+  return calcularCobroEquipo(eq, bolsasCalc);
 }
 
 function generarAsientoSAP(equipos, meta, numFactura){
@@ -1388,7 +1416,8 @@ function generarAsientoSAP(equipos, meta, numFactura){
 
   const totalRenta = meta.totalRenta || (equipos.length * 51.6819047619048);
   const alquiler = totalRenta / equipos.length;
-  const totalExc = equipos.reduce((s,e) => s + montoConsumoEquipo(e), 0);
+  const bolsasCalc = calcularBolsasAgregadas(equipos);
+  const totalExc = equipos.reduce((s,e) => s + montoConsumoEquipo(e, bolsasCalc), 0);
   const montoTotal = Math.round((totalRenta + totalExc) * 100) / 100;
 
   const ordenados = [...equipos].sort((a,b) => {
@@ -1424,7 +1453,7 @@ function generarAsientoSAP(equipos, meta, numFactura){
     filas.push(rowAlquiler);
     idx++;
 
-    const consumo = montoConsumoEquipo(eq);
+    const consumo = montoConsumoEquipo(eq, bolsasCalc);
     const rowConsumo = {
       Datos: '',
       Monto: '',
@@ -1968,8 +1997,16 @@ document.getElementById('btnDescargarXLSX').addEventListener('click', () => {
               'Cuenta', 'Centro Costo');
 
   const aoaMes = [cabMes];
-  // Acumuladores para la fila TOTAL al pie
   const sumas = {cantidad:0, consumo:0, volMax:0, exc:0, tot:0, alquiler:0};
+  const bolsasCalcMes = calcularBolsasAgregadas(equipos);
+  // Cantidad de equipos por bolsa (para mostrar volMax_individual)
+  const numEqMes = {};
+  for(const eq of equipos){
+    const b = eq.bolsaPdf || 'SIN BOLSA';
+    numEqMes[b] = (numEqMes[b] || 0) + 1;
+  }
+  // Marcadores para no contar dos veces cada bolsa
+  const bolsaContada = new Set();
 
   for(const eq of equipos){
     const m = MAESTRO[eq.sn] || {};
@@ -1978,17 +2015,29 @@ document.getElementById('btnDescargarXLSX').addEventListener('click', () => {
     sumas.cantidad += cant;
     sumas.alquiler += alq;
     const equipoAnt = mesAnterior ? (mesAnterior.equipos||[]).find(x => x.sn === eq.sn) : null;
+    const numEqBolsa = numEqMes[eq.bolsaPdf] || 1;
     for(let i=0;i<FORMATOS.length;i++){
       const fmt = FORMATOS[i];
       const d = eq.formatos[fmt] || {};
-      const volMax = (VOL_MAX_BOLSA[eq.bolsaPdf] && VOL_MAX_BOLSA[eq.bolsaPdf][fmt] != null) ? VOL_MAX_BOLSA[eq.bolsaPdf][fmt] : null;
+      const volMaxTotal = (VOL_MAX_BOLSA[eq.bolsaPdf] && VOL_MAX_BOLSA[eq.bolsaPdf][fmt] != null) ? VOL_MAX_BOLSA[eq.bolsaPdf][fmt] : null;
+      const volMax = (volMaxTotal != null) ? volMaxTotal / numEqBolsa : null;
       const consFmt = d.consumo || 0;
-      const exc = volMax!=null ? (consFmt===0 ? 0 : consFmt - volMax) : (d.cantExc||0);
-      const tot = volMax!=null ? exc*(d.precio||0) : (d.total||0);
+      // Cobro REAL agregado proporcional (siempre >= 0)
+      const bolsaInfo = bolsasCalcMes[eq.bolsaPdf] && bolsasCalcMes[eq.bolsaPdf][fmt];
+      const eqInfo = bolsaInfo && bolsaInfo.equipos.find(x => x.sn === eq.sn);
+      const exc = eqInfo ? Math.round(eqInfo.excAsignado * 100) / 100 : 0;
+      const tot = eqInfo ? Math.round(eqInfo.cobroAsignado * 10000) / 10000 : 0;
       sumas.consumo += consFmt;
-      sumas.volMax  += (volMax || 0);
-      sumas.exc     += exc;
-      sumas.tot     += tot;
+      // Acumular volMax sólo del primer equipo de la bolsa (es el TOTAL)
+      const claveBF = (eq.bolsaPdf||'') + '|' + fmt;
+      if(!bolsaContada.has(claveBF)){
+        sumas.volMax += (volMaxTotal || 0);
+        if(bolsaInfo){
+          sumas.exc += (bolsaInfo.excedente || 0);
+          if((bolsaInfo.cobroTotal || 0) > 0) sumas.tot += bolsaInfo.cobroTotal;
+        }
+        bolsaContada.add(claveBF);
+      }
 
       let cfAnt = '';
       let delta = '';
